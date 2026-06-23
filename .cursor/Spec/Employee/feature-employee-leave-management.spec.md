@@ -4,8 +4,10 @@ Actor: Employee
 Priority: Medium
 Related Code: `Views/Employee/LeaveManagement.jsp`, `LeaveDAO`, `Leave`
 
+
 ## Luu y pham vi
 File nay la ban cu theo `LeaveDAO`/`Leave`. Theo `_Common/database-impact.spec.md`, luong request/nghi phep moi nen dung `MailRequest`; target design nam trong `feature-employee-request-management.spec.md`.
+
 
 ## Muc tieu
 Cho phep nhan vien xem va tao yeu cau nghi phep neu module nghi phep duoc kich hoat.
@@ -30,6 +32,8 @@ Cho phep nhan vien xem va tao yeu cau nghi phep neu module nghi phep duoc kich h
 - [ ] Tao leave khong duoc trung ngay khong hop le.
 - [ ] Leave moi co trang thai cho duyet.
 
+
 ## Missing Work
 - [ ] Chot dung tiep `Leave` hay migrate ve `MailRequest`.
 - [ ] Neu theo target moi, khong gen controller rieng tu file nay; gen theo `feature-employee-request-management.spec.md`.
+

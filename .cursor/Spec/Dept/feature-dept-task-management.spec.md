@@ -13,6 +13,13 @@ Dept Manager quan ly dashboard phong ban, tao task, xem danh sach task va cap nh
 - `feature-dept-task-list.spec.md`
 - `feature-dept-task-update.spec.md`
 
+
+- `feature-dept-search-filer-pagination.md`
+- `feature-dept-updatetaskstatus.md`
+- `feature-dept-viewtask.md`
+
+
+
 ## Route hien co
 - `/dept`
 - `/postTask`

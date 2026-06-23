@@ -7,6 +7,7 @@ Related Code: `com.hrm.controller.employee.ViewTask`, `Views/Employee/ViewTask.j
 ## Luu y pham vi
 File nay mo ta hien trang route `/viewTask` dang bi xung dot voi Dept Manager. Khi gen code moi, uu tien target design trong `feature-employee-task-workflow.spec.md` voi route `/employee/tasks`.
 
+
 ## Route hien co
 - `GET /viewTask?action=view&id={taskId}`
 - `POST /viewTask` goi lai `doGet`

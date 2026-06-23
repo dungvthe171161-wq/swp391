@@ -9,6 +9,7 @@ File nay la ban tom tat hien trang payroll/contract. Khi gen code moi, uu tien:
 - `feature-employee-payslip.spec.md` cho payroll/payslip.
 - `feature-employee-contract.spec.md` cho contract.
 
+
 ## Route/JSP hien co
 - `/Views/Employee/ViewPayroll.jsp`
 - `/Views/Employee/ViewContract.jsp`
@@ -38,4 +39,6 @@ File nay la ban tom tat hien trang payroll/contract. Khi gen code moi, uu tien:
 ## Missing Work
 - [ ] Tao/kiem tra controller backend cho ViewPayroll va ViewContract neu chua co.
 - [ ] Them test chong truy cap du lieu employee khac.
+
 - [ ] Khi implement moi, doi route sang `/employee/payslips` va `/employee/contracts`.
+

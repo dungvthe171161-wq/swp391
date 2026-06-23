@@ -4,8 +4,10 @@ Actor: Employee
 Priority: Medium
 Related Code: `HomepageController`, `Views/Employee/EmployeeHome.jsp`, `RoleAuthorizationFilter`
 
+
 ## Luu y pham vi
 File nay mo ta hien trang Employee Home trong code hien co. Khi gen code moi, uu tien target design trong `feature-employee-dashboard-summary.spec.md`.
+
 
 ## Route
 - Redirect hien tai tu `/homepage` den `/Views/Employee/EmployeeHome.jsp` voi role Employee.
@@ -26,4 +28,6 @@ File nay mo ta hien trang Employee Home trong code hien co. Khi gen code moi, uu
 
 ## Missing Work
 - [ ] Tao controller Employee Home neu muon dung MVC chuan hon.
+
 - [ ] Khi implement moi, doi sang route `/employee/home` neu theo module Employee Self Service.
+

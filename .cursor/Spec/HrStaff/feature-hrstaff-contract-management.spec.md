@@ -1,40 +1,35 @@
-# Feature: HR Staff quan ly hop dong
-Status: Approved
-Actor: HR Staff
-Priority: High
-Related Code: `ContractListController`, `CreateContractController`, `ContractDAO`, `Views/HrStaff/ContractList.jsp`, `Views/HrStaff/CreateContract.jsp`
+# Feature: HR Staff - Contract Management
+Status: Approved | Priority: High
+Related Files: ContractListController.java, CreateContractController.java
 
-## Route
-- `GET /hrstaff/contracts`
-- `POST /hrstaff/contracts`
-- `GET /hrstaff/contracts/create`
-- `POST /hrstaff/contracts/create`
+## 1. Context & Goal
+Cho phép HR Staff quản lý hợp đồng lao động. Dữ liệu hợp đồng là cơ sở gốc để tính toán lương.
 
-## Luong danh sach
-1. HR Staff vao `/hrstaff/contracts`.
-2. Controller lay danh sach contract.
-3. Ap dung search/filter/pagination neu request co.
-4. Forward den `/Views/HrStaff/ContractList.jsp`.
+## 2. Actors & Roles
+- **HR Staff**: Có `HttpSession` hợp lệ, role `ROLE_HR_STAFF` và quyền `VIEW_CONTRACTS`.
 
-## Luong tao hop dong
-1. HR Staff vao `/hrstaff/contracts/create`.
-2. Controller load du lieu employee va form.
-3. HR Staff nhap thong tin hop dong.
-4. Controller validate employee, loai hop dong, ngay bat dau, ngay ket thuc, luong.
-5. Luu contract.
-6. Redirect ve `/hrstaff/contracts`.
+## 3. Functional Requirements (EARS)
+- THE SYSTEM SHALL kiểm tra quyền truy cập thông qua `PermissionUtil.ensureRolePermission` cho mọi request.
+- WHILE HR Staff truy cập `/hrstaff/contracts`, THE SYSTEM SHALL phân trang dữ liệu với kích thước cố định `PAGE_SIZE = 10`.
+- WHEN HR Staff truy cập `/hrstaff/contracts/create`, THE SYSTEM SHALL query toàn bộ danh sách `Employee` để fill vào dropdown.
+- WHEN HR Staff submit form tạo mới hợp đồng, THE SYSTEM SHALL gán trạng thái mặc định là `Draft` nếu không có tham số status truyền lên.
 
-## Luong xoa/cap nhat neu co
-1. HR Staff thao tac tren danh sach contract.
-2. Controller xu ly action theo parameter.
-3. Redirect ve `/hrstaff/contracts` kem success/error.
+## 4. Non-Functional Requirements
+- Tech Stack: Bắt buộc dùng `jakarta.servlet.*` cho Tomcat 10.1+.
 
-## Acceptance Criteria
-- [ ] HR Staff tao hop dong hop le thanh cong.
-- [ ] Ngay ket thuc khong duoc truoc ngay bat dau.
-- [ ] Employee khong hop le bi tu choi.
-- [ ] Role khac khong vao duoc route HR Staff contract.
+## 5. Data Model
+- Entities: `Contract`, `Employee`.
+- Fields quan trọng: StartDate, EndDate, BaseSalary, Allowance, ContractType, Status.
 
-## Missing Work
-- [ ] Duyet hop dong thuoc HR Manager/HR, khong gop vao HR Staff neu can workflow phe duyet.
-- [ ] Them audit log tao/sua/xoa contract.
+## 6. Error Handling (Unwanted Patterns)
+- WHERE người dùng thiếu quyền, THE SYSTEM SHALL chặn request và báo lỗi "You do not have permission to manage contracts".
+- WHERE có lỗi `SQLException` hoặc Exception khác, THE SYSTEM SHALL thiết lập attribute `error`, forward về trang hiện tại và ghi log bằng `java.util.logging.Logger` (Tuyệt đối KHÔNG dùng `e.printStackTrace()`).
+
+## 7. Acceptance Criteria
+- [ ] Truy cập danh sách hợp đồng trả về đúng 10 records/trang.
+- [ ] User không phải HR Staff bị chặn quyền.
+- [ ] Không cho phép ngày kết thúc (EndDate) trước ngày bắt đầu (StartDate).
+
+## 8. Out of Scope
+- KHÔNG hỗ trợ việc chuyển status hợp đồng sang `Active` (thuộc quyền HR Manager).
+- KHÔNG gộp chung workflow duyệt hợp đồng vào Spec này.

@@ -1,11 +1,11 @@
-# Module Spec: Authentication
-Status: Approved
-Actors: Guest, SystemUser
+# Đặc tả Phân hệ: Xác thực (Authentication)
+Trạng thái: Đã phê duyệt
+Tác nhân: Guest, SystemUser
 
-## Pham vi
-Module Auth bao gom dang nhap, dang ky, dang xuat, Google Login, homepage routing, quen mat khau, xac minh PIN va doi mat khau.
+## Phạm vi
+Phân hệ Xác thực (Auth) bao gồm các chức năng đăng nhập, đăng ký, đăng xuất, Google Login, định tuyến trang chủ (homepage routing), quên mật khẩu, xác minh mã PIN và đổi mật khẩu.
 
-## Feature files
+## Các tập tin đặc tả tính năng (Feature files)
 - `feature-login.spec.md`
 - `feature-register.spec.md`
 - `feature-logout.spec.md`
@@ -13,19 +13,19 @@ Module Auth bao gom dang nhap, dang ky, dang xuat, Google Login, homepage routin
 - `feature-password-recovery-change.spec.md`
 - `feature-google-login.spec.md`
 
-## Nguyen tac dung voi code hien tai
-- Tai khoan dang nhap bang username parameter `user` va password parameter `pass`.
-- Login local chap nhan username hoac email.
-- Register local dung route `/register`, tao tai khoan `SystemUser` va gui email BetterHR neu SMTP dung.
-- Session dang nhap luu attribute `systemUser`.
-- Password trong code hien tai duoc kiem tra bang `DAO.checkPassword` va luu/cap nhat tai `SystemUser.PasswordHash` theo logic plain text hien tai cua du an.
-- Luong quen mat khau dung `SystemUser.Email`, PIN session `pinCode`, va flag `recoveryVerified` truoc khi cho vao `/changepassRE`.
-- `/homepage` la cua vao trung tam hien thi cac dashboard duoc cap quyen theo role, khong auto redirect bat buoc theo role.
-- Code dung Jakarta Servlet, khong dung `javax.servlet`.
+## Nguyên tắc đúng với mã nguồn hiện tại
+- Tài khoản đăng nhập bằng tham số tên đăng nhập `user` và tham số mật khẩu `pass`.
+- Đăng nhập cục bộ (local login) chấp nhận tên đăng nhập (username) hoặc email.
+- Đăng ký cục bộ (local register) sử dụng tuyến đường (route) `/register`, tiến hành tạo tài khoản `SystemUser` và gửi email BetterHR nếu cấu hình SMTP chính xác.
+- Phiên đăng nhập (session) lưu trữ thuộc tính `systemUser`.
+- Mật khẩu trong mã nguồn hiện tại được xác thực qua hàm `DAO.checkPassword` và lưu/cập nhật tại trường `SystemUser.PasswordHash` theo logic lưu văn bản thuần (plain text) hiện tại của dự án.
+- Luồng quên mật khẩu sử dụng `SystemUser.Email`, mã PIN phiên làm việc `pinCode`, và cờ xác thực `recoveryVerified` trước khi cho phép truy cập vào `/changepassRE`.
+- `/homepage` đóng vai trò là cổng truy cập trung tâm để hiển thị các bảng điều khiển (dashboard) được cấp quyền tương ứng với vai trò (role), hệ thống không tự động chuyển hướng bắt buộc theo vai trò.
+- Mã nguồn dự án sử dụng Jakarta Servlet, không sử dụng `javax.servlet`.
 
-## Diem can canh bao
-- Remember-me hien tai chi luu cookie `username`, khong luu password.
-- Google Login da co servlet OAuth2 va callback.
-- Login da co `FailedLoginAttempt`, `LockedUntil`, `LastLogin` theo `SystemUser`.
-- Mail SMTP phai dung bien moi truong hoac file local ignored, khong hardcode secret trong Java code.
-- Role mac dinh cho user dang ky moi la `Guest`, `EmployeeID = NULL`; chi khi HR Manager tao/chuyen thanh nhan vien moi doi sang role `Employee` va gan `EmployeeID`.
+## Các lưu ý/cảnh báo
+- Chức năng tự động nhớ đăng nhập (Remember-me) hiện tại mới chỉ lưu trữ cookie tên đăng nhập `username`, không lưu trữ mật khẩu.
+- Chức năng đăng nhập Google (Google Login) đã có sẵn servlet OAuth2 và callback tương ứng.
+- Đăng nhập đã được tích hợp đếm số lần thất bại `FailedLoginAttempt`, khóa tài khoản đến thời điểm `LockedUntil`, và thời điểm đăng nhập cuối `LastLogin` theo `SystemUser`.
+- Cấu hình SMTP gửi mail phải sử dụng biến môi trường (environment variable) hoặc tập tin cấu hình cục bộ được thiết lập ignore (bỏ qua không đẩy lên git), không được viết cứng (hardcode) mã bí mật trong code Java.
+- Vai trò mặc định cho tài khoản đăng ký mới là `Guest` và trường `EmployeeID = NULL`; tài khoản này chỉ được chuyển sang vai trò `Employee` và gán mã nhân viên `EmployeeID` sau khi bộ phận HR Manager phê duyệt/tạo thông tin nhân viên mới.

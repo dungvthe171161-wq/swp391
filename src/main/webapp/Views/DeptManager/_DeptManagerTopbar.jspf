@@ -1,0 +1,12 @@
+<%@ page pageEncoding="UTF-8" %>
+<header class="dept-topbar">
+    <div>
+        <h1>${pageTitle}</h1>
+        <p>${pageSubtitle}</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a class="dept-btn secondary" href="${pageContext.request.contextPath}/dept">Tổng quan</a>
+        <a class="dept-btn" href="${pageContext.request.contextPath}/postTask"><i class="fa-solid fa-plus"></i> Tạo công việc</a>
+        <a class="dept-btn secondary" href="${pageContext.request.contextPath}/logout" aria-label="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+</header>

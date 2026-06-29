@@ -1,53 +1,53 @@
-# Feature: Gan permission cho role
-Status: Approved
-Actor: Admin
-Priority: High
-Related Code: `AdminController`, `RolePermissionServlet`, `RolePermissionDAO`, `PermissionDAO`, `Admin/RolePermissionManager.jsp`
+# Tính năng: Gán quyền hạn (permission) cho vai trò (role)
+Trạng thái: Đã phê duyệt
+Tác nhân: Admin
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `AdminController`, `RolePermissionServlet`, `RolePermissionDAO`, `PermissionDAO`, `Admin/RolePermissionManager.jsp`
 
-## Route
-- UI: `GET /admin?action=role-permissions`
+## Các Route
+- Giao diện (UI): `GET /admin?action=role-permissions`
 - API: `GET /admin/role-permissions/api`
 - API: `POST /admin/role-permissions/api`
 
-## Luong UI
-1. Admin vao `/admin?action=role-permissions`.
-2. Controller kiem tra session.
-3. Lay danh sach role va permission summary.
-4. Group permission theo category, category null/blank thanh `Khac`.
-5. Forward den `Admin/RolePermissionManager.jsp`.
+## Luồng giao diện (UI Flow)
+1. Admin truy cập `/admin?action=role-permissions`.
+2. Controller kiểm tra thông tin phiên làm việc (session).
+3. Lấy danh sách vai trò (role) và bảng tổng hợp quyền hạn (permission summary).
+4. Nhóm các quyền (group permission) theo danh mục (category), các danh mục có giá trị `null` hoặc rỗng sẽ được gom vào nhóm `Khác`.
+5. Chuyển tiếp (forward) đến `Admin/RolePermissionManager.jsp`.
 
-## Luong API GET
-1. Frontend goi `/admin/role-permissions/api`.
-2. Neu co `roleId`, API tra permission va trang thai granted cua role do.
-3. Response la JSON UTF-8.
+## Luồng API GET
+1. Phía máy khách (Frontend) gọi `/admin/role-permissions/api`.
+2. Nếu có tham số `roleId`, API sẽ trả về các quyền hạn và trạng thái đã gán (granted) của vai trò đó.
+3. Phản hồi (Response) trả về dữ liệu dạng JSON mã hóa `UTF-8`.
 
-## Luong API POST
-1. Frontend gui JSON co `roleId`, `granted`, va `permissionIds` hoac `permissionId`.
-2. Servlet parse body bang `request.getReader()`.
-3. Neu granted = true thi gan permission.
-4. Neu granted = false thi go permission.
-5. Tra JSON status.
+## Luồng API POST
+1. Frontend gửi dữ liệu JSON chứa `roleId`, `granted`, và danh sách `permissionIds` hoặc `permissionId`.
+2. Servlet thực hiện phân tích cú pháp (parse) nội dung body bằng `request.getReader()`.
+3. Nếu `granted = true` thì tiến hành gán quyền (permission).
+4. Nếu `granted = false` thì thực hiện thu hồi/gỡ quyền (permission).
+5. Trả về trạng thái phản hồi dạng JSON.
 
-## Hien trang code
-- API da ton tai.
-- Body rong/sai hien tra JSON error message va HTTP 400, khong tra object rong.
-- Permission filter yeu cau `MANAGE_ROLE_PERMISSIONS`.
-- RoleID 1 Admin duoc phep quan ly role permissions theo `PermissionUtil`/filter hien tai; user khac van phai co `MANAGE_ROLE_PERMISSIONS`.
+## Hiện trạng code
+- API đã có sẵn trong hệ thống.
+- Phần body gửi lên bị rỗng/sai định dạng sẽ trả về thông báo lỗi JSON (error message) kèm mã trạng thái HTTP 400, không trả về đối tượng rỗng.
+- Bộ lọc quyền (Permission filter) yêu cầu quyền `MANAGE_ROLE_PERMISSIONS`.
+- Vai trò Admin có RoleID = 1 mặc định được phép quản lý quyền hạn của vai trò (role permissions) theo logic `PermissionUtil`/bộ lọc hiện tại; các người dùng khác vẫn bắt buộc phải có quyền `MANAGE_ROLE_PERMISSIONS`.
 
-## UI contract
-- Trang phan quyen dung layout Admin BetterHR, khong bi de UI cu len UI moi.
-- Checkbox role permission phai bam duoc va co state ro rang.
-- Nut `Luu trang thai`, `Bat tat ca`, `Tat tat ca`, `Ve Admin` hien tieng Viet.
-- Toast loi/thanh cong phai gom nhom hop ly, khong spam nhieu toast trung nhau khi user thieu quyen.
+## Giao ước giao diện (UI contract)
+- Trang quản lý phân quyền sử dụng bố cục (layout) Admin BetterHR đồng bộ, tránh việc hiển thị đè giao diện cũ lên giao diện mới.
+- Hộp chọn (Checkbox) phân quyền vai trò phải có trạng thái rõ ràng và tương tác nhấp chọn bình thường.
+- Các nút chức năng `Lưu trạng thái`, `Bật tất cả`, `Tắt tất cả`, `Về Admin` hiển thị hoàn toàn bằng tiếng Việt.
+- Thông báo Toast hiển thị lỗi/thành công cần được gom nhóm hợp lý, không hiển thị quá nhiều thông báo trùng lặp khi người dùng không đủ quyền.
 
-## Acceptance Criteria
-- [ ] GET API tra JSON UTF-8.
-- [ ] Permission duoc group theo category.
-- [ ] POST body thieu `roleId` hoac permission list bi tra 400.
-- [ ] User thieu `MANAGE_ROLE_PERMISSIONS` bi chan.
-- [ ] Admin RoleID 1 mo va luu trang phan quyen duoc ngay ca khi seed role permission thieu.
-- [ ] Checkbox tren UI co the toggle neu user co quyen.
+## Tiêu chí nghiệm thu
+- [ ] API GET trả về định dạng JSON UTF-8.
+- [ ] Các quyền hạn được phân nhóm theo danh mục rõ ràng.
+- [ ] Gửi request POST với body thiếu `roleId` hoặc danh sách quyền hạn sẽ bị trả về mã lỗi HTTP 400.
+- [ ] Người dùng không có quyền `MANAGE_ROLE_PERMISSIONS` bị hệ thống chặn.
+- [ ] Tài khoản Admin có RoleID = 1 mở và lưu được trang phân quyền ngay cả khi dữ liệu seed ban đầu bị thiếu quyền hạn của vai trò.
+- [ ] Hộp chọn (Checkbox) trên giao diện có thể thay đổi trạng thái (toggle) nếu người dùng có quyền hợp lệ.
 
-## Missing Work
-- [ ] Them test cho grant/revoke nhieu permission cung luc.
-- [ ] Ghi audit log khi thay doi permission cua role.
+## Các phần việc còn thiếu
+- [ ] Bổ sung các bài kiểm thử (test) cho việc cấp/thu hồi nhiều quyền cùng một lúc.
+- [ ] Ghi nhật ký hệ thống (audit log) khi thay đổi cấu hình quyền hạn của một vai trò.

@@ -1,25 +1,25 @@
-# Feature: Dashboard phong ban
-Status: Approved
-Actor: Dept Manager
-Priority: Medium
-Related Code: `DeptController`, `Views/DeptManager/deptHome.jsp`
+# Tính năng: Bảng điều khiển phòng ban (Department Dashboard)
+Trạng thái: Đã phê duyệt
+Tác nhân: Trưởng phòng (Dept Manager)
+Độ ưu tiên: Trung bình
+Mã nguồn liên quan: `DeptController`, `Views/DeptManager/deptHome.jsp`
 
-## Route
+## Các Route
 - `GET /dept`
 - `GET /dept?action=dashboard`
 
-## Luong chinh
-1. Dept Manager truy cap `/dept`.
-2. He thong kiem tra session `systemUser`.
-3. Filter kiem tra role/permission.
-4. Controller lay du lieu can thiet cho phong ban.
-5. Forward den `/Views/DeptManager/deptHome.jsp`.
+## Luồng chính
+1. Trưởng phòng (Dept Manager) truy cập `/dept`.
+2. Hệ thống kiểm tra phiên làm việc (session) `systemUser`.
+3. Bộ lọc (Filter) kiểm tra vai trò/quyền hạn (role/permission).
+4. Controller lấy dữ liệu cần thiết cho phòng ban.
+5. Chuyển tiếp (forward) đến `/Views/DeptManager/deptHome.jsp`.
 
-## Hien trang code
-- Da co `DeptController`.
-- Da co redirect ve login khi chua co session.
+## Hiện trạng code
+- Đã xây dựng `DeptController`.
+- Đã có cơ chế chuyển hướng (redirect) về trang đăng nhập khi chưa có session.
 
-## Acceptance Criteria
-- [ ] Dept Manager vao duoc dashboard phong ban.
-- [ ] User chua login bi chuyen ve login.
-- [ ] User khong dung role/permission bi filter chan.
+## Tiêu chí nghiệm thu
+- [ ] Trưởng phòng (Dept Manager) truy cập thành công bảng điều khiển phòng ban.
+- [ ] Người dùng chưa đăng nhập bị hệ thống chuyển về trang login.
+- [ ] Người dùng không đúng vai trò/quyền hạn bị bộ lọc (filter) chặn lại.

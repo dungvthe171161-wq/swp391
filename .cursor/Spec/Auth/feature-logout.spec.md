@@ -1,35 +1,35 @@
-# Feature: Dang xuat he thong
-Status: Approved
-Actor: Authenticated User
-Priority: High
-Related Code: `LogoutController`
+# Tính năng: Đăng xuất hệ thống (Logout)
+Trạng thái: Đã phê duyệt
+Tác nhân: Người dùng đã đăng nhập (Authenticated User)
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `LogoutController`
 
-## Muc tieu
-Cho phep nguoi dung da dang nhap thoat khoi he thong bang cach huy `HttpSession` va quay ve trang public homepage.
+## Mục tiêu
+Cho phép người dùng đã đăng nhập thoát khỏi hệ thống bằng cách hủy phiên làm việc `HttpSession` và quay trở lại trang chủ công khai (public homepage).
 
-## Route
+## Các Route
 - `GET /logout`
 - `POST /logout`
 
-## Luong chinh
-1. Nguoi dung click dang xuat.
-2. `LogoutController` lay session hien tai bang `request.getSession(false)`.
-3. Neu session ton tai, he thong invalidate session.
-4. He thong redirect ve `/homepage`.
+## Luồng chính
+1. Người dùng nhấp chọn đăng xuất.
+2. Lớp điều khiển `LogoutController` lấy phiên làm việc hiện tại bằng lệnh `request.getSession(false)`.
+3. Nếu tồn tại phiên làm việc, hệ thống thực hiện hủy phiên làm việc (invalidate session).
+4. Hệ thống chuyển hướng (redirect) người dùng về trang chủ `/homepage`.
 
-## Luong loi
-- Neu khong co session, he thong van redirect ve `/homepage`.
+## Luồng lỗi
+- Nếu không tồn tại phiên làm việc, hệ thống vẫn chuyển hướng người dùng về trang chủ `/homepage`.
 
-## Hien trang code
-- Da co `GET /logout` va `POST /logout`.
-- Da invalidate session.
-- Chua clear cookie remember-me `username` va `password`.
+## Hiện trạng code
+- Đã có sẵn các tuyến đường xử lý `GET /logout` và `POST /logout`.
+- Đã thực hiện hủy phiên làm việc (invalidate session) của người dùng.
+- Chưa xử lý xóa (clear) các cookie tự động nhớ đăng nhập `username` và `password`.
 
-## Acceptance Criteria
-- [ ] Sau logout, session cu khong con su dung duoc.
-- [ ] Sau logout, nguoi dung quay ve `/homepage`.
-- [ ] Goi `/logout` khi chua dang nhap khong gay loi server.
+## Tiêu chí nghiệm thu
+- [ ] Sau khi đăng xuất, phiên làm việc (session) cũ không còn giá trị sử dụng.
+- [ ] Sau khi đăng xuất, người dùng được chuyển hướng về trang chủ công khai `/homepage`.
+- [ ] Truy cập đường dẫn `/logout` khi chưa thực hiện đăng nhập không gây ra lỗi hệ thống (server error).
 
-## Missing Work
-- [ ] Xoa cookie remember-me khi dang xuat.
-- [ ] Neu them token remember-me, phai revoke token o database.
+## Các phần việc còn thiếu
+- [ ] Thực hiện xóa cookie remember-me khi người dùng đăng xuất.
+- [ ] Nếu bổ sung cơ chế token remember-me, phải thực hiện thu hồi (revoke) token tương ứng trong cơ sở dữ liệu.

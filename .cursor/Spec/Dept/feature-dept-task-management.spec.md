@@ -1,35 +1,28 @@
-# Module Spec: Dept Manager Task Management
-Status: Approved
-Actor: Dept Manager
-Priority: High
-Related Code: `DeptController`, `PostTask`, `TaskManager`, `com.hrm.controller.dept.ViewTask`, `Views/DeptManager/*`
+# Đặc tả Phân hệ: Quản lý công việc của Trưởng phòng (Dept Manager Task Management)
+Trạng thái: Đã phê duyệt
+Tác nhân: Trưởng phòng (Dept Manager)
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `DeptController`, `PostTask`, `TaskManager`, `com.hrm.controller.dept.ViewTask`, `Views/DeptManager/*`
 
-## Pham vi
-Dept Manager quan ly dashboard phong ban, tao task, xem danh sach task va cap nhat task.
+## Phạm vi
+Trưởng phòng (Dept Manager) thực hiện quản lý bảng điều khiển (dashboard) phòng ban, tạo công việc (task) mới, xem danh sách công việc và cập nhật tiến độ công việc.
 
-## Feature files
+## Các tập tin đặc tả tính năng (Feature files)
 - `feature-dept-dashboard.spec.md`
 - `feature-dept-task-create.spec.md`
 - `feature-dept-task-list.spec.md`
 - `feature-dept-task-update.spec.md`
 
-
-- `feature-dept-search-filer-pagination.md`
-- `feature-dept-updatetaskstatus.md`
-- `feature-dept-viewtask.md`
-
-
-
-## Route hien co
+## Các Route hiện có
 - `/dept`
 - `/postTask`
 - `/taskManager`
 - `/viewTask`
 
-## Phan quyen hien co
-- `RoleAuthorizationFilter` cho role 3 truy cap `/dept`, `/taskManager`, `/viewTask`, `/postTask`.
-- `ModulePermissionFilter` yeu cau permission `VIEW_DEPARTMENTS` cho cac route nay.
+## Phân quyền hiện có
+- Bộ lọc `RoleAuthorizationFilter` cấp quyền cho vai trò số 3 (role 3 - Dept Manager) truy cập các đường dẫn: `/dept`, `/taskManager`, `/viewTask`, `/postTask`.
+- Bộ lọc `ModulePermissionFilter` yêu cầu quyền hạn `VIEW_DEPARTMENTS` đối với các tuyến đường (route) này.
 
-## Canh bao code
-- `com.hrm.controller.dept.ViewTask` va `com.hrm.controller.employee.ViewTask` deu khai bao `@WebServlet("/viewTask")`. Day la xung dot mapping can xu ly khi clean code.
-- Spec Dept nay chi noi ve luong Dept Manager, khong gom Employee view task.
+## Các cảnh báo trong mã nguồn
+- Cả hai lớp `com.hrm.controller.dept.ViewTask` và `com.hrm.controller.employee.ViewTask` hiện tại đều đang khai báo nhãn đường dẫn trùng nhau là `@WebServlet("/viewTask")`. Đây là một xung đột ánh xạ (mapping conflict) cần được xử lý khi thực hiện dọn dẹp và tối ưu mã nguồn (clean code).
+- Tài liệu đặc tả phòng ban (Dept spec) này chỉ tập trung mô tả luồng hoạt động của Trưởng phòng (Dept Manager), không bao gồm luồng xem công việc của Nhân viên (Employee view task).

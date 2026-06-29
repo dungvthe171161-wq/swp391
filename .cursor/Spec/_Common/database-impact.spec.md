@@ -11,6 +11,8 @@ Lap ban do bang du lieu bi doc/ghi theo module de khi implement khong tac dong s
 | --- | --- |
 | Core | `Role`, `Department`, `Employee`, `SystemUser`, `SystemLog` |
 | HR | `Contract`, `Recruitment`, `Guest`, `MailRequest` |
+| Guest Phase 2 | `Application`, `Interview`, `Offer` |
+| Common Notification | `Notification` |
 | Task | `Task`, `assignList` |
 | Payroll | `Payroll`, `PayrollAudit`, `Attendance`, `AllowanceType`, `EmployeeAllowance`, `DeductionType`, `EmployeeDeduction`, `InsuranceRate`, `TaxRate`, `Dependent` |
 | Permission | `Permission`, `RolePermission`, `UserPermission` |
@@ -77,13 +79,26 @@ Lap ban do bang du lieu bi doc/ghi theo module de khi implement khong tac dong s
 | Feature | Read | Write |
 | --- | --- | --- |
 | Job list | `Recruitment` | none |
-| Apply job | `Recruitment` | `Guest`, uploaded CV path in `Guest.CV` |
+| Apply job Phase 1 | `Recruitment` | `Guest`, uploaded CV path in `Guest.CV` |
+| Apply job Phase 2 | `Recruitment`, `Guest`, `Application` | `Application`, uploaded CV path in `Application.CV`, optional `Notification` |
+| Guest dashboard Phase 2 | `Application`, `Interview`, `Offer`, `Notification` | none |
+| Guest applications Phase 2 | `Application`, `Recruitment`, `Interview`, `Offer` | none |
+| Guest profile | `Guest`, `SystemUser` | `Guest` |
+
+## Common Notification
+| Feature | Read | Write |
+| --- | --- | --- |
+| Notification list | `Notification` by `SystemUser.UserID` | none |
+| Mark notification read | `Notification` by `SystemUser.UserID` | `Notification.IsRead`, `Notification.ReadDate` |
+| Create notification | `SystemUser`, optional related module data | `Notification` |
 
 ## Luu y quan trong
 - SQL dung ten bang PascalCase, vi du `SystemUser`, khong phai `system_user`.
 - Bang giao task la `assignList`, khong phai `task_assignment`.
 - Bang nghi phep/yeu cau la `MailRequest`, khong phai `Leave`.
 - Ung vien public nam trong `Guest`, khong co bang `Candidate` rieng.
+- Phase 2 tach moi lan ung tuyen sang `Application`; `Guest` chi la profile ung vien.
+- `Notification` la bang dung chung cho moi actor theo `SystemUser.UserID`, khong thuoc rieng Guest.
 - Payroll generate ghi ca `Payroll` va `PayrollAudit`.
 
 ## Acceptance Criteria

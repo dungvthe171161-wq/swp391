@@ -1,10 +1,10 @@
-# Feature: Quan ly phong ban
-Status: Partial
-Actor: Admin
-Priority: High
-Related Code: `DepartmentController`, `DepartmentDAO`, `Admin/Departments.jsp`
+# Tính năng: Quản lý phòng ban
+Trạng thái: Chưa hoàn thiện (Partial)
+Tác nhân: Admin
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `DepartmentController`, `DepartmentDAO`, `Admin/Departments.jsp`
 
-## Route
+## Các Route
 - `GET /departments`
 - `GET /departments?action=departments`
 - `GET /departments?action=edit`
@@ -13,30 +13,30 @@ Related Code: `DepartmentController`, `DepartmentDAO`, `Admin/Departments.jsp`
 - `POST /departments?action=department-delete`
 - `POST /departments?action=department-permissions-save`
 
-## Luong danh sach
-1. Admin vao `/departments`.
-2. Controller doc search/filter/page.
-3. Truy van department bang PreparedStatement.
-4. Forward den `Admin/Departments.jsp`.
+## Luồng danh sách
+1. Admin truy cập `/departments`.
+2. Controller đọc dữ liệu tìm kiếm/bộ lọc/phân trang (search/filter/page).
+3. Truy vấn phòng ban (department) bằng `PreparedStatement`.
+4. Chuyển tiếp (forward) đến `Admin/Departments.jsp`.
 
-## Luong them/sua/xoa
-1. Admin mo form them hoac edit.
-2. Submit `department-save`.
-3. Controller validate va luu.
-4. Xoa department bang `department-delete` neu hop le.
-5. Redirect ve `/departments?action=departments`.
+## Luồng thêm/sửa/xóa
+1. Admin mở biểu mẫu (form) thêm mới hoặc chỉnh sửa (edit).
+2. Gửi (submit) hành động `department-save`.
+3. Controller xác thực (validate) và lưu dữ liệu.
+4. Xóa phòng ban bằng hành động `department-delete` nếu hợp lệ.
+5. Chuyển hướng (redirect) về `/departments?action=departments`.
 
-## Hien trang code
-- Controller `/departments` da co.
-- Co bug redirect trong save permissions ve `/department?action=departments` singular, trong khi route dung la `/departments`.
-- Route `/departments` chua nam trong `ModulePermissionFilter`/`AdminAuthorizationFilter`.
+## Hiện trạng code
+- Controller `/departments` đã có sẵn.
+- Có lỗi (bug) chuyển hướng trong phần lưu quyền hạn (save permissions) về `/department?action=departments` dạng số ít, trong khi tuyến đường (route) đúng phải là `/departments`.
+- Route `/departments` chưa được đưa vào `ModulePermissionFilter` hay `AdminAuthorizationFilter`.
 
-## Acceptance Criteria
-- [ ] Admin xem duoc danh sach department.
-- [ ] Them/sua/xoa department redirect ve dung `/departments?action=departments`.
-- [ ] User khong phai Admin khong vao duoc `/departments`.
+## Tiêu chí nghiệm thu
+- [ ] Admin xem được danh sách phòng ban (department).
+- [ ] Thêm/sửa/xóa phòng ban chuyển hướng (redirect) về đúng `/departments?action=departments`.
+- [ ] Người dùng không phải Admin không truy cập được vào `/departments`.
 
-## Missing Work
-- [ ] Them `/departments` vao filter bao ve.
-- [ ] Sua redirect singular `/department` thanh `/departments`.
-- [ ] Them audit log cho thay doi department.
+## Các phần việc còn thiếu
+- [ ] Thêm `/departments` vào bộ lọc bảo vệ (filter).
+- [ ] Sửa chuyển hướng dạng số ít `/department` thành `/departments`.
+- [ ] Thêm nhật ký hoạt động (audit log) cho các thay đổi liên quan đến phòng ban.

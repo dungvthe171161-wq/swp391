@@ -1,0 +1,174 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+    :root {
+        --bh-primary: #006241;
+        --bh-primary-dark: #00482f;
+        --bh-primary-soft: #dff6ea;
+        --bh-accent: #00754a;
+        --bh-canvas: #f2f0eb;
+        --bh-surface: #fbf9f4;
+        --bh-card: #ffffff;
+        --bh-border: #d8d1c7;
+        --bh-muted-border: #e7e1d8;
+        --bh-text: #1b1c19;
+        --bh-muted: #637067;
+        --bh-danger: #c82014;
+        --bh-danger-soft: #fdebea;
+        --bh-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 14px 32px rgba(30, 57, 50, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        background: var(--bh-canvas);
+        color: var(--bh-text);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font-family: inherit; }
+    .employee-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 276px minmax(0, 1fr);
+    }
+    .employee-sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+        padding: 22px 18px;
+        background: var(--bh-primary-dark);
+        color: #ffffff;
+        box-shadow: 8px 0 28px rgba(0, 72, 47, 0.16);
+        z-index: 20;
+    }
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 4px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .brand-mark {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(162, 243, 200, 0.16);
+        color: #a2f3c8;
+        font-weight: 800;
+        font-size: 18px;
+    }
+    .brand strong { display: block; font-size: 20px; line-height: 1.1; }
+    .brand span { display: block; margin-top: 3px; color: rgba(255, 255, 255, 0.68); font-size: 12px; }
+    .side-nav { display: grid; gap: 7px; }
+    .nav-section-label {
+        margin: 22px 12px 8px;
+        color: rgba(255, 255, 255, 0.54);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
+        padding: 11px 13px;
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .nav-item i { width: 18px; text-align: center; }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.10); color: #ffffff; }
+    .nav-item.active { background: #d8f5e3; color: var(--bh-primary-dark); }
+    .sidebar-bottom {
+        margin-top: auto;
+        display: grid;
+        gap: 7px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .employee-main {
+        min-width: 0;
+        background: var(--bh-surface);
+    }
+    .content {
+        width: min(100%, 1180px);
+        margin: 0 auto;
+        padding: 34px clamp(20px, 4vw, 44px);
+    }
+    .page-title {
+        margin: 0 0 6px;
+        color: var(--bh-primary-dark);
+        font-size: 32px;
+        line-height: 1.15;
+        font-weight: 800;
+    }
+    .page-note { margin: 0 0 24px; color: var(--bh-muted); }
+    .panel {
+        border: 1px solid var(--bh-border);
+        border-radius: 16px;
+        background: var(--bh-card);
+        box-shadow: var(--bh-shadow);
+        overflow: hidden;
+    }
+    .panel-inner { padding: 22px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 12px; border-bottom: 1px solid var(--bh-muted-border); text-align: left; }
+    .table th { color: var(--bh-primary-dark); font-size: 12px; text-transform: uppercase; }
+    .field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .field label { color: var(--bh-primary-dark); font-weight: 800; font-size: 13px; }
+    .field input, .field select, .field textarea {
+        width: 100%;
+        border: 1px solid var(--bh-border);
+        border-radius: 10px;
+        padding: 11px 12px;
+        background: #ffffff;
+        color: var(--bh-text);
+    }
+    .field input[readonly] { background: #f7f4ee; color: var(--bh-muted); }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .primary-button, .secondary-button {
+        min-height: 42px;
+        border: 0;
+        border-radius: 12px;
+        padding: 0 16px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .primary-button { background: var(--bh-primary); color: #ffffff; }
+    .secondary-button { background: #effaf4; color: var(--bh-primary); border: 1px solid #9dddbb; }
+    .alert {
+        margin-bottom: 18px;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-weight: 700;
+    }
+    .alert.success { background: #e3f5eb; color: var(--bh-primary-dark); }
+    .alert.error { background: var(--bh-danger-soft); color: var(--bh-danger); }
+    .stat-row { display: grid; gap: 10px; }
+    .stat {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--bh-muted-border);
+    }
+    .stat span { color: var(--bh-muted); }
+    .stat strong { color: var(--bh-primary-dark); }
+    @media (max-width: 900px) {
+        .employee-shell { grid-template-columns: 1fr; }
+        .employee-sidebar { position: relative; height: auto; }
+        .grid-2 { grid-template-columns: 1fr; }
+    }
+</style>

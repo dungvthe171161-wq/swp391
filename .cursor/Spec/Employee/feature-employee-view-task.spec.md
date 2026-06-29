@@ -1,40 +1,47 @@
-# Feature: Nhan vien xem chi tiet task
-Status: Partial
+# Feature: Employee assigned tasks
+Status: Approved
 Actor: Employee
+Owner: Dept Manager
 Priority: High
-Related Code: `com.hrm.controller.employee.ViewTask`, `Views/Employee/ViewTask.jsp`
+Related code: `EmployeePortalController`, `TaskDAO`, `Views/Employee/Tasks.jsp`
 
-## Luu y pham vi
-File nay mo ta hien trang route `/viewTask` dang bi xung dot voi Dept Manager. Khi gen code moi, uu tien target design trong `feature-employee-task-workflow.spec.md` voi route `/employee/tasks`.
+## Goal
+Employees can view tasks assigned to them and update their own task status.
 
+## Routes
+- Task list: `GET /employee/tasks`
+- Update status: `POST /employee/tasks`
 
-## Route hien co
-- `GET /viewTask?action=view&id={taskId}`
-- `POST /viewTask` goi lai `doGet`
+## Data Shown
+- Task title.
+- Description.
+- Assigner.
+- Assigned date / due date if available.
+- Current status.
 
-## Luong chinh
-1. Employee truy cap `/viewTask?action=view&id={taskId}`.
-2. Controller kiem tra session `systemUser`.
-3. Neu thieu id, forward den `/Views/Employee/ViewTask.jsp` kem error.
-4. Parse `taskId`.
-5. Lay task bang `DAO.getTaskById(taskId)`.
-6. Lay nguoi giao viec bang `DAO.getEmp(task.getAssignedBy())`.
-7. Lay danh sach employee duoc assign bang `DAO.getEmployeeIdsByTaskId(taskId)`.
-8. Set `task`, `assignedByEmployee`, `assignedEmployees`.
-9. Forward den `/Views/Employee/ViewTask.jsp`.
+## Allowed Status Updates
+Employee may update their assigned task to supported DB statuses:
+- `Waiting`
+- `In Progress`
+- `Completed`
 
-## Hien trang code
-- Co controller Employee ViewTask nhung dang trung route `/viewTask` voi Dept ViewTask.
-- `RoleAuthorizationFilter` hien cho `/viewTask` role 3 Dept Manager, khong cho role 5 Employee.
-- `ModulePermissionFilter` cung gan `/viewTask` voi permission `VIEW_DEPARTMENTS`, khong phu hop Employee.
+`Rejected` should be reserved for manager-side handling unless a separate rejection flow is approved.
+
+## Main Flow
+1. Employee opens `/employee/tasks`.
+2. System loads tasks assigned to the employee's `EmployeeID`.
+3. Employee changes status on a task.
+4. System verifies the task is assigned to this employee.
+5. System updates status through `TaskDAO`.
+6. Page redirects back with success/error message.
+
+## Security Rules
+- Employee can only view tasks assigned to them.
+- Employee can only update tasks assigned to them.
+- Task ID tampering must not update another employee's task.
 
 ## Acceptance Criteria
-- [ ] Employee xem duoc task duoc giao cho minh.
-- [ ] Employee khong xem duoc task cua nguoi khac.
-- [ ] Id sai hien thi loi than thien.
-
-## Missing Work
-- [ ] Tach route Employee thanh `/employee/tasks` hoac `/employee/view-task`.
-- [ ] Cap nhat filter cho role 5 Employee.
-- [ ] Them check task co assigned cho employee hien tai truoc khi hien thi.
-- [ ] Bo trung mapping `/viewTask`.
+- [ ] Employee sees assigned tasks.
+- [ ] Employee can update status of their own tasks.
+- [ ] Employee cannot update tasks assigned to another employee.
+- [ ] Invalid task/status returns a friendly error.

@@ -1,0 +1,74 @@
+/* Pagination styling */
+.pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 4px;
+    margin-top: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.pagination-controls a,
+.pagination-controls span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #0066cc;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.pagination-controls a:hover {
+    background-color: #f8f9fa;
+    border-color: #0066cc;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.pagination-controls span.active {
+    background-color: #0066cc;
+    border-color: #0066cc;
+    color: #fff;
+}
+
+.pagination-controls span.disabled {
+    color: #ccc;
+    border-color: #eee;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pagination-controls span.ellipsis {
+    border: none;
+    padding: 0 4px;
+}
+
+/* Previous/Next buttons */
+.pagination-controls a:first-child,
+.pagination-controls a:last-child {
+    padding: 0 12px;
+}
+
+/* Active page number hover effect */
+.pagination-controls span.active:hover {
+    background-color: #0056b3;
+}

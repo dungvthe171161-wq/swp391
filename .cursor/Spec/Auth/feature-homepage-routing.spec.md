@@ -1,49 +1,49 @@
-# Feature: Homepage hien thi quyen theo role
-Status: Approved
-Actor: Guest, Admin, HR Manager, HR Staff, Dept Manager, Employee
-Priority: High
-Related Code: `HomepageController`, `Views/Homepage.jsp`
+# Tính năng: Định tuyến trang chủ (Homepage) hiển thị quyền theo vai trò (role)
+Trạng thái: Đã phê duyệt
+Tác nhân: Guest, Admin, HR Manager, HR Staff, Dept Manager, Employee
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `HomepageController`, `Views/Homepage.jsp`
 
-## Muc tieu
-Dung `/homepage` lam cua vao trung tam. Sau moi luong dang nhap local/Google hoac doi mat khau thanh cong, user quay ve login/homepage theo luong auth, va homepage hien thi cac khu vuc/dashboard ma role hien tai duoc cap quyen.
+## Mục tiêu
+Sử dụng đường dẫn `/homepage` làm cổng truy cập trung tâm của hệ thống. Sau tất cả các luồng đăng nhập (đăng nhập cục bộ hoặc Google Login) hoặc đổi mật khẩu thành công, người dùng sẽ được đưa về login/homepage theo luồng xác thực (auth flow), và trang chủ sẽ hiển thị các khu vực/bảng điều khiển (dashboard) mà vai trò hiện tại được cấp quyền truy cập.
 
-## Route
+## Các Route
 - `GET /homepage`
 
-## Luong guest
-1. Guest truy cap `/homepage`.
-2. Neu chua co `systemUser` trong session, `HomepageController` set `dashboardAccess` mac dinh cho guest.
-3. He thong forward den `/Views/Homepage.jsp`.
-4. Guest xem trang public va danh sach link public.
-5. Nut `Dang ky` tren homepage tro toi `/register`, khong tro nham ve `/login`.
+## Luồng cho khách truy cập (Guest flow)
+1. Khách truy cập vào `/homepage`.
+2. Nếu chưa tồn tại đối tượng `systemUser` trong session, `HomepageController` sẽ thiết lập đối tượng quyền truy cập `dashboardAccess` mặc định dành cho khách (guest).
+3. Hệ thống chuyển tiếp (forward) yêu cầu đến `/Views/Homepage.jsp`.
+4. Khách xem trang công khai (public) và danh sách các liên kết công khai.
+5. Nút `Đăng ký` trên trang chủ trỏ chính xác tới tuyến đường `/register`, không trỏ nhầm về `/login`.
 
-## Luong da dang nhap
-1. User truy cap `/homepage`.
-2. `HomepageController` lay `systemUser` tu session.
-3. Controller lay role hien tai va tao object `dashboardAccess`.
-4. He thong forward den `/Views/Homepage.jsp`, khong auto redirect bat buoc theo role.
-5. JSP hien thi cac nut/dashboard tuong ung:
-   - Admin: khu vuc Admin, HR/HR Staff neu duoc cap, Employee, Guest.
-   - HR Manager: khu vuc HR Manager, Employee, Guest.
-   - HR Staff: khu vuc HR Staff, Employee, Guest.
-   - Dept Manager: khu vuc Dept Manager/Employee/Guest neu code cap quyen.
-   - Employee: khu vuc Employee va Guest.
-   - Guest role: chi khu vuc Guest/public.
+## Luồng người dùng đã đăng nhập (Logged-in user flow)
+1. Người dùng truy cập vào `/homepage`.
+2. `HomepageController` tiến hành lấy đối tượng `systemUser` từ session.
+3. Controller lấy vai trò (role) hiện tại và khởi tạo đối tượng quyền truy cập `dashboardAccess`.
+4. Hệ thống forward yêu cầu đến `/Views/Homepage.jsp`, không tự động chuyển hướng bắt buộc theo vai trò (auto redirect).
+5. Trang JSP hiển thị các nút chức năng/bảng điều khiển (dashboard) tương ứng:
+   - Admin: Khu vực Admin, phân hệ HR/HR Staff nếu được cấp quyền, khu vực Employee, Guest.
+   - HR Manager: Khu vực HR Manager, Employee, Guest.
+   - HR Staff: Khu vực HR Staff, Employee, Guest.
+   - Dept Manager: Khu vực Dept Manager/Employee/Guest nếu logic phân quyền cho phép.
+   - Employee: Khu vực Employee và Guest.
+   - Guest (vai trò): Chỉ hiển thị khu vực Guest/public.
 
-## Hien trang code
-- Da co route `/homepage`.
-- Da forward ve `/Views/Homepage.jsp`.
-- Da dung `dashboardAccess` de render menu theo role.
-- Login local va Google deu redirect ve `/homepage` sau khi tao session.
+## Hiện trạng code
+- Đã có sẵn tuyến đường (route) `/homepage`.
+- Đã thực hiện forward về `/Views/Homepage.jsp`.
+- Đã sử dụng đối tượng `dashboardAccess` để render menu tương ứng với từng vai trò.
+- Đăng nhập cục bộ (local login) và đăng nhập Google đều chuyển hướng về `/homepage` sau khi khởi tạo thành công session.
 
-## Acceptance Criteria
-- [ ] Guest vao `/homepage` thay trang public.
-- [ ] User da dang nhap vao `/homepage` van o homepage, khong bi redirect bat buoc.
-- [ ] Homepage hien dashboard/menu theo role hien tai.
-- [ ] Role khong hop le hoac thieu role fallback ve quyen Guest/public.
-- [ ] Nut/link dashboard tren homepage tro dung route code hien tai.
-- [ ] Nut `Dang ky` tren homepage mo dung `/register`.
+## Tiêu chí nghiệm thu
+- [ ] Khách truy cập (Guest) vào `/homepage` nhìn thấy giao diện trang công khai.
+- [ ] Người dùng đã đăng nhập truy cập vào `/homepage` vẫn ở lại trang chủ, không bị hệ thống tự động chuyển hướng bắt buộc sang trang khác.
+- [ ] Trang chủ hiển thị đúng dashboard/menu tương ứng với vai trò hiện tại của người dùng.
+- [ ] Vai trò không hợp lệ hoặc thiếu thông tin vai trò sẽ tự động được đưa về quyền hạn của khách/công khai (Guest/public).
+- [ ] Các nút bấm/đường liên kết dashboard trên trang chủ trỏ đúng tuyến đường trong code hiện tại.
+- [ ] Nút `Đăng ký` trên trang chủ mở đúng đường dẫn `/register`.
 
-## Missing Work
-- [ ] Chuan hoa mapping role ID/role name trong tai lieu he thong de tranh nham lan.
-- [ ] Them test cho `dashboardAccess` theo tung role.
+## Các phần việc còn thiếu
+- [ ] Chuẩn hóa việc ánh xạ mã vai trò (role ID) và tên vai trò (role name) trong tài liệu hệ thống để tránh nhầm lẫn.
+- [ ] Bổ sung mã kiểm thử (test) cho đối tượng quyền truy cập `dashboardAccess` đối với từng vai trò.

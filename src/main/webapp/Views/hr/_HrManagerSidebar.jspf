@@ -1,0 +1,71 @@
+<%@ page pageEncoding="UTF-8" %>
+<aside class="hr-sidebar">
+    <div class="hr-sidebar-brand">
+        <div class="brand-mark">B</div>
+        <div>
+            <strong>BetterHR</strong>
+            <span>Cổng quản trị nhân sự</span>
+        </div>
+    </div>
+
+    <nav class="hr-nav" aria-label="HR Manager navigation">
+        <div class="nav-section">
+            <a href="${pageContext.request.contextPath}/HrHomeController"
+               class="nav-item${hrSidebarActive eq 'overview' ? ' active' : ''}">
+                <i class="fas fa-home"></i>
+                <span>Tổng quan HR</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>YÊU CẦU</h3>
+            <a href="${pageContext.request.contextPath}/HrHomeController?section=requests-approval"
+               class="nav-item${hrSidebarActive eq 'requests' ? ' active' : ''}">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Duyệt đề xuất</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>LƯƠNG &amp; HỢP ĐỒNG</h3>
+            <a href="${pageContext.request.contextPath}/hr/payroll-approval"
+               class="nav-item${hrSidebarActive eq 'payroll' ? ' active' : ''}">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Duyệt bảng lương</span>
+            </a>
+            <a href="${pageContext.request.contextPath}/hr/approve-reject-contracts"
+               class="nav-item${hrSidebarActive eq 'contracts' ? ' active' : ''}">
+                <i class="fas fa-file-contract"></i>
+                <span>Duyệt hợp đồng</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>TUYỂN DỤNG</h3>
+            <a href="${pageContext.request.contextPath}/viewRecruitment"
+               class="nav-item${hrSidebarActive eq 'recruitment' ? ' active' : ''}">
+                <i class="fas fa-bullhorn"></i>
+                <span>Tin tuyển dụng</span>
+            </a>
+            <a href="${pageContext.request.contextPath}/hr/create-employee"
+               class="nav-item${hrSidebarActive eq 'create-employee' ? ' active' : ''}">
+                <i class="fas fa-user-plus"></i>
+                <span>Tạo nhân viên</span>
+            </a>
+            <a href="${pageContext.request.contextPath}/hr/employee-list"
+               class="nav-item${hrSidebarActive eq 'employee-list' ? ' active' : ''}">
+                <i class="fas fa-list"></i>
+                <span>Danh sách nhân viên</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>BÁO CÁO</h3>
+            <a href="${pageContext.request.contextPath}/HrHomeController?section=reports-analytics"
+               class="nav-item${hrSidebarActive eq 'reports' ? ' active' : ''}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Báo cáo &amp; phân tích</span>
+            </a>
+        </div>
+    </nav>
+</aside>

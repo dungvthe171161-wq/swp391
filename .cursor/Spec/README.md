@@ -1,46 +1,51 @@
-# HRMS Spec Index
-Status: Approved
-Updated: 2026-06-18
+# Chỉ mục Spec của HRMS
+Trạng thái: Đã phê duyệt
+Cập nhật: 2026-06-18
 
-## Muc tieu
-Thu muc `.cursor/Spec` luu cac spec theo actor va module, viet theo luong code hien tai cua HRMS. Moi spec can neu ro actor, route, controller/JSP lien quan, luong chinh, hien trang code va missing work.
+## Mục tiêu
+Thư mục `.cursor/Spec` lưu các spec theo actor và module, viết theo luồng code hiện tại của HRMS. Mỗi spec cần nêu rõ actor, route, controller/JSP liên quan, luồng chính, hiện trạng code và missing work.
 
-## Actor folders
-- `Auth`: dang nhap, dang ky, dang xuat, homepage routing, quen mat khau/PIN, doi mat khau, Google Login.
+## Thư mục Tác nhân (Actor)
+- `Auth`: đăng nhập, đăng ký, đăng xuất, homepage routing, quên mật khẩu/PIN, đổi mật khẩu, Google Login.
 - `Admin`: dashboard, user, role, permission, department, audit/profile.
-- `Dept`: dashboard phong ban, tao task, danh sach task, cap nhat task.
+- `Dept`: dashboard phòng ban, tạo task, danh sách task, cập nhật task.
 - `Employee`: home, view task, profile, payroll/contract, leave.
 - `HrStaff`: recruitment post, candidate, contract, payroll, allowance/deduction.
 - `HrManager`: recruitment review, CV, employee, contract approval, payroll approval.
-- `Guest`: actor Guest Candidate xem homepage public, xem job va nop don ung tuyen.
-- `PublicCandidate`: spec cu cua ung vien public, giu de doi chieu; spec chinh nen doc trong `Guest`.
+- `Guest`: actor Guest Candidate xem homepage public, xem job và nộp đơn ứng tuyển.
+- `PublicCandidate`: spec cũ của ứng viên public, giữ để đối chiếu; spec chính nên đọc trong `Guest`.
+- `AI`: trợ lý AI tích hợp cho toàn bộ BetterHR; chi tiết trong `AI/AI_Assistant_Spec.md`.
 
-## Cross-cutting specs
-- `_Common/permission-matrix.spec.md`: bang role, route, permission va filter.
-- `_Common/security-auth-hardening.spec.md`: bao mat login, session, cookie, remember-me.
-- `_Common/error-handling-standard.spec.md`: chuan loi HTML va JSON API.
-- `_Common/status-workflow.spec.md`: status nghiep vu cho recruitment, candidate, payroll, contract, task, leave.
-- `_Common/audit-log.spec.md`: thao tac can ghi log va du lieu log can co.
-- `_Common/upload-cv.spec.md`: rule upload CV cho ung vien public.
-- `_Common/route-conflict-resolution.spec.md`: xu ly xung dot route `/viewTask`.
-- `_Common/database-impact.spec.md`: bang doc/ghi theo module.
-- `_Common/test-plan.spec.md`: bo test toi thieu theo module.
-- `_Common/ui-language-theme.spec.md`: chuan giao dien, mau sac, font chu va tieng Viet tren JSP.
+## Đặc tả dùng chung (Cross-cutting Spec)
+- `_Common/permission-matrix.spec.md`: bảng role, route, permission và filter.
+- `_Common/security-auth-hardening.spec.md`: bảo mật login, session, cookie, remember-me.
+- `_Common/error-handling-standard.spec.md`: chuẩn lỗi HTML và JSON API.
+- `_Common/status-workflow.spec.md`: status nghiệp vụ cho recruitment, candidate, payroll, contract, task, leave.
+- `_Common/audit-log.spec.md`: thao tác cần ghi log và dữ liệu log cần có.
+- `_Common/upload-cv.spec.md`: rule upload CV cho ứng viên public.
+- `_Common/route-conflict-resolution.spec.md`: xử lý xung đột route `/viewTask`.
+- `_Common/database-impact.spec.md`: bảng đọc/ghi theo module.
+- `_Common/notification.spec.md`: thông báo dùng chung cho mọi actor theo `SystemUser.UserID`.
+- `_Common/test-plan.spec.md`: bộ test tối thiểu theo module.
+- `_Common/ui-language-theme.spec.md`: chuẩn giao diện, màu sắc, font chữ và tiếng Việt trên JSP.
 
-## Nguyen tac cap nhat spec
-- Spec phai uu tien dung voi route/controller hien co.
-- Neu code hien tai co loi thiet ke, ghi vao `Missing Work`, khong viet nhu da hoan thanh.
-- Password auth hien tai dung `SystemUser.PasswordHash` theo logic plain text cua du an; neu doi sang hash/BCrypt thi phai cap nhat code va spec cung luc.
-- Session login dung attribute `systemUser`.
-- JSP va noi dung UI cua du an nen hien thi tieng Viet, giu ten logo BetterHR.
-- Khi chi sua UI, khong doi route, form action, input name/value hoac attribute controller.
+## Nguyên tắc cập nhật spec
+- Spec phải ưu tiên đúng với route/controller hiện có.
+- Nếu code hiện tại có lỗi thiết kế, ghi vào `Missing Work`, không viết như đã hoàn thành.
+- Password auth hiện tại dùng `SystemUser.PasswordHash` theo logic plain text của dự án; nếu đổi sang hash/BCrypt thì phải cập nhật code và spec cùng lúc.
+- Session login dùng attribute `systemUser`.
+- JSP và nội dung UI của dự án nên hiển thị tiếng Việt, giữ tên logo BetterHR.
+- Khi chỉ sửa UI, không đổi route, form action, input name/value hoặc attribute controller.
 
-## Cac canh bao can xu ly trong code
-- `/departments` chua duoc dua vao filter bao ve admin.
-- Employee `ViewTask` va Dept `ViewTask` dang trung mapping `/viewTask`.
-- Auth password recovery dung PIN session, can rate limit neu hardening sau nay.
-- Google Login da co backend OAuth2, can dam bao config Google local/env dung.
-- Register local da gui email BetterHR sau khi tao account; role mac dinh phai la `Guest`, `EmployeeID = NULL`.
-- Guest Candidate la actor public chinh; account Guest chi duoc chuyen sang Employee khi HR Manager tao/chuyen nhan vien.
-- HR Manager Home dung `/HrHomeController`; khong link truc tiep JSP neu can nap data.
-- Mot so controller con `printStackTrace`/`System.out`, nen thay bang logger.
+## Các cảnh báo cần xử lý trong code
+- `/departments` chưa được đưa vào filter bảo vệ admin.
+- Employee `ViewTask` và Dept `ViewTask` đang trùng mapping `/viewTask`.
+- Auth password recovery dùng PIN session, cần rate limit nếu hardening sau này.
+- Google Login đã có backend OAuth2, cần đảm bảo config Google local/env đúng.
+- Register local đã gửi email BetterHR sau khi tạo account; role mặc định phải là `Guest`, `EmployeeID = NULL`.
+- Guest Candidate là actor public chính; Phase 2 dùng `Application`, `Interview`, `Offer` cho workflow ứng tuyển.
+- Account Guest chỉ được chuyển sang Employee khi offer được accepted/hired theo spec Guest Phase 2.
+- `Notification` là module chung cho mọi actor, Guest chỉ là một nơi hiển thị notification.
+- HR Manager Home dùng `/HrHomeController`; không link trực tiếp JSP nếu cần nạp data.
+- Một số controller còn `printStackTrace`/`System.out`, nên thay bằng logger.
+- Route `/ai/chat` chưa được thêm vào filter; phải đảm bảo chỉ user đã đăng nhập mới gọi được ChatServlet.

@@ -1,132 +1,132 @@
-# Feature: Quen mat khau va doi mat khau
-Status: Approved
-Actor: Guest, Authenticated User
-Priority: High
-Related Code: `ForgotPassController`, `RecoveryController`, `ChangePassREController`, `ChangePassController`, `LoginController`, `SessionSecurityFilter`, `DAO`, `EmailSender`, `Views/ForgotPassword.jsp`, `Views/Recovery.jsp`, `Views/ChangePasswordRE.jsp`, `Views/ChangePassword.jsp`
+# Tính năng: Khôi phục mật khẩu (Quên mật khẩu) và Đổi mật khẩu
+Trạng thái: Đã phê duyệt
+Tác nhân: Guest, Người dùng đã đăng nhập (Authenticated User)
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `ForgotPassController`, `RecoveryController`, `ChangePassREController`, `ChangePassController`, `LoginController`, `SessionSecurityFilter`, `DAO`, `EmailSender`, `Views/ForgotPassword.jsp`, `Views/Recovery.jsp`, `Views/ChangePasswordRE.jsp`, `Views/ChangePassword.jsp`
 
-## Muc tieu
-Ho tro nguoi dung khoi phuc mat khau bang email va ma PIN, sau do tao mat khau moi. Dong thoi ho tro user da dang nhap doi mat khau trong tai khoan.
+## Mục tiêu
+Hỗ trợ người dùng khôi phục lại mật khẩu bằng cách sử dụng địa chỉ email và xác thực qua mã PIN, sau đó cho phép khởi tạo mật khẩu mới. Đồng thời, hỗ trợ người dùng đã đăng nhập thực hiện đổi mật khẩu ngay trong tài khoản cá nhân.
 
-## Route hien co
-- `GET /ForgotPassword`: hien thi form nhap email khoi phuc.
-- `POST /ForgotPassword`: kiem tra email va gui ma PIN.
-- `GET /Recovery`: hien thi form nhap PIN.
-- `POST /Recovery`: xac minh PIN.
-- `GET /changepassRE`: hien thi form tao mat khau moi sau khi PIN dung.
-- `POST /changepassRE`: cap nhat mat khau moi.
-- `GET/POST /changepass`: doi mat khau khi user da dang nhap.
-- `GET /login?success=password_changed`: hien thi thong bao doi mat khau thanh cong.
+## Các Route hiện có
+- `GET /ForgotPassword`: Hiển thị biểu mẫu (form) nhập địa chỉ email để yêu cầu khôi phục mật khẩu.
+- `POST /ForgotPassword`: Xác thực địa chỉ email nhập vào và gửi mã PIN khôi phục.
+- `GET /Recovery`: Hiển thị biểu mẫu nhập mã PIN xác thực.
+- `POST /Recovery`: Tiến hành xác minh mã PIN do người dùng cung cấp.
+- `GET /changepassRE`: Hiển thị biểu mẫu tạo mật khẩu mới sau khi xác thực mã PIN thành công.
+- `POST /changepassRE`: Cập nhật mật khẩu mới vào hệ thống.
+- `GET/POST /changepass`: Thực hiện đổi mật khẩu khi người dùng đã đăng nhập vào hệ thống.
+- `GET /login?success=password_changed`: Hiển thị thông báo đổi mật khẩu thành công trên trang đăng nhập.
 
-## Public route trong filter
-`SessionSecurityFilter` phai cho phep cac route sau khi chua dang nhap:
+## Các tuyến đường công khai (Public Route) trong bộ lọc bảo mật
+Bộ lọc bảo mật `SessionSecurityFilter` phải cho phép truy cập công khai vào các tuyến đường sau khi người dùng chưa đăng nhập:
 - `/ForgotPassword`
 - `/Recovery`
 - `/changepassRE`
 - `/ForgotPassword.jsp`
 - `/Views/ForgotPassword.jsp`
 
-Luu y: `/changepassRE` la public o muc filter, nhung controller van phai chan bang session `recoveryEmail` va `recoveryVerified`.
+Lưu ý: Tuyến đường `/changepassRE` được cấu hình công khai ở mức bộ lọc (filter), nhưng lớp điều khiển (controller) vẫn phải kiểm soát chặt chẽ bằng cách kiểm tra thuộc tính session `recoveryEmail` và `recoveryVerified`.
 
-## Luong quen mat khau
-1. Guest bam `Quen mat khau?` tu `/login` va mo `/Views/ForgotPassword.jsp` hoac `/ForgotPassword`.
-2. Guest nhap email tai khoan.
-3. `ForgotPassController` validate email khong rong.
-4. `DAO.checkEmailExist(email)` kiem tra trong bang `SystemUser.Email`, khong kiem tra `Employee.Email`.
-5. Neu email khong ton tai, forward lai `Views/ForgotPassword.jsp` voi message: `Email nay khong ton tai trong he thong.`
-6. Neu email ton tai, he thong tao PIN 6 chu so.
-7. `EmailSender.sendEmail(...)` gui PIN qua SMTP.
-8. He thong luu vao session:
+## Luồng quên mật khẩu (Password recovery flow)
+1. Khách truy cập (Guest) nhấp vào `Quên mật khẩu?` từ trang `/login` và hệ thống mở trang `/Views/ForgotPassword.jsp` hoặc `/ForgotPassword`.
+2. Người dùng nhập địa chỉ email liên kết với tài khoản.
+3. `ForgotPassController` xác thực (validate) địa chỉ email đảm bảo không được để trống.
+4. Gọi hàm `DAO.checkEmailExist(email)` để kiểm tra sự tồn tại của email trong bảng người dùng hệ thống `SystemUser.Email`, không kiểm tra trong bảng nhân viên `Employee.Email`.
+5. Nếu địa chỉ email không tồn tại trong hệ thống, chuyển tiếp (forward) quay lại trang `Views/ForgotPassword.jsp` kèm theo thông báo: `Email này không tồn tại trong hệ thống.`
+6. Nếu email tồn tại, hệ thống tự động sinh một mã PIN ngẫu nhiên gồm 6 chữ số.
+7. Gọi hàm `EmailSender.sendEmail(...)` để gửi mã PIN này tới địa chỉ email của người dùng thông qua giao thức SMTP.
+8. Hệ thống lưu trữ các thuộc tính sau vào phiên làm việc (session):
    - `recoveryEmail = email`
    - `pinCode = pin`
-   - session timeout `600` giay
-9. He thong redirect sang `/Recovery`.
+   - Thời gian hết hạn của phiên làm việc (session timeout) là `600` giây (10 phút).
+9. Hệ thống chuyển hướng (redirect) người dùng sang trang xác nhận `/Recovery`.
 
-## Luong xac minh PIN
-1. Guest mo `/Recovery`.
-2. `RecoveryController` forward den `Views/Recovery.jsp`.
-3. Guest nhap PIN.
-4. Controller so sanh request parameter `pin` voi session attribute `pinCode`.
-5. Neu PIN sai hoac session het han, forward lai `Views/Recovery.jsp` voi message: `Ma PIN khong hop le hoac da het han.`
-6. Neu PIN dung, controller set `recoveryVerified = true`.
-7. He thong redirect sang `/changepassRE`.
+## Luồng xác minh mã PIN
+1. Người dùng mở trang `/Recovery`.
+2. `RecoveryController` forward yêu cầu đến `Views/Recovery.jsp`.
+3. Người dùng nhập mã PIN đã nhận từ email.
+4. Controller so sánh mã PIN trong tham số request `pin` với mã PIN lưu trong session `pinCode`.
+5. Nếu mã PIN không chính xác hoặc session đã hết thời gian hiệu lực, forward quay lại trang `Views/Recovery.jsp` kèm theo thông báo: `Mã PIN không hợp lệ hoặc đã hết hạn.`
+6. Nếu mã PIN trùng khớp, controller thiết lập thuộc tính session `recoveryVerified = true`.
+7. Hệ thống chuyển hướng người dùng sang trang tạo mật khẩu mới `/changepassRE`.
 
-## Luong tao mat khau moi sau PIN
-1. Guest mo `/changepassRE`.
-2. `ChangePassREController` chi cho vao form khi session co:
+## Luồng tạo mật khẩu mới sau khi xác thực mã PIN
+1. Người dùng mở trang `/changepassRE`.
+2. `ChangePassREController` chỉ cho phép truy cập biểu mẫu tạo mật khẩu mới khi session có đầy đủ:
    - `recoveryEmail`
    - `recoveryVerified = true`
-3. Neu thieu session recovery hoac chua xac minh PIN, redirect ve `/ForgotPassword`.
-4. Guest nhap `newPass` va `confirmPass`.
-5. Validate mat khau:
-   - Bat buoc tu 8 den 16 ky tu.
-   - Chi cho phep chu va so theo pattern `[a-zA-Z0-9]+`.
-   - `confirmPass` phai trung `newPass`.
-6. Controller lay user bang `DAO.getAccountByEmail(recoveryEmail)`.
-7. Neu tim thay user, goi `DAO.changePassword(user.getUsername(), newPass)`.
-8. Neu cap nhat thanh cong, xoa session:
+3. Nếu thiếu thông tin session khôi phục hoặc chưa xác minh mã PIN thành công, chuyển hướng người dùng về trang `/ForgotPassword`.
+4. Người dùng nhập mật khẩu mới `newPass` và xác nhận mật khẩu `confirmPass`.
+5. Xác thực mật khẩu nhập vào theo các quy tắc:
+   - Độ dài bắt buộc từ 8 đến 16 ký tự.
+   - Chỉ cho phép chữ cái và chữ số theo biểu thức chính quy `[a-zA-Z0-9]+` (không chứa ký tự đặc biệt).
+   - Xác nhận mật khẩu `confirmPass` phải trùng khớp hoàn toàn với mật khẩu mới `newPass`.
+6. Controller lấy thông tin người dùng qua hàm `DAO.getAccountByEmail(recoveryEmail)`.
+7. Nếu tìm thấy tài khoản tương ứng, gọi hàm `DAO.changePassword(user.getUsername(), newPass)` để lưu mật khẩu mới.
+8. Nếu cập nhật thành công, hệ thống xóa bỏ các thuộc tính khôi phục khỏi session:
    - `recoveryEmail`
    - `pinCode`
    - `recoveryVerified`
-9. Redirect ve `/login?success=password_changed`.
-10. `LoginController` hien message: `Doi mat khau thanh cong. Ban co the dang nhap bang mat khau moi.`
+9. Chuyển hướng người dùng về `/login?success=password_changed`.
+10. `LoginController` hiển thị thông báo: `Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.`
 
-## Luong doi mat khau khi da dang nhap
-1. Authenticated user vao `/changepass`.
-2. Nhap mat khau hien tai, mat khau moi va xac nhan mat khau.
-3. `ChangePassController` kiem tra session `systemUser`.
-4. He thong kiem tra mat khau hien tai bang `DAO.checkPassword`.
-5. Neu hop le, goi `DAO.changePassword(username, newPass)`.
-6. He thong tra ve UI/redirect theo logic hien tai.
+## Luồng đổi mật khẩu khi đã đăng nhập
+1. Người dùng đã đăng nhập (Authenticated user) truy cập vào `/changepass`.
+2. Người dùng nhập mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
+3. `ChangePassController` thực hiện kiểm tra đối tượng người dùng đăng nhập trong session `systemUser`.
+4. Hệ thống kiểm tra tính chính xác của mật khẩu hiện tại bằng hàm `DAO.checkPassword`.
+5. Nếu mật khẩu hiện tại chính xác, gọi hàm `DAO.changePassword(username, newPass)` để cập nhật.
+6. Hệ thống trả về giao diện hoặc chuyển hướng người dùng tương ứng với logic hiện có.
 
-## Email sender
-`EmailSender` khong hardcode Gmail/app password trong Java code.
+## Lớp gửi email (Email sender)
+Lớp `EmailSender` tuyệt đối không được viết cứng địa chỉ Gmail hoặc mật khẩu ứng dụng (app password) bên trong mã nguồn Java.
 
-Nguon cau hinh uu tien:
-1. Bien moi truong:
+Các nguồn cấu hình được ưu tiên đọc theo thứ tự:
+1. Biến môi trường hệ thống (Environment variables):
    - `MAIL_USERNAME`
    - `MAIL_PASSWORD`
    - `MAIL_FROM`
    - `MAIL_FROM_NAME`
    - `MAIL_HOST`
    - `MAIL_PORT`
-2. Java system properties cung ten.
-3. File local ignored:
+2. Các thuộc tính hệ thống Java (Java system properties) có cùng tên.
+3. Tập tin cấu hình cục bộ được bỏ qua không đẩy lên git (ignored local file):
    - `src/main/resources/META-INF/mail.local.properties`
-   - hoac `META-INF/mail.properties` khi deploy.
+   - Hoặc tập tin `META-INF/mail.properties` khi hệ thống chạy deploy thực tế.
 
-File mau:
+Tập tin mẫu cấu hình:
 - `src/main/resources/META-INF/mail.example.properties`
 
-Quy tac:
-- Gmail phai dung App Password.
-- Khong commit `mail.local.properties`.
-- Neu thieu config mail, forgot password phai forward lai form voi message: `Khong the gui email. Vui long thu lai sau.`
+Quy tắc cấu hình:
+- Đối với dịch vụ Gmail bắt buộc phải cấu hình và sử dụng Mật khẩu ứng dụng (App Password).
+- Tuyệt đối không commit tập tin cấu hình cục bộ `mail.local.properties` lên hệ thống quản lý mã nguồn.
+- Nếu thiếu cấu hình gửi mail, luồng quên mật khẩu phải forward quay lại biểu mẫu nhập email kèm theo thông báo: `Không thể gửi email. Vui lòng thử lại sau.`
 
-## Hien trang code
-- `ForgotPassController` da co GET/POST.
-- `RecoveryController` da set `recoveryVerified` khi PIN dung.
-- `ChangePassREController` da chan truy cap truc tiep neu chua xac minh PIN.
-- `SessionSecurityFilter` da public `/ForgotPassword`, `/Recovery`, `/changepassRE`.
-- `DAO.checkEmailExist` dang check `SystemUser.Email`.
-- Password hien tai duoc luu vao `SystemUser.PasswordHash` theo logic plain text cua du an hien tai, chua hash/BCrypt.
-- UI Forgot/Recovery/ChangePasswordRE da theo mau BetterHR va hien thi tieng Viet.
+## Hiện trạng code
+- Lớp điều khiển `ForgotPassController` đã có sẵn xử lý cho các phương thức GET/POST.
+- Lớp điều khiển `RecoveryController` đã cấu hình gán thuộc tính `recoveryVerified` khi người dùng nhập đúng mã PIN.
+- Lớp điều khiển `ChangePassREController` đã tích hợp chặn các truy cập trực tiếp nếu người dùng chưa xác minh mã PIN thành công.
+- Bộ lọc `SessionSecurityFilter` đã cho phép truy cập công khai vào `/ForgotPassword`, `/Recovery`, `/changepassRE`.
+- Hàm `DAO.checkEmailExist` đang thực hiện kiểm tra trong bảng `SystemUser.Email`.
+- Mật khẩu hiện tại của người dùng được lưu trữ trực tiếp vào cột `SystemUser.PasswordHash` dạng văn bản thuần (plain text), chưa áp dụng băm hoặc BCrypt.
+- Giao diện của các trang Quên mật khẩu, Xác minh mã PIN, Tạo mật khẩu mới sau khi xác minh mã PIN đã được thiết kế đồng bộ theo BetterHR và hiển thị bằng tiếng Việt.
 
-## Acceptance Criteria
-- [ ] Guest mo duoc `/ForgotPassword` khi chua dang nhap.
-- [ ] Email rong hien loi va khong gui mail.
-- [ ] Email khong ton tai trong `SystemUser` hien loi.
-- [ ] Email ton tai thi gui PIN va redirect `/Recovery`.
-- [ ] PIN sai hoac session het han khong vao duoc form tao mat khau moi.
-- [ ] PIN dung redirect sang `/changepassRE`.
-- [ ] Mo truc tiep `/changepassRE` khi chua co `recoveryVerified` bi redirect ve `/ForgotPassword`.
-- [ ] Mat khau moi duoi 8 hoac tren 16 ky tu bi tu choi.
-- [ ] Mat khau moi co ky tu dac biet bi tu choi.
-- [ ] Xac nhan mat khau khong khop bi tu choi.
-- [ ] Doi mat khau thanh cong cap nhat `SystemUser.PasswordHash`.
-- [ ] Doi mat khau thanh cong xoa `recoveryEmail`, `pinCode`, `recoveryVerified`.
-- [ ] Doi mat khau thanh cong redirect ve `/login?success=password_changed`.
+## Tiêu chí nghiệm thu
+- [ ] Khách truy cập mở được trang `/ForgotPassword` khi chưa đăng nhập.
+- [ ] Gửi email rỗng hiển thị thông điệp báo lỗi và hệ thống không thực hiện gửi email.
+- [ ] Gửi địa chỉ email không tồn tại trong bảng `SystemUser` hiển thị thông điệp báo lỗi.
+- [ ] Nhập đúng email tồn tại hệ thống tiến hành gửi mã PIN và chuyển hướng sang trang `/Recovery`.
+- [ ] Nhập sai mã PIN hoặc session hết hạn không thể truy cập vào biểu mẫu tạo mật khẩu mới.
+- [ ] Nhập đúng mã PIN hệ thống chuyển hướng người dùng sang `/changepassRE`.
+- [ ] Truy cập trực tiếp vào `/changepassRE` khi chưa có cờ xác nhận `recoveryVerified` sẽ bị chuyển hướng về `/ForgotPassword`.
+- [ ] Nhập mật khẩu mới ngắn hơn 8 ký tự hoặc dài hơn 16 ký tự bị hệ thống từ chối.
+- [ ] Nhập mật khẩu mới chứa ký tự đặc biệt bị hệ thống từ chối.
+- [ ] Nhập xác nhận mật khẩu không trùng khớp với mật khẩu mới bị từ chối.
+- [ ] Đổi mật khẩu thành công cập nhật chính xác giá trị vào cột `SystemUser.PasswordHash`.
+- [ ] Đổi mật khẩu thành công thực hiện xóa các thuộc tính `recoveryEmail`, `pinCode`, `recoveryVerified` khỏi session.
+- [ ] Đổi mật khẩu thành công chuyển hướng người dùng về `/login?success=password_changed`.
 
-## Missing Work
-- [ ] Sau nay neu bat lai hash password, cap nhat `DAO.changePassword` va spec nay cung luc.
-- [ ] Co the them bang/token recovery rieng thay vi luu PIN trong session neu can bao mat cao hon.
-- [ ] Co the them rate limit gui PIN de tranh spam email.
+## Các phần việc còn thiếu
+- [ ] Trong tương lai nếu dự án áp dụng băm mật khẩu, cần tiến hành cập nhật đồng thời hàm `DAO.changePassword` và đặc tả này.
+- [ ] Có thể thiết kế bảng lưu trữ token khôi phục riêng trong cơ sở dữ liệu thay vì lưu trữ mã PIN tạm thời trong session để nâng cao tính bảo mật.
+- [ ] Bổ sung cơ chế giới hạn tần suất gửi (rate limit) mã PIN để tránh việc bị gửi email spam liên tục.

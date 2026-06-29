@@ -1,36 +1,36 @@
-# Feature: Cap nhat task phong ban
-Status: Approved
-Actor: Dept Manager
-Priority: High
-Related Code: `com.hrm.controller.dept.ViewTask`, `DAO`, `Views/DeptManager/viewTask.jsp`
+# Tính năng: Cập nhật công việc (task) phòng ban
+Trạng thái: Đã phê duyệt
+Tác nhân: Trưởng phòng (Dept Manager)
+Độ ưu tiên: Cao
+Mã nguồn liên quan: `com.hrm.controller.dept.ViewTask`, `DAO`, `Views/DeptManager/viewTask.jsp`
 
-## Route
+## Các Route
 - `GET /viewTask?id={taskId}`
 - `POST /viewTask`
 
-## Luong GET
-1. Dept Manager mo chi tiet task bang id.
-2. Controller kiem tra session.
-3. Lay task theo id.
-4. Forward den `/Views/DeptManager/viewTask.jsp`.
+## Luồng GET
+1. Trưởng phòng (Dept Manager) mở trang chi tiết công việc bằng mã định danh công việc (id).
+2. Controller kiểm tra phiên làm việc (session) của người dùng.
+3. Tiến hành lấy thông tin công việc theo id.
+4. Chuyển tiếp (forward) đến `/Views/DeptManager/viewTask.jsp`.
 
-## Luong POST
-1. Dept Manager submit `taskId`, `title`, `description`, `startDate`, `dueDate`.
-2. Controller parse `taskId`.
-3. Goi `DAO.updateTask`.
-4. Neu thanh cong, goi `DAO.deleteTaskAssignments(taskId)` de reset assignment cu.
-5. Redirect ve `/viewTask?id={taskId}&mess=Task updated successfully`.
-6. Neu that bai, redirect ve `/viewTask?id={taskId}&error=Failed to update task`.
+## Luồng POST
+1. Trưởng phòng (Dept Manager) gửi (submit) các thông tin gồm: `taskId`, `title`, `description`, `startDate`, `dueDate`.
+2. Controller thực hiện phân tích cú pháp (parse) mã `taskId`.
+3. Gọi hàm `DAO.updateTask` để cập nhật dữ liệu.
+4. Nếu cập nhật thành công, gọi tiếp hàm `DAO.deleteTaskAssignments(taskId)` để xóa bỏ và thiết lập lại các phân công công việc cũ (reset assignment).
+5. Chuyển hướng (redirect) về tuyến đường `/viewTask?id={taskId}&mess=Task updated successfully`.
+6. Nếu cập nhật thất bại, chuyển hướng (redirect) về tuyến đường `/viewTask?id={taskId}&error=Failed to update task`.
 
-## Hien trang code
-- Da co luong update va reset assignment.
-- Chua thay xu ly HTTP 400 rieng cho `NumberFormatException`.
+## Hiện trạng code
+- Đã xây dựng hoàn thiện luồng cập nhật thông tin công việc và đặt lại phân công nhân sự.
+- Chưa tích hợp xử lý riêng mã lỗi HTTP 400 khi xảy ra ngoại lệ chuyển đổi kiểu số `NumberFormatException` đối với ID công việc.
 
-## Acceptance Criteria
-- [ ] Update thanh cong redirect kem `mess`.
-- [ ] Update that bai redirect kem `error`.
-- [ ] Chua login bi redirect ve `/Views/Login.jsp`.
+## Tiêu chí nghiệm thu
+- [ ] Cập nhật công việc thành công chuyển hướng người dùng kèm theo thông điệp thông báo `mess`.
+- [ ] Cập nhật công việc thất bại chuyển hướng người dùng kèm theo thông điệp thông báo lỗi `error`.
+- [ ] Người dùng chưa đăng nhập bị chuyển hướng về trang đăng nhập `/Views/Login.jsp`.
 
-## Missing Work
-- [ ] Bat loi id sai va tra loi than thien.
-- [ ] Kiem tra task thuoc phong ban truoc khi cho sua.
+## Các phần việc còn thiếu
+- [ ] Bắt các lỗi khi truyền sai ID công việc và trả về thông báo giao diện thân thiện với người dùng.
+- [ ] Kiểm tra xác thực đảm bảo công việc phải thuộc phòng ban quản lý của Trưởng phòng đó trước khi cho phép chỉnh sửa.

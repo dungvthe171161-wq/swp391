@@ -1,41 +1,32 @@
-# Feature: HR Staff quan ly phu cap va khau tru
-Status: Approved
-Actor: HR Staff
-Priority: High
-Related Code: `PayrollAllowanceController`, `PayrollDeductionController`, `PayrollAllowanceApiController`, `PayrollDeductionApiController`
+# Tính năng HR Staff: Quản lý phụ cấp và khấu trừ
 
-## Route HTML
-- `/hrstaff/payroll/allowance`
-- `/hrstaff/payroll/allowance/delete`
-- `/hrstaff/payroll/deduction`
-- `/hrstaff/payroll/deduction/delete`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Route API
-- `/api/allowance/*`
-- `/api/deduction/*`
+## Actor và phạm vi
+- HR Staff quản lý allowance và deduction liên quan payroll.
 
-## Luong phu cap
-1. HR Staff them/sua phu cap cua employee trong ky payroll.
-2. Controller kiem tra payroll status.
-3. Neu status bi khoa, redirect ve payroll tab allowance kem error.
-4. Neu hop le, luu va redirect ve tab allowance.
+## Route, controller và JSP liên quan
+- `/hrstaff`, `/postRecruitments`, `/candidates`, `/viewCV`, `/hrstaff/interviews/schedule`.
+- `/hrstaff/contracts`, `/hrstaff/contracts/create`, `/hrstaff/payroll`, `/hrstaff/payroll/*`, `/api/payroll`, `/api/allowance/*`, `/api/deduction/*`.
+- Controller: `HrStaffHomeController`, `PostRecruitmentController`, `ViewCandidateController`, `InterviewScheduleController`, `ContractListController`, `CreateContractController`, `PayrollManagementController`.
 
-## Luong khau tru
-1. HR Staff them/sua khau tru cua employee.
-2. Controller kiem tra payroll status.
-3. Neu hop le, luu va redirect ve tab deduction.
+## Hiện trạng code
+- API `/api/allowance/*` và `/api/deduction/*` phục vụ điều chỉnh payroll.
+- Có route UI `/hrstaff/payroll/allowance` và `/hrstaff/payroll/deduction`.
+- Các API cần trả JSON.
 
-## Luong API
-1. Frontend goi `/api/allowance/*` hoac `/api/deduction/*`.
-2. Controller tra JSON.
-3. Neu thieu quyen payroll, tra JSON 403.
+## Quy tắc nghiệp vụ chuẩn
+- Điều chỉnh payroll phải validate số tiền, kỳ lương và employee.
+- Không cho điều chỉnh payroll đã khóa nếu nghiệp vụ cấm.
+- JSON lỗi phải có thông báo tiếng Việt.
 
-## Acceptance Criteria
-- [ ] Khong cho sua/xoa adjustment khi payroll da khoa theo rule code.
-- [ ] API tra `application/json` va UTF-8.
-- [ ] Thieu id khi xoa thi redirect/tra loi loi ro rang.
-- [ ] Role khac khong goi duoc API payroll adjustment.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra permission API allowance/deduction có thống nhất với payroll không.
+- Cần test số âm, thiếu employee, payroll đã duyệt.
 
-## Missing Work
-- [ ] Chuan hoa tat ca loi API ve JSON status code thong nhat.
-- [ ] Them audit log cho adjustment.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

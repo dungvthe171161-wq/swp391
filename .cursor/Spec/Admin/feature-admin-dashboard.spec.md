@@ -1,47 +1,31 @@
-# Tính năng: Bảng điều khiển Admin (Admin Dashboard)
-Trạng thái: Đã phê duyệt
-Tác nhân: Admin
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `AdminController`, `DashboardDAO`, `EmployeeDAO`, `DepartmentDAO`, `SystemUserDAO`, `Admin/AdminHome.jsp`
+# Tính năng Admin: Bảng điều khiển
 
-## Các Route
-- `GET /admin`
-- `GET /admin?action=dashboard`
-- `GET /admin?action=dashboard-data`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng Dashboard HTML
-1. Admin truy cập `/admin` hoặc `/admin?action=dashboard`.
-2. Bộ lọc (Filter) kiểm tra session và quyền (permission) `MANAGE_SYSTEM`.
-3. `AdminController` lấy số liệu thống kê tổng quan từ các DAO.
-4. Hệ thống thiết lập thuộc tính (set attribute) cho request.
-5. Chuyển tiếp (forward) đến `Admin/AdminHome.jsp`.
+## Actor và phạm vi
+- Admin xem tổng quan hệ thống sau khi đăng nhập.
 
-## Luồng Dashboard JSON
-1. Admin gọi `/admin?action=dashboard-data`.
-2. Controller lấy dữ liệu thống kê.
-3. Phản hồi (Response) trả về định dạng `application/json` và mã hóa `UTF-8`.
-
-## Dữ liệu hiển thị
-- Tổng số nhân viên.
-- Tổng số phòng ban.
-- Tổng số người dùng (user).
-- Thống kê hoạt động, phòng ban, quyền hạn, phân phối trạng thái (status distribution) nếu DAO trả về.
-
-## Giao ước giao diện (UI contract)
-- Bảng điều khiển admin sử dụng thanh bên (sidebar)/thanh điều hướng trên (topbar) BetterHR đồng bộ với các trang Admin khác.
-- Thẻ (Card) thống kê có nhãn bằng tiếng Việt và màu sắc theo bảng màu (palette) BetterHR.
-- Biểu đồ (Chart) phòng ban và trạng thái nhân viên phải có kích thước ổn định, không làm tràn bố cục (layout).
-- Nếu biểu đồ chưa có dữ liệu thực tế, giao diện (UI) phải hiển thị trạng thái trống (empty state) bằng tiếng Việt thay vì báo lỗi JS.
+## Route, controller và JSP liên quan
+- `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Controller: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`.
+- JSP: `AdminHome.jsp`, `Users.jsp`, `RolePermissionManager.jsp` và các trang Admin liên quan.
 
 ## Hiện trạng code
-- Đã có dashboard dạng HTML và JSON.
-- JSON trong `AdminController` vẫn đang được xây dựng thủ công bằng `StringBuilder`.
-- Một số ngoại lệ (exception) vẫn dùng `printStackTrace`.
+- Dashboard dùng `/admin?action=dashboard` và JSP Admin.
+- Thông tin hiển thị phụ thuộc dữ liệu controller nạp.
+- Route `/admin` được filter kiểm tra `MANAGE_SYSTEM`.
 
-## Tiêu chí nghiệm thu
-- [ ] Admin có quyền xem được bảng điều khiển (dashboard).
-- [ ] Người dùng không có quyền sẽ bị chặn trước khi vào controller.
-- [ ] JSON dashboard thiết lập đúng loại nội dung (content type) và mã hóa (encoding).
-- [ ] Lỗi cơ sở dữ liệu không làm lộ vết ngăn xếp (stack trace) ra giao diện người dùng.
-- [ ] Bảng điều khiển không bị chồng lấn giao diện cũ lên giao diện mới.
-- [ ] Tất cả nhãn/nhãn hiển thị (label) phải là tiếng Việt.
+## Quy tắc nghiệp vụ chuẩn
+- Dashboard chỉ hiển thị dữ liệu tổng hợp, không thực hiện thay đổi dữ liệu.
+- Link thao tác phải trỏ về controller, không trỏ thẳng JSP nếu cần dữ liệu.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra các card thống kê có dữ liệu thật hay placeholder.
+- Cần audit nếu dashboard có action nhanh thay đổi dữ liệu.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

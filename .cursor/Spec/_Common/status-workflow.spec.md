@@ -1,81 +1,35 @@
-# Cross-cutting Spec: Business Status Workflow
-Status: Approved
-Priority: High
-Schema Source: `src/data/data.sql`
+# Đặc tả dùng chung: Trạng thái nghiệp vụ
 
-## Muc tieu
-Chuan hoa status cho cac nghiep vu co vong doi ro rang. Phan "DB enum hien tai" phai khop voi `src/data/data.sql`; phan "De xuat" chi dung khi refactor schema.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Employee status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Active` | Dang lam viec |
-| `Resigned` | Da nghi viec |
-| `Probation` | Thu viec |
-| `Intern` | Thuc tap |
+## Actor và phạm vi
+- Tất cả actor có thao tác làm thay đổi trạng thái tuyển dụng, hợp đồng, payroll, nghỉ phép và task.
 
-## Contract status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Draft` | Ban nhap |
-| `Pending_Approval` | Cho duyet |
-| `Approved` | Da duyet |
-| `Rejected` | Bi tu choi |
-| `Active` | Dang hieu luc |
-| `Expired` | Het han |
+## Route, controller và JSP liên quan
+- `src/data/data.sql`: định nghĩa enum chính.
+- `ApplicationDAO`, `InterviewDAO`, `OfferDAO`: đọc và ghi trạng thái tuyển dụng.
+- Các controller HR Staff, HR Manager, Guest và Employee sử dụng trạng thái để hiển thị hành động.
 
-## MailRequest status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Pending` | Cho duyet |
-| `Approved` | Da duyet |
-| `Rejected` | Bi tu choi |
+## Hiện trạng code
+- `Application.Status`: `Applied`, `Screening`, `Interview`, `Offered`, `Rejected`, `Withdrawn`, `Hired`.
+- `Application.CurrentStep`: `Applied`, `Screening`, `Interview`, `Offer`, `Hired`, `Rejected`, `Withdrawn`.
+- `Interview.Status`: `Scheduled`, `Completed`, `Cancelled`, `NoShow`, `Rescheduled`; `Interview.Result`: `Pending`, `Passed`, `Failed`.
+- `Offer.Status`: `Draft`, `Sent`, `Accepted`, `Rejected`, `Expired`, `Cancelled`.
+- Task dùng `Waiting`, `In Progress`, `Completed`, `Rejected`; nghỉ phép dùng `Pending`, `Approved`, `Rejected`.
 
-## Task status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Waiting` | Cho xu ly |
-| `In Progress` | Dang lam |
-| `Completed` | Hoan thanh |
-| `Rejected` | Bi tu choi |
+## Quy tắc nghiệp vụ chuẩn
+- Spec phải dùng đúng enum hiện có nếu chưa có migration.
+- Nếu muốn trạng thái chi tiết hơn, phải sửa database, DAO, controller, JSP và test cùng lúc.
+- Không cập nhật `Guest.Status` thay cho `Application.Status` trong workflow ứng tuyển mới.
 
-## Recruitment status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Waiting` | Cho xu ly/cho duyet |
-| `New` | Tin moi |
-| `Rejected` | Bi tu choi |
-| `Applied` | Da co ung tuyen/da apply |
-| `Deleted` | Da xoa mem |
+## Code còn lệch spec hoặc cần bổ sung
+- Spec cũ có `InterviewScheduled`, `OfferAccepted`, `OfferDeclined`; code hiện chưa hỗ trợ các enum đó.
+- `OfferDAO.respondOffer` hiện chuyển application sang `Hired` ngay khi ứng viên accept offer.
+- `ViewCV` POST cập nhật `Guest.Status`, dễ lệch với `Application.Status`.
 
-## Guest status
-| DB enum hien tai | Y nghia |
-| --- | --- |
-| `Processing` | Dang xu ly |
-| `Hired` | Da tuyen |
-| `Rejected` | Bi tu choi |
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## Payroll status
-| DB enum hien tai | Y nghia | Rule |
-| --- | --- | --- |
-| `Draft` | HR Staff dang tao/tinh | Cho phep sua/xoa |
-| `Pending` | Da submit cho duyet | Khoa allowance/deduction |
-| `Approved` | HR Manager da duyet | Khoa sua |
-| `Rejected` | Bi tu choi, cho HR Staff sua/gui lai | Cho submit lai |
-| `Paid` | Da chi tra | Khoa sua |
-
-## PayrollAudit status
-| DB hien tai | Y nghia |
-| --- | --- |
-| `Status VARCHAR(20) DEFAULT 'Draft'` | Khong bi rang buoc ENUM trong SQL, nhung nen dong bo voi `Payroll.Status` |
-
-## De xuat refactor sau nay
-- Recruitment nen tach ve `Draft`, `Pending`, `Approved`, `Rejected`, `Closed` neu can workflow duyet ro rang.
-- Guest/Candidate nen mo rong `New`, `Reviewing`, `Interview`, `Passed`, `Rejected` neu can pipeline tuyen dung.
-- Task nen doi `Waiting` thanh `NotStarted` neu muon ten status de hieu hon, nhung phai migrate DB va code.
-- Contract nen dung `Pending_Approval` dung voi DB, khong ghi `Pending` trong code/spec neu chua migrate.
-
-## Acceptance Criteria
-- [ ] Spec va code dung dung enum hien co trong `data.sql`.
-- [ ] UI co the hien thi tieng Viet, nhung gia tri ghi DB phai dung enum.
-- [ ] Neu them status moi, phai update `data.sql`, DAO, controller, JSP va spec.

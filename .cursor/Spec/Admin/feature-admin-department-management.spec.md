@@ -1,42 +1,32 @@
-# Tính năng: Quản lý phòng ban
-Trạng thái: Chưa hoàn thiện (Partial)
-Tác nhân: Admin
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `DepartmentController`, `DepartmentDAO`, `Admin/Departments.jsp`
+# Tính năng Admin: Quản lý phòng ban
 
-## Các Route
-- `GET /departments`
-- `GET /departments?action=departments`
-- `GET /departments?action=edit`
-- `GET /departments?action=permissions`
-- `POST /departments?action=department-save`
-- `POST /departments?action=department-delete`
-- `POST /departments?action=department-permissions-save`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng danh sách
-1. Admin truy cập `/departments`.
-2. Controller đọc dữ liệu tìm kiếm/bộ lọc/phân trang (search/filter/page).
-3. Truy vấn phòng ban (department) bằng `PreparedStatement`.
-4. Chuyển tiếp (forward) đến `Admin/Departments.jsp`.
+## Actor và phạm vi
+- Admin quản lý phòng ban và dữ liệu liên quan tới Dept Manager.
 
-## Luồng thêm/sửa/xóa
-1. Admin mở biểu mẫu (form) thêm mới hoặc chỉnh sửa (edit).
-2. Gửi (submit) hành động `department-save`.
-3. Controller xác thực (validate) và lưu dữ liệu.
-4. Xóa phòng ban bằng hành động `department-delete` nếu hợp lệ.
-5. Chuyển hướng (redirect) về `/departments?action=departments`.
+## Route, controller và JSP liên quan
+- `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Controller: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`.
+- JSP: `AdminHome.jsp`, `Users.jsp`, `RolePermissionManager.jsp` và các trang Admin liên quan.
 
 ## Hiện trạng code
-- Controller `/departments` đã có sẵn.
-- Có lỗi (bug) chuyển hướng trong phần lưu quyền hạn (save permissions) về `/department?action=departments` dạng số ít, trong khi tuyến đường (route) đúng phải là `/departments`.
-- Route `/departments` chưa được đưa vào `ModulePermissionFilter` hay `AdminAuthorizationFilter`.
+- `DepartmentController` mapping `/departments`.
+- Code hiện chưa có kiểm tra session/role/permission ngay trong controller.
+- `/departments` không nằm trong `ModulePermissionFilter`.
 
-## Tiêu chí nghiệm thu
-- [ ] Admin xem được danh sách phòng ban (department).
-- [ ] Thêm/sửa/xóa phòng ban chuyển hướng (redirect) về đúng `/departments?action=departments`.
-- [ ] Người dùng không phải Admin không truy cập được vào `/departments`.
+## Quy tắc nghiệp vụ chuẩn
+- Chỉ Admin hoặc role được cấp quyền quản lý phòng ban mới được truy cập.
+- Không xóa phòng ban đang có employee/task nếu chưa có chính sách xử lý.
+- Dữ liệu phòng ban phải giữ toàn vẹn khóa ngoại.
 
-## Các phần việc còn thiếu
-- [ ] Thêm `/departments` vào bộ lọc bảo vệ (filter).
-- [ ] Sửa chuyển hướng dạng số ít `/department` thành `/departments`.
-- [ ] Thêm nhật ký hoạt động (audit log) cho các thay đổi liên quan đến phòng ban.
+## Code còn lệch spec hoặc cần bổ sung
+- Bắt buộc bổ sung filter hoặc kiểm tra quyền trong `DepartmentController`.
+- Cần thêm audit cho tạo/sửa/xóa department.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

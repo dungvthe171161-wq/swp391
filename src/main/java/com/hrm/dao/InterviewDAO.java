@@ -13,6 +13,22 @@ import java.util.List;
 
 public class InterviewDAO {
 
+    public Interview findById(int interviewId) {
+        String sql = "SELECT * FROM Interview WHERE InterviewID = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, interviewId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapInterview(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public List<Interview> findByApplicationId(int applicationId) {
         List<Interview> interviews = new ArrayList<>();
         String sql = """

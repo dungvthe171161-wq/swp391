@@ -1,41 +1,32 @@
-# Tính năng: Guest xem danh sách hồ sơ đã ứng tuyển
-Trạng thái: Cập nhật theo schema Application/CandidateProfile
-Tác nhân: Guest Candidate
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `GuestPortalController`, `ApplicationDAO`, `CandidateProfileDAO`, `RecruitmentDAO`, `InterviewDAO`, `OfferDAO`
+# Tính năng Guest: Xem hồ sơ đã ứng tuyển
 
-## Route mục tiêu
-- `GET /guest/applications`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Nguồn dữ liệu chính
-Danh sách hồ sơ đã ứng tuyển lấy từ `Application`:
-- `Application.GuestID -> Guest.GuestID`.
-- `Application.RecruitmentID -> Recruitment.RecruitmentID`.
-- `Application.CandidateProfileID -> CandidateProfile.CandidateProfileID`.
-- Lọc theo tài khoản đang đăng nhập: `Guest.UserID = session.systemUser.UserID`.
+## Actor và phạm vi
+- Guest xem danh sách application của chính mình.
 
-Không dùng `Guest.Status` hoặc `Guest.RecruitmentID` làm nguồn chính cho hồ sơ mới. Chỉ dùng fallback cho dữ liệu cũ nếu cần.
+## Route, controller và JSP liên quan
+- `/guest`, `/guest/dashboard`, `/guest/applications`, `/guest/profile`, `/guest/notification/read`, `/guest/offer/respond`.
+- `/RecruitmentController` cho trang tuyển dụng và nộp hồ sơ.
+- Controller: `GuestPortalController`, `RecruitmentController`; JSP: `Views/Guest/*`.
 
-## Trường hiển thị
-- Tên công việc.
-- Địa điểm.
-- Mức lương.
-- Ngày ứng tuyển.
-- Trạng thái application.
-- CV đã nộp, ưu tiên `Application.CV`, fallback `CandidateProfile.CVFilePath`.
+## Hiện trạng code
+- `/guest/applications` dùng `ApplicationDAO.findByUserId`.
+- Danh sách có interview sắp tới và offer pending từ DAO liên quan.
+- Offer response thực hiện POST `/guest/offer/respond`.
 
-## Tiến trình hồ sơ
-- `Applied` -> Đã nộp hồ sơ.
-- `Screening` -> Đang sàng lọc.
-- `Interview` -> Phỏng vấn.
-- `Offered` -> Thư mời nhận việc.
-- `Hired` -> Nhận việc thành công.
-- `Rejected` -> Từ chối.
-- `Withdrawn` -> Đã rút hồ sơ.
+## Quy tắc nghiệp vụ chuẩn
+- Chỉ xem application theo user hiện tại.
+- Status hiển thị phải dùng enum database hiện có.
+- Action offer chỉ hiện khi offer thuộc user hiện tại và còn hợp lệ.
 
-## Acceptance Criteria
-- [ ] Guest đã đăng nhập xem được danh sách application của mình.
-- [ ] Guest không xem được application của người khác.
-- [ ] Danh sách lấy dữ liệu chính từ `Application`.
-- [ ] Thông tin ứng viên/CV join từ `CandidateProfile` khi cần.
-- [ ] Empty state thân thiện khi chưa ứng tuyển job nào.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test nhiều application cùng Guest.
+- Cần xử lý trạng thái offer accepted không nhảy thẳng Hired nếu áp dụng thiết kế mới.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

@@ -488,11 +488,17 @@
                                 List<Guest> guests = (List<Guest>) request.getAttribute("guests");
                                 if (guests != null && !guests.isEmpty()) {
                                     for (Guest guest : guests) {
+                                        String guestDob = guest.getDateOfBirth() != null ? guest.getDateOfBirth().toString() : "";
+                                        String guestGender = guest.getGender() != null ? guest.getGender() : "";
+                                        String guestAddress = guest.getAddress() != null ? guest.getAddress().replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;") : "";
                             %>
                                 <div class="guest-item" data-guest-id="<%= guest.getGuestId() %>" 
                                      data-guest-name="<%= guest.getFullName() %>"
                                      data-guest-email="<%= guest.getEmail() %>"
-                                     data-guest-phone="<%= guest.getPhone() %>">
+                                     data-guest-phone="<%= guest.getPhone() %>"
+                                     data-guest-gender="<%= guestGender %>"
+                                     data-guest-dob="<%= guestDob %>"
+                                     data-guest-address="<%= guestAddress %>">
                                     <div class="guest-info">
                                         <div class="guest-name"><%= guest.getFullName() %></div>
                                         <div class="guest-details">
@@ -523,21 +529,18 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="fullName">Họ và tên <span class="required">*</span></label>
-                                <input type="text" id="fullName" name="fullName" required readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <input type="text" id="fullName" name="fullName" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="email">Email <span class="required">*</span></label>
-                                <input type="email" id="email" name="email" required readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <input type="email" id="email" name="email" required>
                             </div>
                             <div class="form-group">
                                 <label for="phone">Số điện thoại</label>
-                                <input type="tel" id="phone" name="phone" readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <input type="tel" id="phone" name="phone">
                             </div>
                         </div>
                         
@@ -545,7 +548,6 @@
                             <div class="form-group">
                                 <label for="gender">Giới tính</label>
                                 <select id="gender" name="gender" required>
-                                    <option value="">Chọn giới tính</option>
                                     <option value="Male">Nam</option>
                                     <option value="Female">Nữ</option>
                                     <option value="Other">Khác</option>
@@ -573,7 +575,6 @@
                             <div class="form-group">
                                 <label for="departmentId">Phòng ban <span class="required">*</span></label>
                                 <select id="departmentId" name="departmentId" required>
-                                    <option value="">Chọn phòng ban</option>
                                     <% 
                                         List<Department> departments = (List<Department>) request.getAttribute("departments");
                                         if (departments != null) {
@@ -589,7 +590,6 @@
                             <div class="form-group">
                                 <label for="position">Vị trí <span class="required">*</span></label>
                                 <select id="position" name="position" required disabled>
-                                    <option value="">Vui lòng chọn phòng ban trước</option>
                                 </select>
                             </div>
                         </div>
@@ -600,7 +600,7 @@
                                 <input type="date" id="hireDate" name="hireDate" required>
                             </div>
                             <div class="form-group">
-                                <label for="endDate">Ngày kết thúc</label>
+                                <label for="endDate">Ngày kết thúc thử việc</label>
                                 <input type="date" id="endDate" name="endDate">
                             </div>
                         </div>
@@ -609,31 +609,13 @@
                             <div class="form-group">
                                 <label for="status">Trạng thái làm việc <span class="required">*</span></label>
                                 <select id="status" name="status" required>
-                                    <option value="">Chọn trạng thái</option>
                                     <option value="Active">Chính thức</option>
                                     <option value="Intern">Thực tập</option>
-                                    <option value="Probation">Thử việc</option>
+                                    <option value="Probation" selected>Thử việc</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- System Account Section -->
-                    <div class="form-section">
-                        <h3 class="section-title">4. Tài khoản hệ thống</h3>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="username">Username <span class="required">*</span></label>
-                                <input type="text" id="username" name="username" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="password">Password <span class="required">*</span></label>
-                                <input type="password" id="password" name="password" required>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Form Actions -->
                     <div class="form-actions">
                        
@@ -690,6 +672,9 @@
                 const fullNameInput = document.getElementById('fullName');
                 const emailInput = document.getElementById('email');
                 const phoneInput = document.getElementById('phone');
+                const genderInput = document.getElementById('gender');
+                const dobInput = document.getElementById('dob');
+                const addressInput = document.getElementById('address');
                 const createEmployeeBtn = document.getElementById('createEmployeeBtn');
                 const departmentSelect = document.getElementById('departmentId');
                 const positionSelect = document.getElementById('position');
@@ -742,15 +727,19 @@
                         // Set hidden input value
                         selectedGuestIdInput.value = this.dataset.guestId;
                         
-                        // Pre-fill form with guest data (keep readonly)
+                        // Pre-fill form with candidate data
                         fullNameInput.value = this.dataset.guestName;
                         emailInput.value = this.dataset.guestEmail;
-                        phoneInput.value = this.dataset.guestPhone;
-                        
-                        // Ensure fields remain readonly
-                        fullNameInput.setAttribute('readonly', 'readonly');
-                        emailInput.setAttribute('readonly', 'readonly');
-                        phoneInput.setAttribute('readonly', 'readonly');
+                        phoneInput.value = this.dataset.guestPhone || '';
+                        if (genderInput && this.dataset.guestGender) {
+                            genderInput.value = this.dataset.guestGender;
+                        }
+                        if (dobInput) {
+                            dobInput.value = this.dataset.guestDob || '';
+                        }
+                        if (addressInput) {
+                            addressInput.value = this.dataset.guestAddress || '';
+                        }
                         
                         // Enable create button
                         createEmployeeBtn.disabled = false;
@@ -793,9 +782,21 @@
                     form.classList.add('loading');
                 });
                 
-                // Set default hire date to today
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('hireDate').value = today;
+                // Set default probation period to 7 days from hire date.
+                const toDateValue = (date) => date.toISOString().split('T')[0];
+                const addDays = (value, days) => {
+                    const date = new Date(value);
+                    date.setDate(date.getDate() + days);
+                    return toDateValue(date);
+                };
+                const today = toDateValue(new Date());
+                hireDateInput.value = today;
+                endDateInput.value = addDays(today, 7);
+                hireDateInput.addEventListener('change', function() {
+                    if (this.value) {
+                        endDateInput.value = addDays(this.value, 7);
+                    }
+                });
             });
         </script>
     </body>

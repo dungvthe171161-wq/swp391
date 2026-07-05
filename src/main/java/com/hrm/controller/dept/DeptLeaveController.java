@@ -2,6 +2,8 @@ package com.hrm.controller.dept;
 
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.MailRequestDAO;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.DeptManagerScope;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,12 +12,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Map;
 
 @WebServlet(name = "DeptLeaveController", urlPatterns = {"/dept/leaves"})
 public class DeptLeaveController extends HttpServlet {
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
     private final MailRequestDAO mailRequestDAO = new MailRequestDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -63,6 +68,7 @@ public class DeptLeaveController extends HttpServlet {
 
         int requestId = parseInt(request.getParameter("requestId"), -1);
         String decision = request.getParameter("decision");
+        Map<String, Object> leaveSummary = mailRequestDAO.getLeaveRequestSummaryById(requestId);
         boolean success = requestId > 0
                 && ("Approved".equals(decision) || "Rejected".equals(decision))
                 && mailRequestDAO.updateLeaveStatusByDepartment(
@@ -70,6 +76,20 @@ public class DeptLeaveController extends HttpServlet {
                         scope.getDepartmentId(),
                         decision,
                         scope.getApproverEmployeeId());
+
+        if (success && leaveSummary != null) {
+            Object employeeIdValue = leaveSummary.get("employeeId");
+            int employeeId = employeeIdValue instanceof Number ? ((Number) employeeIdValue).intValue() : 0;
+            Integer employeeUserId = notificationRecipientService.activeUserByEmployeeId(employeeId);
+            if (employeeUserId != null) {
+                notificationService.notifyLeaveDecisionForEmployee(
+                        employeeUserId,
+                        scope.getUser() != null ? scope.getUser().getUserId() : 0,
+                        requestId,
+                        decision
+                );
+            }
+        }
 
         HttpSession session = request.getSession();
         session.setAttribute(success ? "deptLeaveSuccess" : "deptLeaveError",

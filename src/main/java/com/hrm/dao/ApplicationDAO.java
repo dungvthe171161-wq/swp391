@@ -1,6 +1,7 @@
 package com.hrm.dao;
 
 import com.hrm.model.entity.Application;
+import com.hrm.model.entity.CandidateProfile;
 import com.hrm.model.entity.Guest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,6 +71,21 @@ public class ApplicationDAO {
                    g.RecruitmentID AS g_RecruitmentID,
                    g.AppliedDate AS g_AppliedDate,
                    g.UpdatedDate AS g_UpdatedDate,
+                   cp.CandidateProfileID AS cp_CandidateProfileID,
+                   cp.GuestID AS cp_GuestID,
+                   cp.FullName AS cp_FullName,
+                   cp.Phone AS cp_Phone,
+                   cp.Email AS cp_Email,
+                   cp.DateOfBirth AS cp_DateOfBirth,
+                   cp.Address AS cp_Address,
+                   cp.DesiredPosition AS cp_DesiredPosition,
+                   cp.ExpectedSalary AS cp_ExpectedSalary,
+                   cp.WorkExperience AS cp_WorkExperience,
+                   cp.CVFilePath AS cp_CVFilePath,
+                   cp.EmailVerified AS cp_EmailVerified,
+                   cp.EmailVerifiedAt AS cp_EmailVerifiedAt,
+                   cp.CreatedDate AS cp_CreatedDate,
+                   cp.UpdatedDate AS cp_UpdatedDate,
                    r.JobTitle,
                    r.JobDescription,
                    r.Requirement,
@@ -80,6 +96,7 @@ public class ApplicationDAO {
             FROM `Application` a
             JOIN Guest g ON a.GuestID = g.GuestID
             JOIN Recruitment r ON a.RecruitmentID = r.RecruitmentID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
             JOIN SystemUser su ON su.UserID = ?
             WHERE (g.UserID = ? OR (g.UserID IS NULL AND g.Email = su.Email))
             ORDER BY a.AppliedDate DESC, a.ApplicationID DESC
@@ -97,6 +114,78 @@ public class ApplicationDAO {
             e.printStackTrace();
         }
         return applications;
+    }
+
+    public CandidateApplicationView findCandidateApplicationById(int applicationId) {
+        String sql = baseCandidateApplicationSql() + " WHERE a.ApplicationID = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, applicationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCandidateApplicationView(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<CandidateApplicationView> findCandidateApplicationsForHr(String searchName,
+                                                                         String status,
+                                                                         String startDate,
+                                                                         String endDate,
+                                                                         int page,
+                                                                         int pageSize) {
+        List<CandidateApplicationView> applications = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(baseCandidateApplicationSql());
+        appendCandidateApplicationFilters(sql, params, searchName, status, startDate, endDate);
+        sql.append(" ORDER BY a.AppliedDate DESC, a.ApplicationID DESC LIMIT ? OFFSET ?");
+        params.add(Math.max(1, pageSize));
+        params.add(Math.max(0, (Math.max(1, page) - 1) * pageSize));
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    applications.add(mapCandidateApplicationView(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return applications;
+    }
+
+    public int countCandidateApplicationsForHr(String searchName,
+                                               String status,
+                                               String startDate,
+                                               String endDate) {
+        List<Object> params = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(*)
+            FROM `Application` a
+            JOIN Guest g ON a.GuestID = g.GuestID
+            JOIN Recruitment r ON a.RecruitmentID = r.RecruitmentID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
+        """);
+        appendCandidateApplicationFilters(sql, params, searchName, status, startDate, endDate);
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     public boolean existsByGuestAndRecruitment(int guestId, int recruitmentId) {
@@ -266,6 +355,7 @@ public class ApplicationDAO {
         CandidateApplicationView view = new CandidateApplicationView();
         view.setApplication(mapApplication(rs));
         view.setGuest(mapGuestWithPrefix(rs));
+        view.setCandidateProfile(mapCandidateProfileWithPrefix(rs));
         view.setJobTitle(rs.getString("JobTitle"));
         view.setJobDescription(rs.getString("JobDescription"));
         view.setRequirement(rs.getString("Requirement"));
@@ -274,6 +364,107 @@ public class ApplicationDAO {
         view.setRecruitmentStatus(rs.getString("RecruitmentStatus"));
         view.setPostedDate(getLocalDateTime(rs, "PostedDate"));
         return view;
+    }
+
+    private String baseCandidateApplicationSql() {
+        return """
+            SELECT a.*,
+                   g.GuestID AS g_GuestID,
+                   g.UserID AS g_UserID,
+                   g.FullName AS g_FullName,
+                   g.Email AS g_Email,
+                   g.Phone AS g_Phone,
+                   g.CV AS g_CV,
+                   g.Avatar AS g_Avatar,
+                   g.Gender AS g_Gender,
+                   g.DateOfBirth AS g_DateOfBirth,
+                   g.Address AS g_Address,
+                   g.Status AS g_Status,
+                   g.RecruitmentID AS g_RecruitmentID,
+                   g.AppliedDate AS g_AppliedDate,
+                   g.UpdatedDate AS g_UpdatedDate,
+                   cp.CandidateProfileID AS cp_CandidateProfileID,
+                   cp.GuestID AS cp_GuestID,
+                   cp.FullName AS cp_FullName,
+                   cp.Phone AS cp_Phone,
+                   cp.Email AS cp_Email,
+                   cp.DateOfBirth AS cp_DateOfBirth,
+                   cp.Address AS cp_Address,
+                   cp.DesiredPosition AS cp_DesiredPosition,
+                   cp.ExpectedSalary AS cp_ExpectedSalary,
+                   cp.WorkExperience AS cp_WorkExperience,
+                   cp.CVFilePath AS cp_CVFilePath,
+                   cp.EmailVerified AS cp_EmailVerified,
+                   cp.EmailVerifiedAt AS cp_EmailVerifiedAt,
+                   cp.CreatedDate AS cp_CreatedDate,
+                   cp.UpdatedDate AS cp_UpdatedDate,
+                   r.JobTitle,
+                   r.JobDescription,
+                   r.Requirement,
+                   r.Location,
+                   r.Salary,
+                   r.Status AS RecruitmentStatus,
+                   r.PostedDate
+            FROM `Application` a
+            JOIN Guest g ON a.GuestID = g.GuestID
+            JOIN Recruitment r ON a.RecruitmentID = r.RecruitmentID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
+        """;
+    }
+
+    private void appendCandidateApplicationFilters(StringBuilder sql,
+                                                   List<Object> params,
+                                                   String searchName,
+                                                   String status,
+                                                   String startDate,
+                                                   String endDate) {
+        sql.append(" WHERE 1=1");
+        if (searchName != null && !searchName.trim().isEmpty()) {
+            sql.append("""
+                AND (
+                    COALESCE(cp.FullName, g.FullName) LIKE ?
+                    OR COALESCE(cp.Email, g.Email) LIKE ?
+                    OR COALESCE(cp.Phone, g.Phone) LIKE ?
+                    OR r.JobTitle LIKE ?
+                )
+            """);
+            String search = "%" + searchName.trim() + "%";
+            params.add(search);
+            params.add(search);
+            params.add(search);
+            params.add(search);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND a.Status = ?");
+            params.add(normalizeApplicationStatus(status));
+        }
+        if (startDate != null && !startDate.trim().isEmpty()) {
+            sql.append(" AND DATE(a.AppliedDate) >= ?");
+            params.add(startDate.trim());
+        }
+        if (endDate != null && !endDate.trim().isEmpty()) {
+            sql.append(" AND DATE(a.AppliedDate) <= ?");
+            params.add(endDate.trim());
+        }
+    }
+
+    private String normalizeApplicationStatus(String status) {
+        return switch (status.trim().toLowerCase()) {
+            case "processing", "applied" -> "Applied";
+            case "screening" -> "Screening";
+            case "interview" -> "Interview";
+            case "offered" -> "Offered";
+            case "hired" -> "Hired";
+            case "rejected" -> "Rejected";
+            case "withdrawn" -> "Withdrawn";
+            default -> status.trim();
+        };
+    }
+
+    private void bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            ps.setObject(i + 1, params.get(i));
+        }
     }
 
     private Guest mapGuestWithPrefix(ResultSet rs) throws SQLException {
@@ -296,6 +487,31 @@ public class ApplicationDAO {
         return guest;
     }
 
+    private CandidateProfile mapCandidateProfileWithPrefix(ResultSet rs) throws SQLException {
+        int candidateProfileId = rs.getInt("cp_CandidateProfileID");
+        if (rs.wasNull()) {
+            return null;
+        }
+        CandidateProfile profile = new CandidateProfile();
+        profile.setCandidateProfileId(candidateProfileId);
+        profile.setGuestId(rs.getInt("cp_GuestID"));
+        profile.setFullName(rs.getString("cp_FullName"));
+        profile.setPhone(rs.getString("cp_Phone"));
+        profile.setEmail(rs.getString("cp_Email"));
+        java.sql.Date birthDate = rs.getDate("cp_DateOfBirth");
+        profile.setDateOfBirth(birthDate != null ? birthDate.toLocalDate() : null);
+        profile.setAddress(rs.getString("cp_Address"));
+        profile.setDesiredPosition(rs.getString("cp_DesiredPosition"));
+        profile.setExpectedSalary(rs.getBigDecimal("cp_ExpectedSalary"));
+        profile.setWorkExperience(rs.getString("cp_WorkExperience"));
+        profile.setCvFilePath(rs.getString("cp_CVFilePath"));
+        profile.setEmailVerified(rs.getBoolean("cp_EmailVerified"));
+        profile.setEmailVerifiedAt(getLocalDateTime(rs, "cp_EmailVerifiedAt"));
+        profile.setCreatedDate(getLocalDateTime(rs, "cp_CreatedDate"));
+        profile.setUpdatedDate(getLocalDateTime(rs, "cp_UpdatedDate"));
+        return profile;
+    }
+
     private java.time.LocalDateTime getLocalDateTime(ResultSet rs, String column) throws SQLException {
         Timestamp value = rs.getTimestamp(column);
         return value != null ? value.toLocalDateTime() : null;
@@ -304,6 +520,7 @@ public class ApplicationDAO {
     public static class CandidateApplicationView {
         private Application application;
         private Guest guest;
+        private CandidateProfile candidateProfile;
         private String jobTitle;
         private String jobDescription;
         private String requirement;
@@ -326,6 +543,14 @@ public class ApplicationDAO {
 
         public void setGuest(Guest guest) {
             this.guest = guest;
+        }
+
+        public CandidateProfile getCandidateProfile() {
+            return candidateProfile;
+        }
+
+        public void setCandidateProfile(CandidateProfile candidateProfile) {
+            this.candidateProfile = candidateProfile;
         }
 
         public String getJobTitle() {

@@ -209,10 +209,16 @@
 
             .hero h2 {
                 margin:0 0 6px 0;
+                color:#fff !important;
+                font-size:30px;
+                font-weight:800;
+                letter-spacing:-0.02em;
+                text-shadow:0 2px 10px rgba(0,0,0,0.18);
             }
 
             .hero .muted {
-                color: rgba(255,255,255,0.9);
+                color: rgba(255,255,255,0.94) !important;
+                font-weight:600;
             }
 
             .card {
@@ -637,7 +643,7 @@
                 background-color: #f8f9fa;
             }
         </style>
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260627-1">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260630-1">
     </head>
     <body class="hr-staff-page-shell">
         <%

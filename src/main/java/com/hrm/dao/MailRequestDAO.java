@@ -13,22 +13,33 @@ public class MailRequestDAO {
     private static final int DEFAULT_PAID_LEAVE_SESSIONS = 24;
 
     public boolean insert(MailRequest r) {
+        return insertAndReturnId(r) > 0;
+    }
+
+    public int insertAndReturnId(MailRequest r) {
         String sql = """
             INSERT INTO MailRequest (EmployeeID, RequestType, LeaveType, StartDate, EndDate, Reason, Status)
             VALUES (?, ?, ?, ?, ?, ?, 'Pending')
         """;
-        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, r.getEmployeeId());
             ps.setString(2, r.getRequestType());
             ps.setString(3, r.getLeaveType());
             ps.setObject(4, r.getStartDate());
             ps.setObject(5, r.getEndDate());
             ps.setString(6, r.getReason());
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        return keys.getInt(1);
+                    }
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        return 0;
     }
 
     public boolean updateStatus(int requestId, String status, int approverId) {
@@ -36,6 +47,100 @@ public class MailRequestDAO {
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, status);
             ps.setInt(2, approverId);
+            ps.setInt(3, requestId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<Map<String, Object>> getAllRequests(String status) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+            SELECT mr.RequestID, mr.EmployeeID, e.FullName, e.Email,
+                   d.DeptName AS DepartmentName, mr.RequestType, mr.LeaveType,
+                   mr.StartDate, mr.EndDate, mr.Reason, mr.Status, mr.ApprovedBy
+            FROM MailRequest mr
+            JOIN Employee e ON e.EmployeeID = mr.EmployeeID
+            LEFT JOIN Department d ON d.DepartmentID = e.DepartmentID
+            WHERE 1 = 1
+        """);
+        List<Object> params = new ArrayList<>();
+        if (status != null && !status.isBlank() && !"All".equalsIgnoreCase(status)) {
+            sql.append(" AND mr.Status = ?");
+            params.add(status);
+        }
+        sql.append(" ORDER BY mr.RequestID DESC");
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("requestId", rs.getInt("RequestID"));
+                    row.put("employeeId", rs.getInt("EmployeeID"));
+                    row.put("employeeName", rs.getString("FullName"));
+                    row.put("employeeEmail", rs.getString("Email"));
+                    row.put("departmentName", rs.getString("DepartmentName"));
+                    row.put("requestType", rs.getString("RequestType"));
+                    row.put("leaveType", rs.getString("LeaveType"));
+                    row.put("startDate", rs.getDate("StartDate"));
+                    row.put("endDate", rs.getDate("EndDate"));
+                    row.put("reason", rs.getString("Reason"));
+                    row.put("status", rs.getString("Status"));
+                    row.put("approvedBy", rs.getObject("ApprovedBy"));
+                    list.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int countRequestsByStatus(String status) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS Total FROM MailRequest WHERE 1 = 1");
+        List<Object> params = new ArrayList<>();
+        if (status != null && !status.isBlank() && !"All".equalsIgnoreCase(status)) {
+            sql.append(" AND Status = ?");
+            params.add(status);
+        }
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("Total");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public boolean updateRequestStatus(int requestId, String status, Integer approverId) {
+        if (!List.of("Approved", "Rejected").contains(status)) {
+            return false;
+        }
+        String sql = """
+            UPDATE MailRequest
+            SET Status = ?, ApprovedBy = ?
+            WHERE RequestID = ? AND Status = 'Pending'
+        """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            if (approverId == null) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, approverId);
+            }
             ps.setInt(3, requestId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -321,6 +426,39 @@ public class MailRequestDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public Map<String, Object> getLeaveRequestSummaryById(int requestId) {
+        if (requestId <= 0) {
+            return null;
+        }
+        String sql = """
+            SELECT mr.RequestID, mr.EmployeeID, e.FullName, e.DepartmentID,
+                   mr.StartDate, mr.EndDate, mr.Status
+            FROM MailRequest mr
+            JOIN Employee e ON e.EmployeeID = mr.EmployeeID
+            WHERE mr.RequestID = ? AND mr.RequestType = 'Leave'
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("requestId", rs.getInt("RequestID"));
+                    row.put("employeeId", rs.getInt("EmployeeID"));
+                    row.put("employeeName", rs.getString("FullName"));
+                    row.put("departmentId", rs.getInt("DepartmentID"));
+                    row.put("startDate", rs.getDate("StartDate"));
+                    row.put("endDate", rs.getDate("EndDate"));
+                    row.put("status", rs.getString("Status"));
+                    return row;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public boolean updateLeaveStatusByDepartment(int requestId, int departmentId, String status, int approverId) {

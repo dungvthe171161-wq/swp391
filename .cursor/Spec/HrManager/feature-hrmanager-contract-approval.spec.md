@@ -1,32 +1,32 @@
-# Feature: HR Manager duyet hop dong
-Status: Partial
-Actor: HR Manager
-Priority: High
-Related Code: `ApproveRejectContractController`, `ContractDAO`, `Views/hr/ApproveRejectContract.jsp`
+# Tính năng HR Manager: Phê duyệt hợp đồng
 
-## Route
-- `GET /hr/approve-reject-contracts`
-- `POST /hr/approve-reject-contracts`
-- JSP: `/Views/hr/ApproveRejectContract.jsp`.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong chinh
-1. HR Manager vao `/hr/approve-reject-contracts`.
-2. `ApproveRejectContractController` kiem tra permission `VIEW_CONTRACTS`.
-3. Controller lay danh sach contract cho duyet.
-4. HR Manager approve hoac reject.
-5. Controller cap nhat status contract.
-6. Redirect ve danh sach kem thong bao.
+## Actor và phạm vi
+- HR Manager duyệt hoặc từ chối hợp đồng do HR Staff tạo.
 
-## UI contract
-- JSP phai theo BetterHR theme va hien thi tieng Viet.
-- Link tu HR Home vao `/hr/approve-reject-contracts`.
-- Gia tri status gui backend giu dung theo code/data hien tai.
+## Route, controller và JSP liên quan
+- `/HrHomeController`, `/viewRecruitment`, `/viewCV`, `/hr/employee-list`, `/hr/create-employee`.
+- `/hr/approve-reject-contracts`, `/hr/payroll-approval`, `/hr/leaves` và các route `/hr/*`.
+- Controller: `HrHomeController`, `ViewRecruitment`, `ViewCV`, `EmployeeListController`, `CreateEmployeeController`, `ApproveRejectContractController`, `PayrollApprovalController`.
 
-## Acceptance Criteria
-- [ ] Chi HR Manager co quyen moi duyet hop dong.
-- [ ] Reject phai co ly do neu business rule yeu cau.
-- [ ] Khong duyet contract khong ton tai.
+## Hiện trạng code
+- `ApproveRejectContractController` mapping `/hr/approve-reject-contracts`.
+- Permission hiện dùng `VIEW_CONTRACTS`.
+- Contract enum có `Pending_Approval`, `Approved`, `Rejected`, `Active`, `Expired`.
 
-## Missing Work
-- [ ] Xem lai permission `VIEW_CONTRACTS` co du cho approve/reject hay can them `APPROVE_CONTRACTS`.
-- [ ] Them audit log approve/reject.
+## Quy tắc nghiệp vụ chuẩn
+- Duyệt hợp đồng cần permission phê duyệt riêng nếu phân quyền chi tiết.
+- Reject phải có lý do nếu nghiệp vụ yêu cầu.
+- Thay đổi trạng thái phải audit và notification cho HR Staff/Employee nếu cần.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Tách `APPROVE_CONTRACT` khỏi quyền xem.
+- Cần test trạng thái hợp đồng không thể duyệt.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

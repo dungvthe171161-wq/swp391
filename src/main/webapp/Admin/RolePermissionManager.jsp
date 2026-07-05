@@ -8,12 +8,17 @@
                 <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"><title>Phân quyền</title>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <title>Phân quyền</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/Admin/css/Admin_home.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/Admin/css/user-menu.css">
         <style>
             body {
                 background: #f4f6fb;
+            }
+            body.role-permission-page .top-bar-actions > button.icon-button:first-of-type {
+                display: none;
             }
             .permission-wrapper {
                 min-height: 100vh;
@@ -386,6 +391,7 @@
                         <input class="search-input" type="text" placeholder="Tìm kiếm...">
                     </div>
                     <div class="top-bar-actions">
+                        <%@ include file="../Views/_NotificationBell.jspf" %>
                         <button class="icon-button" type="button" aria-label="Thông báo">
                             <span class="material-symbols-outlined">notifications</span>
                         </button>

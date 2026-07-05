@@ -1,49 +1,56 @@
-# Đặc tả Module: Quản trị hệ thống (System Administration)
-Trạng thái: Đã phê duyệt
-Tác nhân: Admin
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`, `AdminAuthorizationFilter`, `ModulePermissionFilter`
+# Đặc tả module: Quản trị hệ thống
 
-## Phạm vi
-Admin quản lý nền tảng hệ thống gồm bảng điều khiển (dashboard), người dùng (user), vai trò (role), quyền hạn (permission), phòng ban (department), nhật ký hệ thống (audit log) và thông tin cá nhân (profile) của Admin.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Các tập tin đặc tả tính năng (Feature files)
-- `feature-admin-dashboard.spec.md`
-- `feature-admin-user-management.spec.md`
-- `feature-admin-role-management.spec.md`
-- `feature-admin-role-permission.spec.md`
-- `feature-admin-department-management.spec.md`
-- `feature-admin-audit-profile.spec.md`
+## Actor và phạm vi
+- Admin quản trị toàn bộ cấu hình hệ thống, user, role, permission và phòng ban.
 
-## Nguyên tắc truy cập
-- Admin bắt buộc phải có thông tin phiên đăng nhập `systemUser` trong session.
-- Các tuyến đường (route) `/admin` và `/admin/*` đang được bảo vệ bởi bộ lọc quyền `ModulePermissionFilter`.
-- Route `/admin` đang được bảo vệ bổ sung bởi `AdminAuthorizationFilter`.
-- Route `/departments` hiện tại được xử lý bởi `DepartmentController`, nhưng chưa được đưa vào `ModulePermissionFilter` và `AdminAuthorizationFilter`; đặc tả này đánh dấu đây là phần việc còn thiếu (missing work) cần được khắc phục.
+## Route, controller và JSP liên quan
+- `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Controller: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`.
+- JSP: `AdminHome.jsp`, `Users.jsp`, `RolePermissionManager.jsp` và các trang Admin liên quan.
 
-## Vai trò và quyền hạn (Role & Permission) liên quan
-- `MANAGE_SYSTEM`: cho phép truy cập bảng điều khiển quản trị (admin dashboard).
-- `VIEW_USERS`: cho phép quản lý người dùng (user).
-- `VIEW_ROLES`: cho phép quản lý vai trò (role).
-- `MANAGE_ROLE_PERMISSIONS`: cho phép quản lý và gán quyền hạn cho vai trò (role permission).
+## Hiện trạng code
+- Admin dashboard đi qua `/admin?action=dashboard`.
+- User management có API tạo/sửa/xóa/khóa/reset password.
+- Role và role-permission dùng permission động.
+- `/departments` đang thiếu bảo vệ trong filter và controller.
 
-## Các điểm cần khớp với mã nguồn hiện tại
-- Mật khẩu của người dùng trong code được cập nhật thông qua hàm `DAO.changePassword`, không dùng mã hóa SHA-256 trực tiếp trong controller.
-- `DAO.changePassword` hiện tại đang ghi trực tiếp giá trị mật khẩu mới vào cột `SystemUser.PasswordHash` dưới dạng văn bản thuần (plain text) theo logic hiện tại của dự án; nếu sau này thay đổi thuật toán băm (hash) thì phải đồng thời cập nhật cả đặc tả và mã nguồn.
-- `RoleServlet` xử lý các đường dẫn dạng `/admin/role/*`.
-- `RolePermissionServlet` xử lý API tại `/admin/role-permissions/api`.
-- `UserController` xử lý đường dẫn `/admin/users`.
-- `DepartmentController` xử lý đường dẫn `/departments`.
+## Quy tắc nghiệp vụ chuẩn
+- Chỉ Admin có role và permission phù hợp mới được quản trị hệ thống.
+- Reset password không được lộ mật khẩu plain text trong response ở thiết kế chuẩn.
+- Quản lý role/permission phải có kiểm tra quyền riêng và audit.
 
-## Giao ước giao diện (UI contract)
-- Tất cả các trang quản trị phải áp dụng chủ đề BetterHR theo đặc tả giao diện chung tại `_Common/ui-language-theme.spec.md`.
-- Thanh bên (Sidebar) quản trị phải hiển thị rõ thương hiệu `BetterHR` cùng dòng chữ mô tả phụ bằng tiếng Việt (ví dụ: `Cổng quản trị`).
-- Menu đang hoạt động (active menu) phải được đánh dấu nổi bật rõ ràng, không bị mất màu nền hoặc mờ chữ.
-- Thanh công cụ phía trên (Topbar) chứa chức năng tìm kiếm, thông báo và thông tin cá nhân có thể thiết kế giao diện tĩnh (UI placeholder) nếu chưa có backend riêng, tránh việc tự bổ sung logic không cần thiết.
-- Toàn bộ nội dung chữ (text) hiển thị trong phân hệ Admin phải là tiếng Việt, ngoại trừ logo `BetterHR` và các thông số kỹ thuật đặc thù.
+## Ma trận route, quyền và dữ liệu cần bổ sung
+| Nhóm chức năng | Route/controller | Permission chuẩn cần có | Bảng dữ liệu chính | Ghi chú |
+|---|---|---|---|---|
+| Dashboard quản trị | `/admin`, `AdminController` | `MANAGE_SYSTEM` hoặc `VIEW_ADMIN_DASHBOARD` | Tổng hợp từ nhiều bảng | Không link thẳng JSP nếu cần nạp dữ liệu. |
+| Quản lý người dùng | `/admin/users`, `UserController` | `VIEW_USERS`, `CREATE_USER`, `UPDATE_USER`, `DELETE_USER`, `RESET_USER_PASSWORD` | `SystemUser`, `Role`, `Employee` | Action ghi dữ liệu không dùng chung quyền xem. |
+| Quản lý vai trò | `/admin/role/*`, `RoleServlet` | `VIEW_ROLES`, `CREATE_ROLE`, `UPDATE_ROLE`, `DELETE_ROLE` | `Role` | Không xóa role đang được user sử dụng nếu chưa có rule chuyển dữ liệu. |
+| Gán quyền vai trò | `/admin/role-permissions/api`, `RolePermissionServlet` | `MANAGE_ROLE_PERMISSIONS` | `Permission`, `RolePermission` | Phải có audit trước/sau khi thay đổi quyền. |
+| Quản lý phòng ban | `/departments`, `DepartmentController` | `VIEW_DEPARTMENTS`, `CREATE_DEPARTMENT`, `UPDATE_DEPARTMENT`, `DELETE_DEPARTMENT` | `Department`, `Employee` | Route hiện cần bổ sung filter và controller-level auth. |
 
-## Các phần việc còn thiếu cấp module
-- [ ] Đưa đường dẫn `/departments` vào trong bộ lọc bảo vệ quyền hạn của admin (permission filter).
-- [ ] Chuẩn hóa việc ghi nhật ký hoạt động (logging), loại bỏ toàn bộ các câu lệnh `System.out.println` và hàm `printStackTrace` trong các controller khi chạy môi trường production.
-- [ ] Chuẩn hóa mã lỗi và cấu trúc thông điệp lỗi JSON cho các API của Admin.
-- [ ] Bổ sung mã kiểm thử (test) cho bộ lọc quyền hạn (permission filter) và API quản lý quyền hạn của vai trò (role-permission).
+## Notification và audit bắt buộc
+- Tạo, sửa, khóa/mở khóa, xóa user phải ghi audit gồm `actorUserId`, `targetUserId`, action, dữ liệu trước/sau và thời điểm.
+- Reset password phải ghi audit nhưng không lưu mật khẩu tạm hoặc mật khẩu mới.
+- Thêm/xóa permission của role phải ghi audit theo từng permission thay đổi.
+- Tạo/sửa/xóa department phải ghi audit; nếu department có employee hoặc task liên quan thì phải ghi rõ lý do không cho xóa.
+- Notification cho Admin chỉ cần phát khi có lỗi hệ thống, thao tác bảo mật nhạy cảm hoặc yêu cầu duyệt/cảnh báo; không spam notification cho mọi thao tác CRUD thường.
+
+## Checklist nghiệm thu riêng cho Admin
+- User không phải Admin không truy cập được `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Admin thiếu permission cụ thể bị chặn đúng ở action tương ứng, đặc biệt là API JSON.
+- Reset password không trả mật khẩu plain text trong response sau khi code được hardening.
+- Thay đổi role-permission có audit và không làm mất quyền quản trị tối thiểu của Admin.
+- `/departments` được bảo vệ ở cả filter và controller, không chỉ ẩn link trên UI.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Bổ sung filter cho `/departments`.
+- Thay reset password trả mật khẩu tạm thời bằng token hoặc kênh an toàn.
+- Bổ sung audit cho thay đổi user, role, permission và department.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.

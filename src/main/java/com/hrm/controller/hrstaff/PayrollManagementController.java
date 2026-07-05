@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 
 /**
@@ -36,6 +39,8 @@ public class PayrollManagementController extends HttpServlet {
     private final DeductionTypeDAO deductionTypeDAO = new DeductionTypeDAO();
     private final EmployeeDeductionDAO employeeDeductionDAO = new EmployeeDeductionDAO();
     private final PayrollDAO payrollDAO = new PayrollDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
 
     @Override
@@ -145,6 +150,7 @@ public class PayrollManagementController extends HttpServlet {
                         boolean statusUpdated = payrollDAO.updateStatus(finalPayrollId, "Pending");
                         
                         if (statusUpdated) {
+                            notifyHrManagersAboutPayroll(request, finalPayrollId, payPeriod);
                             if ("Rejected".equals(previousStatus)) {
                                 request.setAttribute("success", "Gửi lại bảng lương để phê duyệt thành công!");
                             } else {
@@ -524,6 +530,7 @@ public class PayrollManagementController extends HttpServlet {
             boolean success = payrollDAO.updateStatus(payrollId, "Pending");
             
             if (success) {
+                notifyHrManagersAboutPayroll(request, payrollId, payroll.getPayPeriod());
                 String message = "Rejected".equals(payroll.getStatus()) 
                     ? "Gửi lại bảng lương để phê duyệt thành công!" 
                     : "Gửi bảng lương để phê duyệt thành công!";
@@ -591,6 +598,7 @@ public class PayrollManagementController extends HttpServlet {
                 
                 boolean success = payrollDAO.updateStatus(payrollId, "Pending");
                 if (success) {
+                    notifyHrManagersAboutPayroll(request, payrollId, payroll.getPayPeriod());
                     successCount++;
                 } else {
                     failCount++;
@@ -832,6 +840,23 @@ public class PayrollManagementController extends HttpServlet {
                 REQUIRED_PERMISSION,
                 "Khu vực này chỉ dành cho nhân viên nhân sự.",
                 permissionMessage);
+    }
+
+    private void notifyHrManagersAboutPayroll(HttpServletRequest request, int payrollId, String payPeriod) {
+        SystemUser currentUser = currentUser(request);
+        notificationService.notifyPayrollPendingForHrManagers(
+                notificationRecipientService.hrManagerUsers(),
+                currentUser != null ? currentUser.getUserId() : 0,
+                payrollId,
+                payPeriod
+        );
+    }
+
+    private SystemUser currentUser(HttpServletRequest request) {
+        Object value = request.getSession(false) != null
+                ? request.getSession(false).getAttribute("systemUser")
+                : null;
+        return value instanceof SystemUser ? (SystemUser) value : null;
     }
 
     private boolean ensureJsonAccess(HttpServletRequest request,

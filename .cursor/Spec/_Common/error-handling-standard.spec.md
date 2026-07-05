@@ -1,39 +1,33 @@
-# Cross-cutting Spec: Error Handling Standard
-Status: Approved
-Priority: High
-Related Code: All Controllers, `PermissionUtil`, `Views/Common/AccessDenied.jsp`
+# Đặc tả dùng chung: Chuẩn xử lý lỗi
 
-## Muc tieu
-Thong nhat cach tra loi loi cho HTML page va JSON API trong HRMS.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## HTML response
-| Truong hop | Xu ly |
-| --- | --- |
-| Chua dang nhap | Redirect `/login` hoac `/Views/Login.jsp` theo controller hien tai |
-| Khong du quyen | Forward `/Views/Common/AccessDenied.jsp` hoac redirect login theo filter |
-| Validation error | Forward lai JSP kem attribute loi |
-| Loi server | Hien thong bao than thien, khong lo stack trace |
+## Actor và phạm vi
+- Tất cả controller JSP và JSON API trong HRMS.
 
-## JSON response
-| Truong hop | HTTP status | Format de xuat |
-| --- | --- | --- |
-| Validation error | 400 | `{ "status": "error", "message": "...", "code": "VALIDATION_ERROR" }` |
-| Chua dang nhap | 401 | `{ "status": "error", "message": "Vui long dang nhap", "code": "UNAUTHORIZED" }` |
-| Thieu quyen | 403 | `{ "status": "error", "message": "...", "code": "FORBIDDEN" }` |
-| Khong tim thay | 404 | `{ "status": "error", "message": "...", "code": "NOT_FOUND" }` |
-| Loi server | 500 | `{ "status": "error", "message": "Co loi he thong", "code": "SERVER_ERROR" }` |
+## Route, controller và JSP liên quan
+- Controller servlet trả forward/redirect cho HTML và JSON cho API.
+- `PermissionUtil` có helper cho forbidden HTML và JSON.
+- Một số controller hiện vẫn dùng `printStackTrace` hoặc `System.out`.
 
-## Logging
-- Khong dung `System.out.println` hoac `printStackTrace` trong production.
-- Dung `java.util.logging.Logger` hoac logging framework thong nhat.
-- Log exception chi tiet o server, UI/API chi hien message an toan.
+## Hiện trạng code
+- HTML lỗi thường forward về JSP hoặc redirect kèm query string.
+- API admin, payroll và notification có nhánh JSON.
+- Validation form được xử lý rải rác trong controller.
 
-## Acceptance Criteria
-- [ ] API luon set `application/json` va `UTF-8`.
-- [ ] HTML loi khong hien stack trace.
-- [ ] Loi validation tra dung 400 voi API.
-- [ ] Loi permission tra dung 403 voi API.
+## Quy tắc nghiệp vụ chuẩn
+- Lỗi quyền trả 403 hoặc redirect login tùy loại request.
+- Lỗi validation phải giữ lại dữ liệu người dùng đã nhập nếu hợp lý.
+- Lỗi hệ thống phải log ở server, không lộ stack trace cho người dùng.
 
-## Missing Work
-- [ ] Chuan hoa cac controller con redirect/login JSP lan lon.
-- [ ] Thay cac `printStackTrace` bang logger.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần thay `printStackTrace` bằng logger.
+- Cần chuẩn hóa format JSON lỗi: `success`, `message`, `errors` nếu có.
+- Cần tách lỗi validation, lỗi quyền và lỗi hệ thống rõ hơn.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

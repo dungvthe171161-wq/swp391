@@ -2634,6 +2634,344 @@ body.hr-staff-page-shell .notification-dot {
     font-weight: 900 !important;
 }
 
+.topbar .notification-dot.is-zero {
+    background: #66736d !important;
+}
+
+body.hr-staff-page-shell .notification-menu {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown[hidden],
+.topbar .notification-dropdown[hidden],
+.topbar .notification-menu:not(.is-open) .notification-dropdown {
+    display: none !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown {
+    position: absolute !important;
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+    width: min(360px, calc(100vw - 32px)) !important;
+    max-height: 430px !important;
+    display: none !important;
+    overflow: hidden !important;
+    border: 1px solid var(--bh-border) !important;
+    border-radius: 12px !important;
+    background: var(--bh-card) !important;
+    color: var(--bh-text) !important;
+    box-shadow: 0 22px 48px rgba(30, 57, 50, 0.18) !important;
+    z-index: 30 !important;
+}
+
+body.hr-staff-page-shell .notification-menu.is-open .notification-dropdown {
+    display: block !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown-header {
+    min-height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-bottom: 1px solid var(--bh-border-soft) !important;
+    background: var(--bh-surface) !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown-header strong,
+body.hr-staff-page-shell .notification-item-copy strong {
+    display: block !important;
+    color: var(--bh-primary) !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    font-weight: 900 !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown-header span,
+body.hr-staff-page-shell .notification-item-copy span {
+    display: block !important;
+    margin-top: 3px !important;
+    color: var(--bh-muted) !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown-header form,
+body.hr-staff-page-shell .notification-item {
+    margin: 0 !important;
+}
+
+body.hr-staff-page-shell .notification-dropdown-header button {
+    min-height: 32px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    padding: 0 12px !important;
+    background: var(--bh-primary) !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+}
+
+body.hr-staff-page-shell .notification-list {
+    max-height: 360px !important;
+    overflow-y: auto !important;
+}
+
+body.hr-staff-page-shell .notification-item {
+    border-bottom: 1px solid var(--bh-border-soft) !important;
+}
+
+body.hr-staff-page-shell .notification-item:last-child {
+    border-bottom: 0 !important;
+}
+
+body.hr-staff-page-shell .notification-item button {
+    width: 100% !important;
+    min-height: 70px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    border: 0 !important;
+    padding: 12px 14px !important;
+    background: transparent !important;
+    color: inherit !important;
+    text-align: left !important;
+    cursor: pointer !important;
+}
+
+body.hr-staff-page-shell .notification-item.unread button {
+    background: rgba(0, 117, 74, 0.08) !important;
+}
+
+body.hr-staff-page-shell .notification-item button:hover {
+    background: rgba(0, 117, 74, 0.12) !important;
+}
+
+body.hr-staff-page-shell .notification-item-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 auto !important;
+    background: var(--bh-soft-green) !important;
+    color: var(--bh-primary) !important;
+    font-size: 13px !important;
+}
+
+body.hr-staff-page-shell .notification-item-copy {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+body.hr-staff-page-shell .notification-empty {
+    min-height: 110px !important;
+    display: grid !important;
+    place-items: center !important;
+    gap: 8px !important;
+    padding: 18px !important;
+    color: var(--bh-muted) !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+}
+
+body.hr-staff-page-shell .notification-empty i {
+    color: var(--bh-primary) !important;
+    font-size: 22px !important;
+}
+
+.topbar,
+.topbar-actions {
+    overflow: visible !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-menu {
+    position: relative !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 44px !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-trigger {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown {
+    position: fixed !important;
+    top: var(--notification-panel-top, 72px) !important;
+    left: var(--notification-panel-left, auto) !important;
+    right: auto !important;
+    width: min(320px, calc(100vw - 24px)) !important;
+    max-height: 430px !important;
+    display: none !important;
+    overflow: hidden !important;
+    border: 1px solid #d8ded6 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2d2a !important;
+    box-shadow: 0 22px 48px rgba(30, 57, 50, 0.2) !important;
+    transform: translateY(6px) !important;
+    z-index: 9999 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-menu.is-open .notification-dropdown {
+    display: block !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown-header {
+    min-height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-bottom: 1px solid #e8ece7 !important;
+    background: #f8faf7 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown-header strong {
+    display: block !important;
+    color: #00482f !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown-header span {
+    display: block !important;
+    margin-top: 3px !important;
+    color: #66736d !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    font-weight: 700 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown-header form,
+body.hr-staff-page-shell .topbar .notification-item {
+    margin: 0 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-dropdown-header button {
+    width: auto !important;
+    min-height: 30px !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    padding: 0 8px !important;
+    background: transparent !important;
+    color: #00754a !important;
+    box-shadow: none !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-list {
+    max-height: 360px !important;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item {
+    display: block !important;
+    border-bottom: 1px solid #edf1ec !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item:last-child {
+    border-bottom: 0 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item button {
+    width: 100% !important;
+    min-height: 72px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 12px 14px !important;
+    background: #ffffff !important;
+    color: #1f2d2a !important;
+    box-shadow: none !important;
+    text-align: left !important;
+    transform: none !important;
+    cursor: pointer !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item.unread button {
+    border-left: 3px solid #00754a !important;
+    background: #eef8f1 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item button:hover {
+    background: #e8f4ec !important;
+    transform: none !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 30px !important;
+    background: #dff4e9 !important;
+    color: #00754a !important;
+    font-size: 13px !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item-copy {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item-copy strong {
+    display: block !important;
+    color: #00482f !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    font-weight: 900 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-item-copy span {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #4f5d58 !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
+}
+
+body.hr-staff-page-shell .topbar .notification-empty {
+    min-height: 110px !important;
+    display: grid !important;
+    place-items: center !important;
+    gap: 8px !important;
+    padding: 18px !important;
+    color: #66736d !important;
+    background: #ffffff !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+}
+
+@media (max-width: 560px) {
+    body.hr-staff-page-shell .topbar .notification-dropdown {
+        width: min(330px, calc(100vw - 20px)) !important;
+    }
+}
+
 body.hr-staff-page-shell .avatar-chip {
     min-height: 46px !important;
     display: inline-flex !important;
@@ -2731,7 +3069,28 @@ body.hr-staff-page-shell .staff-content .hero {
 }
 
 body.hr-staff-page-shell .staff-content .hero .muted {
-    color: rgba(255, 255, 255, 0.78) !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    font-weight: 600 !important;
+}
+
+body.hr-staff-page-shell .staff-content .hero h1,
+body.hr-staff-page-shell .staff-content .hero h2,
+body.hr-staff-page-shell .staff-content .hero h3,
+body.hr-staff-page-shell .staff-content .hero p {
+    color: #fff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+body.hr-staff-page-shell .page-content .hero h1,
+body.hr-staff-page-shell .page-content .hero h2,
+body.hr-staff-page-shell .page-content .hero h3,
+body.hr-staff-page-shell .page-content .hero p {
+    color: #fff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+body.hr-staff-page-shell .page-content .hero .eyebrow {
+    color: #d8f7e7 !important;
 }
 
 body.hr-staff-page-shell .staff-content .card {
@@ -2748,10 +3107,20 @@ body.hr-staff-page-shell .staff-content .table-header {
 body.hr-staff-page-shell .staff-content h1,
 body.hr-staff-page-shell .staff-content h2,
 body.hr-staff-page-shell .staff-content h3,
-body.hr-staff-page-shell .staff-content .page-title,
-body.hr-staff-page-shell .staff-content .card-header h2 {
+body.hr-staff-page-shell .staff-content .page-title {
     color: var(--bh-primary) !important;
     letter-spacing: -0.02em;
+}
+
+body.hr-staff-page-shell .staff-content .card-header h1,
+body.hr-staff-page-shell .staff-content .card-header h2,
+body.hr-staff-page-shell .staff-content .card-header h3,
+body.hr-staff-page-shell .staff-content .card-header p,
+body.hr-staff-page-shell .staff-content .card-header .subtitle,
+body.hr-staff-page-shell .staff-content .card-header .muted,
+body.hr-staff-page-shell .staff-content .card-header i {
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
 body.hr-staff-page-shell .staff-content .muted,
@@ -2760,6 +3129,26 @@ body.hr-staff-page-shell .staff-content .filter-group label,
 body.hr-staff-page-shell .staff-content .filter-field label,
 body.hr-staff-page-shell .staff-content .help-text {
     color: var(--bh-muted) !important;
+}
+
+body.hr-staff-page-shell .staff-content .hero :is(h1, h2, h3, p),
+body.hr-staff-page-shell .page-content .hero :is(h1, h2, h3, p) {
+    color: #fff !important;
+    opacity: 1 !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+body.hr-staff-page-shell .staff-content .hero :is(p, .muted),
+body.hr-staff-page-shell .page-content .hero :is(p, .muted) {
+    color: rgba(255, 255, 255, 0.94) !important;
+    opacity: 1 !important;
+    font-weight: 700 !important;
+}
+
+body.hr-staff-page-shell .staff-content .card-header :is(h1, h2, h3, p, .subtitle, .muted, i) {
+    color: #fff !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
 body.hr-staff-page-shell .staff-content input,

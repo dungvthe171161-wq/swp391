@@ -11,6 +11,8 @@ import com.hrm.model.entity.Guest;
 import com.hrm.model.entity.Notification;
 import com.hrm.model.entity.Recruitment;
 import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -31,6 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -58,6 +61,8 @@ public class RecruitmentController extends HttpServlet {
     private final transient CandidateProfileDAO candidateProfileDAO = new CandidateProfileDAO();
     private final transient ApplicationDAO applicationDAO = new ApplicationDAO();
     private final transient NotificationDAO notificationDAO = new NotificationDAO();
+    private final transient NotificationService notificationService = new NotificationService();
+    private final transient NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -356,6 +361,15 @@ public class RecruitmentController extends HttpServlet {
         notification.setType("Application");
         notification.setRead(false);
         notificationDAO.create(notification);
+
+        List<Integer> hrStaffUserIds = notificationRecipientService.hrStaffUsers();
+        notificationService.notifyNewApplicationForHrStaff(
+                hrStaffUserIds,
+                currentUser.getUserId(),
+                applicationId,
+                firstNonBlank(profile.getFullName(), currentUser.getUsername(), "Ung vien"),
+                firstNonBlank(recruitment.getTitle(), "dang tuyen")
+        );
 
         response.sendRedirect(request.getContextPath() + "/Views/Success.jsp");
     }

@@ -12,6 +12,7 @@
 <div class="employee-shell">
     <%@ include file="_EmployeeSidebar.jspf" %>
     <main class="employee-main">
+        <%@ include file="_EmployeeTopbar.jspf" %>
         <div class="content">
             <h1 class="page-title">&#272;&#417;n ngh&#7881; ph&#233;p</h1>
             <p class="page-note">&#272;&#417;n &#273;&#432;&#7907;c l&#432;u v&#224;o b&#7843;ng MailRequest &#273;&#7875; tr&#432;&#7903;ng ph&#242;ng duy&#7879;t v&#224; payroll t&#237;nh ng&#224;y ngh&#7881;.</p>

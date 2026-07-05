@@ -529,6 +529,7 @@
                         <h1>Duyệt hợp đồng</h1>
                     </div>
                     <div class="header-actions">
+                        <%@ include file="../_NotificationBell.jspf" %>
                         <a href="${pageContext.request.contextPath}/HrHomeController" class="btn-homepage">
                             <i class="fas fa-arrow-left"></i>
                             <span>Quay lại HR Home</span>

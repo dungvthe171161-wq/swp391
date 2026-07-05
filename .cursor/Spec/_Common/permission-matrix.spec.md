@@ -1,67 +1,35 @@
-# Cross-cutting Spec: Permission Matrix
-Status: Approved
-Priority: High
-Related Code: `RoleAuthorizationFilter`, `ModulePermissionFilter`, `AdminAuthorizationFilter`, `PermissionUtil`
+# Đặc tả dùng chung: Ma trận phân quyền
 
-## Muc tieu
-Chuan hoa bang phan quyen cho toan bo HRMS de moi actor chi truy cap dung route va permission cua minh.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Role hien co theo code
-| Role ID | Actor | Khu vuc chinh |
-| --- | --- | --- |
-| 1 | Admin | `/admin`, `/admin/*`, `/departments`, `/Admin/*` |
-| 2 | HR Manager | `/HrHomeController`, `/hr/*`, `/Views/hr/*`, `/viewRecruitment`, `/viewCV`, `/detailWaitingRecruitment` |
-| 3 | Dept Manager | `/dept`, `/taskManager`, `/postTask`, `/viewTask` |
-| 4 | HR Staff | `/hrstaff`, `/Views/HrStaff/*`, `/postRecruitments`, `/candidates`, `/viewCV`, payroll, contracts |
-| 5 | Employee | `/Views/Employee/*`, `/employee/*`, employee home/profile/payroll/contract/leave |
+## Actor và phạm vi
+- Tất cả actor đăng nhập vào BetterHR; spec này mô tả lớp filter, role và permission đang chi phối truy cập.
 
-## Permission hien co theo filter
-| Route | Permission | Filter |
-| --- | --- | --- |
-| `/admin` | `MANAGE_SYSTEM` | `ModulePermissionFilter` |
-| `/admin/users` | `VIEW_USERS` | `ModulePermissionFilter` |
-| `/admin/role/*` | `VIEW_ROLES` | `ModulePermissionFilter` |
-| `/admin/role-permissions/api` | `MANAGE_ROLE_PERMISSIONS` | `ModulePermissionFilter` |
-| `/dept`, `/taskManager`, `/postTask`, `/viewTask` | `VIEW_DEPARTMENTS` | `ModulePermissionFilter` |
-| `/employee`, `/employee/*` | `VIEW_EMPLOYEE_DETAIL` | `ModulePermissionFilter` |
-| `/viewRecruitment` | `VIEW_RECRUITMENT` | `ViewRecruitment` + filters |
-| `/HrHomeController` | Role 2 | `RoleAuthorizationFilter` |
-| `/hr/employee-list`, `/hr/create-employee` | `VIEW_EMPLOYEES` hien tai | `PermissionUtil` trong controller |
-| `/hr/approve-reject-contracts` | `VIEW_CONTRACTS` hien tai | `PermissionUtil` trong controller |
-| `/hr/payroll-approval` | `VIEW_USERS` hien tai | `PermissionUtil` trong controller |
+## Route, controller và JSP liên quan
+- `RoleRedirectUtil`: điều hướng dashboard theo `RoleID` 1-6.
+- `RoleAuthorizationFilter`: bảo vệ các route `/hr/`, `/hrstaff`, `/dept`, `/employee`, `/guest` và một số route legacy.
+- `ModulePermissionFilter`: bảo vệ `/admin`, `/dept`, `/taskManager`, `/postTask`, `/viewTask`, `/employee` và `/employee/*`.
+- `PermissionUtil`: kiểm tra `systemUser` và permission động theo `RolePermission`.
 
-## Rule dac biet
-- RoleID 1 Admin la super admin trong code permission hien tai va khong duoc bi chan khoi chuc nang role permission chi vi thieu seed `MANAGE_ROLE_PERMISSIONS`.
-- User khac Admin van phai qua permission tu `RolePermission`/`UserPermission`.
+## Hiện trạng code
+- Role seed hiện có: Admin, HR Manager, Dept Manager, HR Staff, Employee, Guest.
+- Nhiều rule trong `ModulePermissionFilter` chỉ kiểm tra permission vì `requiredRoleId = null`.
+- `/candidates` và `/viewCV` đang được `RoleAuthorizationFilter` cho cả HR Manager và HR Staff truy cập.
+- `/departments` chưa nằm trong filter bảo vệ admin.
 
-## Permission seed trong data.sql
-`src/data/data.sql` hien seed cac permission:
+## Quy tắc nghiệp vụ chuẩn
+- Mọi route quản trị phải có cả role phù hợp và permission phù hợp.
+- Permission phải phản ánh đúng thao tác: xem, tạo, sửa, xóa, phê duyệt không dùng chung một mã quyền nếu nghiệp vụ khác nhau.
+- Controller quan trọng phải kiểm tra lại quyền, không chỉ dựa vào ẩn nút trên JSP.
 
-- `VIEW_EMPLOYEES`
-- `VIEW_EMPLOYEE_DETAIL`
-- `VIEW_DEPARTMENTS`
-- `VIEW_CONTRACTS`
-- `VIEW_RECRUITMENT`
-- `VIEW_PAYROLLS`
-- `VIEW_ALL_PAYROLLS`
-- `VIEW_USERS`
-- `VIEW_ROLES`
-- `MANAGE_ROLE_PERMISSIONS`
-- `VIEW_LEAVES`
-- `VIEW_REPORTS`
-- `VIEW_AUDIT_LOG`
-- `MANAGE_SYSTEM`
+## Code còn lệch spec hoặc cần bổ sung
+- Bổ sung bảo vệ `/departments` bằng role Admin và quyền quản lý phòng ban.
+- Tách quyền `CREATE_EMPLOYEE`, `APPROVE_PAYROLL`, `MANAGE_APPLICANTS` nếu code triển khai workflow tuyển dụng đầy đủ.
+- Sửa các controller đang dùng quyền quá rộng: create employee dùng `VIEW_EMPLOYEES`, approve payroll dùng `VIEW_USERS`.
 
-## Missing Work
-- [ ] Dua `/departments` vao filter Admin/permission.
-- [ ] Tach `/viewTask` cua Employee ra route rieng de khong bi permission `VIEW_DEPARTMENTS`.
-- [ ] Dinh nghia permission rieng cho payroll approval va contract approval neu muon tach khoi permission view.
-- [ ] Xem lai `/hr/payroll-approval` dang dung `VIEW_USERS`; nen doi sang `VIEW_PAYROLLS` hoac `APPROVE_PAYROLL`.
-- [ ] Xem lai create/update/delete employee dang dung `VIEW_EMPLOYEES`; nen them `MANAGE_EMPLOYEES` neu can.
-- [ ] Viet test cho cac route nhay cam: admin, payroll, employee data, task.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## Acceptance Criteria
-- [ ] Moi route nhay cam co role/permission ro rang.
-- [ ] API request bi tu choi tra JSON 403.
-- [ ] HTML request bi tu choi redirect login hoac AccessDenied dung logic filter.
-- [ ] Khong co route admin/HR/payroll nao bi bo ngoai filter.

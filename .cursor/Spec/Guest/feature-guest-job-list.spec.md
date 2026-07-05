@@ -1,35 +1,32 @@
-# Tính năng: Guest xem danh sách và chi tiết việc làm
-Trạng thái: Đã cập nhật theo luồng CandidateProfile
-Tác nhân: Guest Candidate
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `RecruitmentController`, `RecruitmentDAO`, `Views/Recruitment.jsp`
+# Tính năng Guest: Xem danh sách và chi tiết việc làm
 
-## Route hiện tại
-- `GET /RecruitmentController`
-- `GET /RecruitmentController?action=apply&recruitmentId={recruitmentId}`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng chính
-1. Guest truy cập trang danh sách việc làm.
-2. Controller lấy các tin tuyển dụng đang hiển thị công khai.
-3. Giao diện hiển thị thông tin việc làm hiện có: tên vị trí, địa điểm, mức lương, số lượng, mô tả, yêu cầu và các trường recruitment đang có.
-4. Guest bấm `Ứng tuyển ngay`.
-5. Nếu chưa đăng nhập, hệ thống yêu cầu đăng nhập/đăng ký và lưu đường dẫn quay lại job.
-6. Sau khi đăng nhập, hệ thống quay lại đúng tin tuyển dụng.
-7. Nếu đã đăng nhập và chưa có `CandidateProfile`, hệ thống hiển thị form hồ sơ ứng tuyển.
-8. Nếu đã đăng nhập và đã có `CandidateProfile`, hệ thống chuyển thẳng sang màn xác nhận ứng tuyển.
+## Actor và phạm vi
+- Guest hoặc ứng viên public xem các vị trí tuyển dụng đang mở.
 
-## Ghi chú dữ liệu tuyển dụng
-Luồng này không thêm mới database cho:
-- Department.
-- Benefit.
-- Deadline.
+## Route, controller và JSP liên quan
+- `/guest`, `/guest/dashboard`, `/guest/applications`, `/guest/profile`, `/guest/notification/read`, `/guest/offer/respond`.
+- `/RecruitmentController` cho trang tuyển dụng và nộp hồ sơ.
+- Controller: `GuestPortalController`, `RecruitmentController`; JSP: `Views/Guest/*`.
 
-Nếu các thông tin này đã tồn tại trong model/database hiện tại thì giao diện có thể hiển thị. Nếu chưa tồn tại, không tạo schema mới chỉ để phục vụ luồng ứng tuyển này.
+## Hiện trạng code
+- Danh sách việc làm lấy từ `RecruitmentDAO` hoặc `RecruitmentController`.
+- Dashboard Guest có recommended recruitments.
+- Status tuyển dụng legacy có `Waiting`, `New`, `Rejected`, `Applied`, `Deleted`.
 
-## Acceptance Criteria
-- [x] Guest chưa đăng nhập vẫn xem được danh sách việc làm.
-- [x] Nút ứng tuyển trỏ đúng `action=apply&recruitmentId={id}`.
-- [x] Guest chưa đăng nhập được yêu cầu đăng nhập và quay lại đúng job sau login.
-- [x] Guest chưa có profile thấy form hồ sơ.
-- [x] Guest đã có profile thấy màn xác nhận ứng tuyển.
-- [x] Lỗi hệ thống không lộ stack trace ra giao diện.
+## Quy tắc nghiệp vụ chuẩn
+- Chỉ hiển thị job đang mở theo trạng thái được phép.
+- Chi tiết job phải có vị trí, mô tả, yêu cầu và hành động ứng tuyển.
+- Không hiển thị job đã xóa hoặc không còn hiệu lực.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần xác định rõ enum nào là nguồn trạng thái recruitment đang mở.
+- Cần test job hết hạn hoặc bị xóa.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

@@ -9,6 +9,9 @@ import com.hrm.dao.ContractDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.model.entity.Contract;
 import com.hrm.model.entity.Employee;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -32,6 +35,8 @@ public class CreateContractController extends HttpServlet {
     private static final String SUCCESS_ATTRIBUTE = "success";
     private static final String DEFAULT_STATUS = "Draft";
     private static final String STATUS_PENDING = "Pending_Approval";
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     /** 
      * Handles the HTTP <code>GET</code> method.
@@ -170,6 +175,10 @@ public class CreateContractController extends HttpServlet {
             boolean success = contractDAO.create(contract);
             
             if (success) {
+                if (STATUS_PENDING.equals(contract.getStatus())) {
+                    int contractId = contractDAO.findLatestContractIdForEmployee(employeeId);
+                    notifyHrManagersAboutContract(request, contractId, employeeId);
+                }
                 String successMessage = hasActiveContract 
                     ? "Tạo hợp đồng thành công! Hợp đồng trước đó đã được đánh dấu hết hạn và hợp đồng mới đang chờ phê duyệt." 
                     : "Tạo hợp đồng thành công!";
@@ -207,6 +216,20 @@ public class CreateContractController extends HttpServlet {
                 "VIEW_CONTRACTS",
                 "Trang này chỉ dành cho nhân viên nhân sự.",
                 "Bạn không có quyền tạo hợp đồng."
+        );
+    }
+
+    private void notifyHrManagersAboutContract(HttpServletRequest request, int contractId, int employeeId) {
+        if (contractId <= 0) {
+            return;
+        }
+        Employee employee = new EmployeeDAO().getById(employeeId);
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        notificationService.notifyContractPendingForHrManagers(
+                notificationRecipientService.hrManagerUsers(),
+                currentUser != null ? currentUser.getUserId() : 0,
+                contractId,
+                employee != null ? employee.getFullName() : "Nhan vien"
         );
     }
 

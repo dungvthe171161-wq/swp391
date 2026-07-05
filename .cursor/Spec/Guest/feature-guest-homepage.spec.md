@@ -1,40 +1,32 @@
-# Tính năng: Khách (Guest) xem trang chủ công khai (Public Homepage)
-Trạng thái: Đã phê duyệt
-Tác nhân: Ứng viên tự do (Guest Candidate)
-Độ ưu tiên: Trung bình
-Mã nguồn liên quan: `HomepageController`, `Views/Homepage.jsp`, `Views/Login.jsp`, `Views/Register.jsp`
+# Tính năng Guest: Xem trang chủ công khai
 
-## Các Route
-- `GET /homepage`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng chính
-1. Khách truy cập vào tuyến đường `/homepage`.
-2. Nếu người dùng chưa đăng nhập, `HomepageController` thiết lập quyền truy cập công khai/khách (public/Guest).
-3. Controller chuyển tiếp (forward) yêu cầu đến trang `/Views/Homepage.jsp`.
-4. Người dùng xem các nội dung công khai, danh sách việc làm/liên kết công khai và các nút điều hướng đến trang đăng nhập/đăng ký.
-5. Nếu người dùng đã đăng nhập với vai trò Guest, trang chủ vẫn được hiển thị bình thường như một trang công khai.
+## Actor và phạm vi
+- Ứng viên xem thông tin BetterHR và tuyển dụng trước hoặc sau khi đăng nhập.
 
-## Các nút điều hướng trên trang chủ
-- Nhấp vào Logo `BetterHR` chuyển hướng về trang chủ `/homepage`.
-- Nút `Đăng nhập` chuyển hướng đến trang `/login`.
-- Nút `Đăng ký` chuyển hướng đến trang `/register`, tuyệt đối không trỏ nhầm về `/login`.
-- Đường liên kết việc làm chuyển hướng đến `RecruitmentController`.
-- Nếu đã đăng nhập vai trò Guest, trong Giai đoạn 1 menu vai trò hiển thị chữ `Guest` và trỏ về `/homepage`.
-- Khi cổng thông tin Guest dashboard được xây dựng, menu vai trò Guest sẽ trỏ về `/guest/dashboard`.
+## Route, controller và JSP liên quan
+- `/guest`, `/guest/dashboard`, `/guest/applications`, `/guest/profile`, `/guest/notification/read`, `/guest/offer/respond`.
+- `/RecruitmentController` cho trang tuyển dụng và nộp hồ sơ.
+- Controller: `GuestPortalController`, `RecruitmentController`; JSP: `Views/Guest/*`.
 
-## Nội dung giao diện (UI content)
-- Giao diện thiết kế theo đúng chủ đề BetterHR theme.
-- Toàn bộ nội dung chữ (text) hiển thị bằng tiếng Việt có dấu.
-- Logo giữ nguyên tên thương hiệu `BetterHR`.
-- Tuyệt đối không hiển thị các menu hoặc phân hệ quản lý nội bộ của bộ phận HR/Admin nếu người dùng chưa đăng nhập tài khoản có quyền hạn tương ứng.
+## Hiện trạng code
+- Homepage public do `HomepageController` và các JSP public xử lý.
+- Guest đăng nhập được redirect về `/guest/dashboard`.
+- Danh sách tuyển dụng có thể đi qua `RecruitmentController`.
 
-## Tiêu chí nghiệm thu
-- [ ] Khách truy cập vào `/homepage` bình thường và không bị hệ thống bắt buộc phải đăng nhập.
-- [ ] Trang chủ hiển thị giao diện công khai theo đúng chủ đề BetterHR theme.
-- [ ] Nút đăng ký mở chính xác trang `/register`.
-- [ ] Liên kết việc làm mở chính xác danh sách tin tuyển dụng.
-- [ ] Người dùng Guest chưa đăng nhập không nhìn thấy các liên kết hay bảng điều khiển nội bộ.
-- [ ] Người dùng Guest đã đăng nhập không bị hệ thống tự động chuyển hướng sang trang chủ dành cho nhân viên (Employee Dashboard).
+## Quy tắc nghiệp vụ chuẩn
+- Trang public không yêu cầu session nếu chỉ xem thông tin chung.
+- Nút nộp hồ sơ phải dẫn đến luồng ứng tuyển hợp lệ.
+- Text hiển thị phải là tiếng Việt có dấu.
 
-## Các phần việc còn thiếu
-- [ ] Khi triển khai tuyến đường `/guest/dashboard`, cần cập nhật lại giá trị biến `guestUrl` bên trong lớp điều khiển `HomepageController`.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra route public nào bị filter quá chặt.
+- Cần đảm bảo link ứng tuyển không bỏ qua validate đăng nhập/hồ sơ.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

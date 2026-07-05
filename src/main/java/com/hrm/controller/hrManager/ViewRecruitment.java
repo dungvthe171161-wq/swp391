@@ -6,6 +6,9 @@ package com.hrm.controller.hrManager;
 
 import com.hrm.dao.DAO;
 import com.hrm.model.entity.Recruitment;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -24,6 +27,8 @@ public class ViewRecruitment extends HttpServlet {
 
     private static final String REQUIRED_PERMISSION = "VIEW_RECRUITMENT";
     private static final String DENIED_MESSAGE = "You do not have permission to Post Recruitment.";
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -38,6 +43,7 @@ public class ViewRecruitment extends HttpServlet {
                 int recruitmentId = Integer.parseInt(idStr);
 
                 DAO.getInstance().updateRecruitmentStatus(recruitmentId,"Applied");
+                notifyHrStaffAboutRecruitmentDecision(request, recruitmentId, "Applied");
                 request.setAttribute("mess", "Apply recruitment successfully!");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -50,6 +56,7 @@ public class ViewRecruitment extends HttpServlet {
                 int recruitmentId = Integer.parseInt(idStr);
 
                 DAO.getInstance().updateRecruitmentStatus(recruitmentId,"Rejected");
+                notifyHrStaffAboutRecruitmentDecision(request, recruitmentId, "Rejected");
                 request.setAttribute("mess", "Reject recruitment successfully!");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -116,5 +123,17 @@ public class ViewRecruitment extends HttpServlet {
     private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         return PermissionUtil.ensurePermission(request, response, REQUIRED_PERMISSION, DENIED_MESSAGE);
+    }
+
+    private void notifyHrStaffAboutRecruitmentDecision(HttpServletRequest request, int recruitmentId, String decision) {
+        Recruitment rec = DAO.getInstance().getRecruitmentById(recruitmentId);
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        notificationService.notifyRecruitmentDecisionForHrStaff(
+                notificationRecipientService.hrStaffUsers(),
+                currentUser != null ? currentUser.getUserId() : 0,
+                recruitmentId,
+                rec != null ? rec.getTitle() : "Tin tuyen dung",
+                decision
+        );
     }
 }

@@ -46,6 +46,7 @@
                     <strong>${guestProfile.fullName}</strong>
                     <span>${currentUser.email}</span>
                 </div>
+                <%@ include file="../_NotificationBell.jspf" %>
                 <a class="candidate-avatar" href="${pageContext.request.contextPath}/guest/profile">
                     <c:choose>
                         <c:when test="${not empty guestProfile.avatar}">
@@ -87,6 +88,72 @@
                     <div><p>Từ chối</p><strong>${rejectedApplications}</strong></div>
                 </div>
             </section>
+
+            <c:if test="${not empty success}">
+                <section class="candidate-card">
+                    <div class="candidate-card-body">
+                        <div class="candidate-empty">${success}</div>
+                    </div>
+                </section>
+            </c:if>
+            <c:if test="${not empty error}">
+                <section class="candidate-card">
+                    <div class="candidate-card-body">
+                        <div class="candidate-empty">${error}</div>
+                    </div>
+                </section>
+            </c:if>
+
+            <c:if test="${not empty pendingOffers}">
+                <section class="candidate-card">
+                    <div class="candidate-card-header">
+                        <div>
+                            <h2>Offer chờ phản hồi</h2>
+                            <p>Chấp nhận hoặc từ chối offer BetterHR đã gửi cho bạn.</p>
+                        </div>
+                    </div>
+                    <div class="candidate-table-wrap">
+                        <table class="candidate-table">
+                            <thead>
+                            <tr>
+                                <th>Vị trí</th>
+                                <th>Lương offer</th>
+                                <th>Ngày bắt đầu</th>
+                                <th>Hạn phản hồi</th>
+                                <th>Ghi chú</th>
+                                <th>Phản hồi</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <c:forEach var="offerView" items="${pendingOffers}">
+                                <tr>
+                                    <td>
+                                        <strong>${empty offerView.offer.position ? offerView.jobTitle : offerView.offer.position}</strong>
+                                        <div class="candidate-muted">${offerView.jobTitle}</div>
+                                    </td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${offerView.offer.offeredSalary != null}">${offerView.offer.offeredSalary} VNĐ</c:when>
+                                            <c:otherwise>Thỏa thuận</c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td class="candidate-muted">${offerView.offer.startDate}</td>
+                                    <td class="candidate-muted">${offerView.offer.expiredAt}</td>
+                                    <td class="candidate-muted">${empty offerView.offer.note ? 'Không có ghi chú' : offerView.offer.note}</td>
+                                    <td>
+                                        <form method="post" action="${pageContext.request.contextPath}/guest/offer/respond" style="display:flex;gap:8px;flex-wrap:wrap;">
+                                            <input type="hidden" name="offerId" value="${offerView.offer.offerId}">
+                                            <button class="candidate-btn" type="submit" name="status" value="Accepted">Chấp nhận</button>
+                                            <button class="candidate-btn secondary" type="submit" name="status" value="Rejected">Từ chối</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </c:if>
 
             <section class="candidate-card">
                 <div class="candidate-card-header">

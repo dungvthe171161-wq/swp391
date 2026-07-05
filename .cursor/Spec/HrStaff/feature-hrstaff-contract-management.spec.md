@@ -1,35 +1,32 @@
-# Feature: HR Staff - Contract Management
-Status: Approved | Priority: High
-Related Files: ContractListController.java, CreateContractController.java
+# Tính năng HR Staff: Quản lý hợp đồng
 
-## 1. Context & Goal
-Cho phép HR Staff quản lý hợp đồng lao động. Dữ liệu hợp đồng là cơ sở gốc để tính toán lương.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## 2. Actors & Roles
-- **HR Staff**: Có `HttpSession` hợp lệ, role `ROLE_HR_STAFF` và quyền `VIEW_CONTRACTS`.
+## Actor và phạm vi
+- HR Staff tạo và quản lý hợp đồng trước khi HR Manager phê duyệt.
 
-## 3. Functional Requirements (EARS)
-- THE SYSTEM SHALL kiểm tra quyền truy cập thông qua `PermissionUtil.ensureRolePermission` cho mọi request.
-- WHILE HR Staff truy cập `/hrstaff/contracts`, THE SYSTEM SHALL phân trang dữ liệu với kích thước cố định `PAGE_SIZE = 10`.
-- WHEN HR Staff truy cập `/hrstaff/contracts/create`, THE SYSTEM SHALL query toàn bộ danh sách `Employee` để fill vào dropdown.
-- WHEN HR Staff submit form tạo mới hợp đồng, THE SYSTEM SHALL gán trạng thái mặc định là `Draft` nếu không có tham số status truyền lên.
+## Route, controller và JSP liên quan
+- `/hrstaff`, `/postRecruitments`, `/candidates`, `/viewCV`, `/hrstaff/interviews/schedule`.
+- `/hrstaff/contracts`, `/hrstaff/contracts/create`, `/hrstaff/payroll`, `/hrstaff/payroll/*`, `/api/payroll`, `/api/allowance/*`, `/api/deduction/*`.
+- Controller: `HrStaffHomeController`, `PostRecruitmentController`, `ViewCandidateController`, `InterviewScheduleController`, `ContractListController`, `CreateContractController`, `PayrollManagementController`.
 
-## 4. Non-Functional Requirements
-- Tech Stack: Bắt buộc dùng `jakarta.servlet.*` cho Tomcat 10.1+.
+## Hiện trạng code
+- `ContractListController` và `CreateContractController` xử lý route `/hrstaff/contracts`.
+- Contract status trong DB gồm `Draft`, `Pending_Approval`, `Approved`, `Rejected`, `Active`, `Expired`.
+- HR Manager có controller duyệt riêng.
 
-## 5. Data Model
-- Entities: `Contract`, `Employee`.
-- Fields quan trọng: StartDate, EndDate, BaseSalary, Allowance, ContractType, Status.
+## Quy tắc nghiệp vụ chuẩn
+- HR Staff tạo draft/pending approval, không tự duyệt nếu nghiệp vụ yêu cầu HR Manager.
+- Hợp đồng phải gắn đúng employee và validate ngày, lương, loại hợp đồng.
+- Thay đổi hợp đồng cần audit/notification nếu quan trọng.
 
-## 6. Error Handling (Unwanted Patterns)
-- WHERE người dùng thiếu quyền, THE SYSTEM SHALL chặn request và báo lỗi "You do not have permission to manage contracts".
-- WHERE có lỗi `SQLException` hoặc Exception khác, THE SYSTEM SHALL thiết lập attribute `error`, forward về trang hiện tại và ghi log bằng `java.util.logging.Logger` (Tuyệt đối KHÔNG dùng `e.printStackTrace()`).
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra permission tạo/sửa contract đã tách khỏi quyền xem chưa.
+- Cần test trạng thái hợp đồng không hợp lệ.
 
-## 7. Acceptance Criteria
-- [ ] Truy cập danh sách hợp đồng trả về đúng 10 records/trang.
-- [ ] User không phải HR Staff bị chặn quyền.
-- [ ] Không cho phép ngày kết thúc (EndDate) trước ngày bắt đầu (StartDate).
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## 8. Out of Scope
-- KHÔNG hỗ trợ việc chuyển status hợp đồng sang `Active` (thuộc quyền HR Manager).
-- KHÔNG gộp chung workflow duyệt hợp đồng vào Spec này.

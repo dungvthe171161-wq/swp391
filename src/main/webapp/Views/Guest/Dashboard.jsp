@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page import="com.hrm.model.entity.Recruitment" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.List" %>
@@ -50,7 +51,7 @@
                     <strong>Chào bạn, ${guestProfile.fullName}</strong>
                     <span>Mã tài khoản: #${currentUser.userId}</span>
                 </div>
-                <button class="candidate-icon-btn" type="button" aria-label="Thông báo"><i class="fa-regular fa-bell"></i></button>
+                <%@ include file="../_NotificationBell.jspf" %>
                 <button class="candidate-icon-btn" type="button" aria-label="Cài đặt"><i class="fa-solid fa-gear"></i></button>
                 <a class="candidate-avatar" href="${pageContext.request.contextPath}/guest/profile">
                     <c:choose>
@@ -105,6 +106,56 @@
                     </div>
                 </div>
             </section>
+
+            <c:if test="${not empty upcomingInterviews}">
+                <section class="candidate-card candidate-schedule-card">
+                    <div class="candidate-card-header">
+                        <div>
+                            <h2>Lịch phỏng vấn sắp tới</h2>
+                            <p>HR Staff đã tạo lịch phỏng vấn cho hồ sơ của bạn.</p>
+                        </div>
+                        <span class="candidate-schedule-count">${upcomingInterviewCount} lịch</span>
+                    </div>
+                    <div class="candidate-schedule-list">
+                        <c:forEach var="schedule" items="${upcomingInterviews}">
+                            <article class="candidate-schedule-item">
+                                <div class="candidate-schedule-round">
+                                    <strong>${schedule.interview.roundNo}</strong>
+                                    <span>Vòng</span>
+                                </div>
+                                <div class="candidate-schedule-content">
+                                    <div class="candidate-schedule-title">
+                                        <h3>${empty schedule.jobTitle ? 'Lịch phỏng vấn' : schedule.jobTitle}</h3>
+                                        <span class="candidate-status">Đã lên lịch</span>
+                                    </div>
+                                    <div class="candidate-schedule-meta">
+                                        <span><i class="fa-regular fa-clock"></i> ${fn:replace(schedule.interview.scheduledAt, 'T', ' ')}</span>
+                                        <c:choose>
+                                            <c:when test="${not empty schedule.interview.meetingLink}">
+                                                <a href="${schedule.interview.meetingLink}" target="_blank" rel="noopener">
+                                                    <i class="fa-solid fa-video"></i> Tham gia phỏng vấn
+                                                </a>
+                                            </c:when>
+                                            <c:when test="${not empty schedule.interview.location}">
+                                                <span><i class="fa-solid fa-location-dot"></i> ${schedule.interview.location}</span>
+                                            </c:when>
+                                            <c:when test="${not empty schedule.jobLocation}">
+                                                <span><i class="fa-solid fa-location-dot"></i> ${schedule.jobLocation}</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span><i class="fa-solid fa-location-dot"></i> HR sẽ cập nhật địa điểm.</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                    <c:if test="${not empty schedule.interview.note}">
+                                        <p class="candidate-schedule-note">${schedule.interview.note}</p>
+                                    </c:if>
+                                </div>
+                            </article>
+                        </c:forEach>
+                    </div>
+                </section>
+            </c:if>
 
             <div class="candidate-grid">
                 <div class="candidate-left">
@@ -263,16 +314,46 @@
                             <div class="candidate-card-header candidate-card-header-compact">
                                 <div>
                                     <h3>Buổi phỏng vấn tiếp theo</h3>
-                                    <p>Chưa có lịch mới</p>
+                                    <p>
+                                        <c:choose>
+                                            <c:when test="${not empty upcomingInterviews}">Lịch mới nhất của bạn</c:when>
+                                            <c:otherwise>Chưa có lịch mới</c:otherwise>
+                                        </c:choose>
+                                    </p>
                                 </div>
                             </div>
-                            <div class="candidate-mini-event">
-                                <time>--<small>--</small></time>
-                                <div>
-                                    <strong>Đang chờ HR sắp lịch</strong>
-                                    <span>Khi có lịch phỏng vấn, thông tin sẽ hiển thị tại đây.</span>
-                                </div>
-                            </div>
+                            <c:choose>
+                                <c:when test="${not empty upcomingInterviews}">
+                                    <c:set var="nextInterview" value="${upcomingInterviews[0]}"/>
+                                    <div class="candidate-mini-event">
+                                        <time>${nextInterview.interview.roundNo}<small>Vòng</small></time>
+                                        <div>
+                                            <strong>${empty nextInterview.jobTitle ? 'Lịch phỏng vấn' : nextInterview.jobTitle}</strong>
+                                            <span>Thời gian: ${nextInterview.interview.scheduledAt}</span>
+                                            <span>
+                                                <c:choose>
+                                                    <c:when test="${not empty nextInterview.interview.meetingLink}">
+                                                        Link: <a href="${nextInterview.interview.meetingLink}" target="_blank" rel="noopener">Tham gia phỏng vấn</a>
+                                                    </c:when>
+                                                    <c:when test="${not empty nextInterview.interview.location}">
+                                                        Địa điểm: ${nextInterview.interview.location}
+                                                    </c:when>
+                                                    <c:otherwise>Địa điểm sẽ được HR cập nhật.</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="candidate-mini-event">
+                                        <time>--<small>--</small></time>
+                                        <div>
+                                            <strong>Đang chờ HR sắp lịch</strong>
+                                            <span>Khi có lịch phỏng vấn, thông tin sẽ hiển thị tại đây.</span>
+                                        </div>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </section>
 

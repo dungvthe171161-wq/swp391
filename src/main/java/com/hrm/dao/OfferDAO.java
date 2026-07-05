@@ -13,6 +13,22 @@ import java.util.List;
 
 public class OfferDAO {
 
+    public Offer findById(int offerId) {
+        String sql = "SELECT * FROM `Offer` WHERE OfferID = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, offerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapOffer(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public Offer findByApplicationId(int applicationId) {
         String sql = "SELECT * FROM `Offer` WHERE ApplicationID = ?";
         try (Connection con = DBConnection.getConnection();
@@ -21,6 +37,32 @@ public class OfferDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return mapOffer(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public OfferView findViewById(int offerId) {
+        String sql = """
+            SELECT o.*,
+                   r.JobTitle
+            FROM `Offer` o
+            JOIN `Application` a ON o.ApplicationID = a.ApplicationID
+            JOIN Recruitment r ON a.RecruitmentID = r.RecruitmentID
+            WHERE o.OfferID = ?
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, offerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    OfferView view = new OfferView();
+                    view.setOffer(mapOffer(rs));
+                    view.setJobTitle(rs.getString("JobTitle"));
+                    return view;
                 }
             }
         } catch (SQLException e) {
@@ -84,6 +126,40 @@ public class OfferDAO {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public int saveDraft(Offer offer) {
+        Offer existing = findByApplicationId(offer.getApplicationId());
+        if (existing == null) {
+            offer.setStatus("Draft");
+            return create(offer);
+        }
+        offer.setOfferId(existing.getOfferId());
+        if (!"Draft".equals(existing.getStatus())) {
+            return 0;
+        }
+        return updateDraft(offer) ? existing.getOfferId() : 0;
+    }
+
+    public boolean updateDraft(Offer offer) {
+        String sql = """
+            UPDATE `Offer`
+            SET Position = ?, OfferedSalary = ?, StartDate = ?, ExpiredAt = ?, Note = ?
+            WHERE OfferID = ? AND Status = 'Draft'
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, offer.getPosition());
+            ps.setBigDecimal(2, offer.getOfferedSalary());
+            ps.setDate(3, offer.getStartDate() != null ? Date.valueOf(offer.getStartDate()) : null);
+            ps.setTimestamp(4, offer.getExpiredAt() != null ? Timestamp.valueOf(offer.getExpiredAt()) : null);
+            ps.setString(5, offer.getNote());
+            ps.setInt(6, offer.getOfferId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public boolean sendOffer(int offerId) {

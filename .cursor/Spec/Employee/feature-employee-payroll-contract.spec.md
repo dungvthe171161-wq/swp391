@@ -1,55 +1,32 @@
-# Feature: Employee payroll and contract view
-Status: Approved
-Actor: Employee
-Priority: High
-Related code: `EmployeePortalController`, `PayrollDAO`, `ContractDAO`, `Views/Employee/Payroll.jsp`, `Views/Employee/Contract.jsp`
+# Tính năng Employee: Xem lương và hợp đồng
 
-## Goal
-Employees can view their own payroll slips and active/latest employment contract. Payroll detail must include calculation audit so the employee can understand attendance, leave, allowances, and deductions.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Routes
-- Payroll list/detail: `GET /employee/payroll`
-- Payroll detail by id: `GET /employee/payroll?payrollId={id}`
-- Contract view: `GET /employee/contract`
+## Actor và phạm vi
+- Employee xem bảng lương và hợp đồng của chính mình.
 
-## Payroll Data
-Payroll screen should show:
-- Pay period.
-- Base salary.
-- Allowances.
-- Deductions.
-- Tax and insurance if available.
-- Net salary.
-- Status.
-- Approval date if available.
-- Audit values: working days, late/early counts, paid leave days, unpaid leave days.
+## Route, controller và JSP liên quan
+- `/employee`, `/employee/*`.
+- Controller chính: `EmployeePortalController`.
+- JSP: `Views/Employee/EmployeeHome.jsp`, `Tasks.jsp`, `Leaves.jsp`, `Payroll.jsp`, `Contract.jsp`, `Attendance.jsp`, `EmployeeProfile.jsp`.
 
-## Contract Data
-Contract screen should show:
-- Contract ID.
-- Contract type.
-- Start date.
-- End date.
-- Base salary.
-- Allowance.
-- Status.
-- Notes.
+## Hiện trạng code
+- `/employee/payroll` và `/employee/contract` do `EmployeePortalController` xử lý.
+- JSP tương ứng là `Payroll.jsp` và `Contract.jsp`.
+- Dữ liệu phải lấy theo employee hiện tại.
 
-## Security Rules
-- Employee can only view payroll records with their own `EmployeeID`.
-- Employee can only view contracts with their own `EmployeeID`.
-- If a payroll ID belongs to another employee, show a friendly error and do not render details.
+## Quy tắc nghiệp vụ chuẩn
+- Employee không được xem payroll/contract của người khác.
+- Chỉ hiển thị bản ghi phù hợp trạng thái công bố hoặc được phép xem.
+- Không cho sửa payroll/contract từ cổng Employee.
 
-## Payroll Business Rules
-- Employee view is read-only.
-- Payroll values are generated/managed by HR Staff and approved by HR Manager.
-- Approved leave from `MailRequest` affects payroll calculation.
-- Payroll detail should expose enough audit data to explain why the final salary changed.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test employee chưa có payroll hoặc contract.
+- Cần kiểm tra trạng thái nào được phép hiển thị.
 
-## Acceptance Criteria
-- [ ] Employee sees their payroll list.
-- [ ] Employee can open payroll details.
-- [ ] Payroll detail includes audit calculation data.
-- [ ] Employee cannot access another employee's payroll.
-- [ ] Employee can view their latest/current contract.
-- [ ] Empty state appears when payroll or contract does not exist.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

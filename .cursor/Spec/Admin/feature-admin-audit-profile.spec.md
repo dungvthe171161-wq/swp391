@@ -1,32 +1,32 @@
-# Tính năng: Nhật ký hệ thống (Audit log) và thông tin cá nhân (Profile) Admin
-Trạng thái: Chưa hoàn thiện (Partial)
-Tác nhân: Admin
-Độ ưu tiên: Trung bình
-Mã nguồn liên quan: `AdminController`, `SystemLogDAO`, `Admin/AuditLog.jsp`, `Admin/Profile.jsp`
+# Tính năng Admin: Nhật ký và hồ sơ cá nhân
 
-## Các Route
-- `GET /admin?action=audit-log`
-- `GET /admin?action=profile`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng nhật ký hệ thống (Audit log)
-1. Admin truy cập `/admin?action=audit-log`.
-2. Controller lấy danh sách nhật ký hệ thống (system log).
-3. Chuyển tiếp (forward) đến `Admin/AuditLog.jsp`.
+## Actor và phạm vi
+- Admin xem thông tin cá nhân và nhật ký hệ thống.
 
-## Luồng thông tin cá nhân (Profile)
-1. Admin truy cập `/admin?action=profile`.
-2. Controller lấy thông tin người dùng hiện tại từ session.
-3. Chuyển tiếp (forward) đến `Admin/Profile.jsp`.
+## Route, controller và JSP liên quan
+- `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Controller: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`.
+- JSP: `AdminHome.jsp`, `Users.jsp`, `RolePermissionManager.jsp` và các trang Admin liên quan.
 
 ## Hiện trạng code
-- Đã có forward đến AuditLog và Profile trong `AdminController`.
-- Cần kiểm tra thêm mức độ filter/permission riêng nếu muốn tách quyền `VIEW_AUDIT_LOG`.
+- Profile dùng controller/profile chung nếu có.
+- Audit log chưa có service thống nhất trong code.
+- Một số hành động quản trị chưa ghi audit.
 
-## Tiêu chí nghiệm thu
-- [ ] Admin xem được nhật ký hệ thống.
-- [ ] Admin xem được thông tin cá nhân (profile) của chính mình.
-- [ ] Người dùng chưa đăng nhập (login) bị chuyển hướng (redirect) về trang đăng nhập.
+## Quy tắc nghiệp vụ chuẩn
+- Admin được xem audit theo quyền riêng.
+- Profile chỉ cho sửa dữ liệu của chính user hoặc theo quyền quản trị.
+- Audit không hiển thị dữ liệu bí mật.
 
-## Các phần việc còn thiếu
-- [ ] Thêm quyền (permission) riêng cho nhật ký hệ thống nếu cần tính bảo mật cao.
-- [ ] Ghi nhật ký (log) đầy đủ cho các hành động quan trọng của admin.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần triển khai audit service và màn hình audit nếu đây là yêu cầu bắt buộc.
+- Cần kiểm tra phân quyền profile Admin với user thường.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

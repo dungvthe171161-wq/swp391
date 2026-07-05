@@ -2,6 +2,10 @@ package com.hrm.controller.admin;
 
 import com.hrm.dao.RolePermissionDAO;
 import com.hrm.model.dto.PermissionSummary;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
+import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,6 +30,8 @@ import org.json.JSONObject;
 public class RolePermissionServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(RolePermissionServlet.class.getName());
     private final RolePermissionDAO rolePermissionDAO = new RolePermissionDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -110,6 +116,13 @@ public class RolePermissionServlet extends HttpServlet {
             }
 
             if (allSucceeded) {
+                notificationService.notifyRolePermissionChangedForAdmins(
+                        notificationRecipientService.adminUsers(),
+                        currentUserId(request),
+                        roleId,
+                        granted,
+                        permissionIds.size()
+                );
                 response.getWriter().write(new JSONObject()
                         .put("status", "success")
                         .put("message", granted ? "Đã cấp quyền cho role" : "Đã thu hồi quyền khỏi role")
@@ -147,6 +160,11 @@ public class RolePermissionServlet extends HttpServlet {
             return new JSONObject();
         }
         return new JSONObject(sb.toString());
+    }
+
+    private int currentUserId(HttpServletRequest request) {
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        return currentUser != null ? currentUser.getUserId() : 0;
     }
 
     private JSONArray buildPermissionArray(List<PermissionSummary> permissions, Set<Integer> assigned) {

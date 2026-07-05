@@ -3,6 +3,8 @@ package com.hrm.controller.dept;
 import com.hrm.dao.DAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.model.entity.Employee;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.DeptManagerScope;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,12 +14,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "postTask", urlPatterns = {"/postTask"})
 public class PostTask extends HttpServlet {
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -75,15 +80,25 @@ public class PostTask extends HttpServlet {
         }
 
         String[] assignToIds = request.getParameterValues("assignTo");
+        List<Integer> assignedEmployeeIds = new ArrayList<>();
         if (assignToIds != null) {
             for (String empIdStr : assignToIds) {
                 int empId = parseInt(empIdStr, -1);
                 Employee assignee = DAO.getInstance().getEmp(empId);
                 if (assignee != null && assignee.getDepartmentId() == scope.getDepartmentId()) {
                     DAO.getInstance().assignTaskToEmployee(taskId, empId);
+                    assignedEmployeeIds.add(empId);
                 }
             }
         }
+
+        List<Integer> employeeUserIds = notificationRecipientService.activeUsersByEmployeeIds(assignedEmployeeIds);
+        notificationService.notifyTaskAssignedToEmployees(
+                employeeUserIds,
+                scope.getUser() != null ? scope.getUser().getUserId() : 0,
+                taskId,
+                title
+        );
 
         response.sendRedirect(request.getContextPath() + "/taskManager?mess=" + URLEncoder.encode("Đã tạo công việc thành công", StandardCharsets.UTF_8));
     }

@@ -1,60 +1,33 @@
-# Cross-cutting Spec: Audit Log
-Status: Approved
-Priority: High
-Schema Source: `src/data/data.sql`
-Related Code: `SystemLogDAO`, `SystemLog`, `Admin/AuditLog.jsp`
+# Đặc tả dùng chung: Nhật ký kiểm toán
 
-## Muc tieu
-Ghi lai cac thao tac quan trong de Admin/HRMS co the truy vet khi co thay doi du lieu nhay cam.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Bang hien co
-Bang `SystemLog` trong `data.sql` gom:
+## Actor và phạm vi
+- Admin, HR Manager, HR Staff và các thao tác thay đổi dữ liệu nhạy cảm.
 
-| Column | Mo ta |
-| --- | --- |
-| `LogID` | Khoa chinh |
-| `UserID` | User thuc hien |
-| `Action` | Hanh dong, vi du `LOGIN`, `CREATE`, `UPDATE`, `APPROVE` |
-| `ObjectType` | Loai doi tuong, vi du `SystemUser`, `Recruitment`, `Task` |
-| `OldValue` | Gia tri cu |
-| `NewValue` | Gia tri moi |
-| `Timestamp` | Thoi diem ghi log |
+## Route, controller và JSP liên quan
+- Các controller quản lý user, role, tuyển dụng, hợp đồng, payroll và employee.
+- Database có thể dùng bảng audit hiện có hoặc bổ sung bảng chuyên trách nếu thiếu.
+- Log nghiệp vụ phải gắn `UserID`, entity và thời điểm.
 
-## Su kien can ghi log
-- Login thanh cong/that bai neu co policy.
-- Logout neu can.
-- Admin tao/sua/xoa user.
-- Admin reset password.
-- Admin thay doi role/permission.
-- Admin thay doi department.
-- HR Staff tao/sua/xoa recruitment.
-- HR Staff tao/sua/xoa contract.
-- HR Staff generate/submit/delete payroll.
-- HR Staff them/sua/xoa allowance/deduction.
-- HR Manager approve/reject recruitment.
-- HR Manager approve/reject contract.
-- HR Manager approve/reject payroll.
+## Hiện trạng code
+- Code hiện chưa có audit service thống nhất cho mọi workflow.
+- Một số thao tác chỉ ghi log console hoặc không ghi.
+- Spec cũ yêu cầu audit nhưng chưa được triển khai đầy đủ.
 
-## Format action de xuat
-| Action | Khi nao dung |
-| --- | --- |
-| `LOGIN` | Dang nhap |
-| `LOGOUT` | Dang xuat |
-| `CREATE` | Tao moi du lieu |
-| `UPDATE` | Cap nhat du lieu |
-| `DELETE` | Xoa du lieu |
-| `APPROVE` | Duyet |
-| `REJECT` | Tu choi |
-| `RESET_PASSWORD` | Reset mat khau |
-| `GRANT_PERMISSION` | Gan quyen |
-| `REVOKE_PERMISSION` | Go quyen |
+## Quy tắc nghiệp vụ chuẩn
+- Tạo/sửa/xóa user, role, permission, department phải có audit.
+- Duyệt hợp đồng, duyệt payroll, reject/hire ứng viên phải có audit.
+- Audit không được chứa mật khẩu plain text hoặc dữ liệu bí mật.
 
-## Acceptance Criteria
-- [ ] Thao tac nhay cam duoc ghi vao `SystemLog`.
-- [ ] `UserID` phai la user dang thao tac neu co session.
-- [ ] `ObjectType` phai dung ten entity/bang lien quan.
-- [ ] Admin xem duoc audit log tai `/admin?action=audit-log`.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần tạo service audit dùng chung.
+- Cần đưa audit vào transaction của workflow quan trọng.
+- Cần màn hình hoặc truy vấn cho Admin xem audit.
 
-## Missing Work
-- [ ] Neu can IP/user-agent, phai them cot moi vao `SystemLog` truoc khi ghi spec nhu implemented.
-- [ ] Bo sung log vao cac controller dang mutate du lieu.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

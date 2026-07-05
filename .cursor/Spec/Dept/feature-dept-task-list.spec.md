@@ -1,32 +1,32 @@
-# Tính năng: Danh sách công việc (task) phòng ban
-Trạng thái: Đã phê duyệt
-Tác nhân: Trưởng phòng (Dept Manager)
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `TaskManager`, `Views/DeptManager/taskManager.jsp`
+# Tính năng Dept: Danh sách công việc
 
-## Các Route
-- `GET /taskManager`
-- `POST /taskManager`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng GET
-1. Trưởng phòng (Dept Manager) truy cập `/taskManager`.
-2. Hệ thống kiểm tra phiên làm việc (session).
-3. Controller lấy danh sách công việc (task).
-4. Chuyển tiếp (forward) đến `/Views/DeptManager/taskManager.jsp`.
+## Actor và phạm vi
+- Dept Manager xem danh sách task của phòng ban.
 
-## Luồng POST
-1. Nếu có yêu cầu gửi dữ liệu dạng `POST` tới tuyến đường `/taskManager`.
-2. Controller thực hiện chuyển hướng (redirect) về lại `GET /taskManager`.
+## Route, controller và JSP liên quan
+- `/dept`, `/dept/*`, `/taskManager`, `/postTask`, `/viewTask`, `/dept/leaves`.
+- Controller: `DeptController`, `TaskManager`, `PostTask`, `ViewTask`, `DeptLeaveController`.
+- JSP: `Views/DeptManager/*`.
 
 ## Hiện trạng code
-- Đã xây dựng lớp `TaskManager`.
-- Yêu cầu `POST /taskManager` đã được cấu hình chuyển hướng về `/taskManager`.
+- Danh sách task legacy đi qua `/taskManager`.
+- Permission hiện dùng `VIEW_DEPARTMENTS`.
+- Dữ liệu phải gắn với manager/department.
 
-## Tiêu chí nghiệm thu
-- [ ] Trưởng phòng (Dept Manager) xem được danh sách các công việc.
-- [ ] Người dùng chưa đăng nhập bị chuyển hướng về trang đăng nhập.
-- [ ] Phương thức `POST` không xử lý trực tiếp dữ liệu mà được chuyển hướng về phương thức `GET`.
+## Quy tắc nghiệp vụ chuẩn
+- Chỉ hiển thị task thuộc phòng ban được quản lý.
+- Bộ lọc trạng thái phải dùng enum task hiện có.
+- Không cho xem task ngoài scope bằng cách sửa URL.
 
-## Các phần việc còn thiếu
-- [ ] Giới hạn danh sách công việc chỉ hiển thị các công việc thuộc phòng ban do Trưởng phòng (Dept Manager) đó quản lý.
-- [ ] Bổ sung các chức năng lọc, tìm kiếm, và phân trang (filter/search/pagination) nếu giao diện (UI) yêu cầu.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần tách route khỏi `/viewTask` legacy.
+- Cần test manager của phòng ban khác.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

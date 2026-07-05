@@ -142,7 +142,7 @@ public class GuestDAO {
 
         Guest newProfile = new Guest();
         newProfile.setUserId(user.getUserId());
-        newProfile.setFullName(firstNonBlank(user.getUsername(), user.getEmail(), "Ứng viên BetterHR"));
+        newProfile.setFullName(firstNonBlank(user.getUsername(), user.getEmail(), "á»¨ng viÃªn BetterHR"));
         newProfile.setEmail(user.getEmail());
         newProfile.setAvatar(user.getAvatarUrl());
         newProfile.setStatus("Processing");
@@ -186,6 +186,111 @@ public class GuestDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public List<Guest> findOfferAcceptedGuestsReadyForEmployee() {
+        List<Guest> list = new ArrayList<>();
+        String sql = """
+            SELECT g.GuestID,
+                   g.UserID,
+                   COALESCE(cp.FullName, g.FullName) AS FullName,
+                   COALESCE(cp.Email, g.Email) AS Email,
+                   COALESCE(cp.Phone, g.Phone) AS Phone,
+                   COALESCE(cp.CVFilePath, g.CV) AS CV,
+                   g.Avatar,
+                   g.Gender,
+                   COALESCE(cp.DateOfBirth, g.DateOfBirth) AS DateOfBirth,
+                   COALESCE(cp.Address, g.Address) AS Address,
+                   g.Status,
+                   a.RecruitmentID,
+                   a.AppliedDate,
+                   g.UpdatedDate
+            FROM `Application` a
+            JOIN Guest g ON a.GuestID = g.GuestID
+            JOIN `Offer` o ON o.ApplicationID = a.ApplicationID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
+            WHERE a.Status = 'Hired'
+              AND a.CurrentStep = 'Hired'
+              AND o.Status = 'Accepted'
+            ORDER BY o.RespondedAt DESC, a.AppliedDate DESC, a.ApplicationID DESC
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapGuest(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+
+    public Guest findOfferAcceptedGuestReadyForEmployeeByGuestId(int guestId) {
+        String sql = """
+            SELECT g.GuestID,
+                   g.UserID,
+                   COALESCE(cp.FullName, g.FullName) AS FullName,
+                   COALESCE(cp.Email, g.Email) AS Email,
+                   COALESCE(cp.Phone, g.Phone) AS Phone,
+                   COALESCE(cp.CVFilePath, g.CV) AS CV,
+                   g.Avatar,
+                   g.Gender,
+                   COALESCE(cp.DateOfBirth, g.DateOfBirth) AS DateOfBirth,
+                   COALESCE(cp.Address, g.Address) AS Address,
+                   g.Status,
+                   a.RecruitmentID,
+                   a.AppliedDate,
+                   g.UpdatedDate
+            FROM `Application` a
+            JOIN Guest g ON a.GuestID = g.GuestID
+            JOIN `Offer` o ON o.ApplicationID = a.ApplicationID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
+            WHERE g.GuestID = ?
+              AND a.Status = 'Hired'
+              AND a.CurrentStep = 'Hired'
+              AND o.Status = 'Accepted'
+            ORDER BY o.RespondedAt DESC, a.AppliedDate DESC, a.ApplicationID DESC
+            LIMIT 1
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, guestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapGuest(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }    public boolean isOfferAcceptedGuestReadyForEmployee(int guestId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM `Application` a
+            JOIN Guest g ON a.GuestID = g.GuestID
+            JOIN `Offer` o ON o.ApplicationID = a.ApplicationID
+            LEFT JOIN CandidateProfile cp ON a.CandidateProfileID = cp.CandidateProfileID
+            WHERE g.GuestID = ?
+              AND a.Status = 'Hired'
+              AND a.CurrentStep = 'Hired'
+              AND o.Status = 'Accepted'
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, guestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public List<GuestApplication> getApplicationsByUserOrEmail(int userId, String email) {
@@ -662,3 +767,4 @@ public class GuestDAO {
         }
     }
 }
+

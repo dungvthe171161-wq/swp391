@@ -164,22 +164,7 @@
     <%@ include file="_EmployeeSidebar.jspf" %>
 
     <main class="employee-main">
-        <header class="topbar">
-            <div>
-                <strong style="color:var(--bh-primary-dark);">BetterHR</strong>
-                <span style="color:var(--bh-muted); margin-left:8px;">C&#7893;ng th&#244;ng tin nh&#226;n vi&#234;n</span>
-            </div>
-            <div>
-                <a class="user-chip" href="${pageContext.request.contextPath}/employee/profile">
-                    <span class="avatar">B</span>
-                    <span>${currentEmployee.fullName}</span>
-                </a>
-                <a class="home-pill" href="${pageContext.request.contextPath}/homepage">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Trang ch&#7911;</span>
-                </a>
-            </div>
-        </header>
+        <%@ include file="_EmployeeTopbar.jspf" %>
 
         <div class="content">
             <section class="welcome-row">

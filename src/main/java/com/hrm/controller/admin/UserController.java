@@ -11,6 +11,8 @@ import com.hrm.model.entity.Role;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.Department;
 import com.hrm.dao.DBConnection;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
@@ -40,6 +42,8 @@ public class UserController extends HttpServlet {
     private static final String TEMP_PASS_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
     private static final int TEMP_PASS_LENGTH = 10; 
     private static final SecureRandom random = new SecureRandom();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     private String generateTempPassword() {
         StringBuilder sb = new StringBuilder(TEMP_PASS_LENGTH);
@@ -496,6 +500,15 @@ public class UserController extends HttpServlet {
                 return;
             }
 
+            if (existingUser.getRoleId() != roleId) {
+                notificationService.notifyUserRoleChangedForAdmins(
+                        notificationRecipientService.adminUsers(),
+                        currentUserId(request),
+                        userId,
+                        username
+                );
+            }
+
             if (password != null && !password.isEmpty()) {
                 if (password.length() < 8 || !password.matches("(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).*")) {
                     out.write("{\"success\":true,\"message\":\"Thông tin người dùng đã được cập nhật thành công, NHƯNG mật khẩu mới không hợp lệ (yêu cầu 8 ký tự, 1 hoa, 1 thường, 1 số) và KHÔNG được lưu.\"}");
@@ -559,10 +572,23 @@ public class UserController extends HttpServlet {
         SystemUserDAO userDAO = new SystemUserDAO();
 
         if (userDAO.toggleUserStatus(userId)) {
+            SystemUser updatedUser = userDAO.getUserById(userId);
+            notificationService.notifyUserStatusChangedForAdmins(
+                    notificationRecipientService.adminUsers(),
+                    currentUserId(request),
+                    userId,
+                    updatedUser != null ? updatedUser.getUsername() : "user",
+                    updatedUser != null && updatedUser.isActive()
+            );
             response.sendRedirect(request.getContextPath() + "/admin/users");
         } else {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to toggle user status");
         }
+    }
+
+    private int currentUserId(HttpServletRequest request) {
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        return currentUser != null ? currentUser.getUserId() : 0;
     }
 
     private void handleDeleteUser(HttpServletRequest request, HttpServletResponse response, Connection conn)

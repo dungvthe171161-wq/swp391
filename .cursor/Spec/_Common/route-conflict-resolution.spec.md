@@ -1,31 +1,33 @@
-# Cross-cutting Spec: Route Conflict Resolution
-Status: Approved
-Priority: High
-Related Code: `com.hrm.controller.dept.ViewTask`, `com.hrm.controller.employee.ViewTask`, `RoleAuthorizationFilter`, `ModulePermissionFilter`
+# Đặc tả dùng chung: Xử lý xung đột route
 
-## Van de hien tai
-Code hien co hai servlet cung khai bao route `/viewTask`:
-- `com.hrm.controller.dept.ViewTask`
-- `com.hrm.controller.employee.ViewTask`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-Dong thoi filter hien tai gan `/viewTask` cho Dept Manager role 3 va permission `VIEW_DEPARTMENTS`, nen Employee role 5 khong phu hop voi route nay.
+## Actor và phạm vi
+- Dept Manager và Employee cùng có chức năng xem task; spec này chốt cách xử lý route bị trùng.
 
-## Huong xu ly de xuat
-| Actor | Route moi | Controller |
-| --- | --- | --- |
-| Dept Manager | `/dept/tasks`, `/dept/task-detail` | `com.hrm.controller.dept.*` |
-| Employee | `/employee/tasks`, `/employee/task-detail` | `com.hrm.controller.employee.*` |
+## Route, controller và JSP liên quan
+- `com.hrm.controller.dept.ViewTask`: `@WebServlet(name = "ViewTask", urlPatterns = {"/viewTask"})`.
+- `com.hrm.controller.employee.ViewTask`: cũng khai báo name `ViewTask` và mapping `/viewTask`.
+- `ModulePermissionFilter` và `RoleAuthorizationFilter` đang coi `/viewTask` là route của Dept Manager.
 
-## Migration de xuat
-1. Doi mapping Dept task list/detail sang prefix `/dept`.
-2. Doi mapping Employee task sang prefix `/employee`.
-3. Cap nhat JSP link trong DeptManager va Employee.
-4. Cap nhat `RoleAuthorizationFilter`.
-5. Cap nhat `ModulePermissionFilter`.
-6. Giu redirect tam thoi neu can de tranh link cu hong.
+## Hiện trạng code
+- Build Java vẫn compile, nhưng servlet container có thể lỗi khi deploy vì trùng name/mapping.
+- Employee portal mới đã có `/employee/tasks` trong `EmployeePortalController`.
+- Dept legacy task vẫn dùng `/taskManager`, `/postTask`, `/viewTask`.
 
-## Acceptance Criteria
-- [ ] Khong con hai servlet trung `@WebServlet("/viewTask")`.
-- [ ] Dept Manager chi vao route `/dept/*` cho task.
-- [ ] Employee chi vao route `/employee/*` cho task cua minh.
-- [ ] Employee khong can permission `VIEW_DEPARTMENTS` de xem task duoc giao.
+## Quy tắc nghiệp vụ chuẩn
+- Route Dept phải nằm dưới `/dept/*`, ví dụ `/dept/tasks`, `/dept/tasks/create`, `/dept/tasks/detail`.
+- Route Employee phải nằm dưới `/employee/*`, ví dụ `/employee/tasks` và `/employee/tasks/detail`.
+- Không dùng chung servlet name cho hai controller khác actor.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần đổi mapping legacy `/viewTask` trước khi test task theo actor.
+- Cần cập nhật JSP link và filter sau khi tách route.
+- Cần kiểm tra lại permission vì `/viewTask` hiện yêu cầu `VIEW_DEPARTMENTS`.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

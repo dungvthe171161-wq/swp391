@@ -1,47 +1,32 @@
-# Feature: Employee assigned tasks
-Status: Approved
-Actor: Employee
-Owner: Dept Manager
-Priority: High
-Related code: `EmployeePortalController`, `TaskDAO`, `Views/Employee/Tasks.jsp`
+# Tính năng Employee: Xem và cập nhật task được giao
 
-## Goal
-Employees can view tasks assigned to them and update their own task status.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Routes
-- Task list: `GET /employee/tasks`
-- Update status: `POST /employee/tasks`
+## Actor và phạm vi
+- Employee xem task được giao và cập nhật trạng thái cho task của mình.
 
-## Data Shown
-- Task title.
-- Description.
-- Assigner.
-- Assigned date / due date if available.
-- Current status.
+## Route, controller và JSP liên quan
+- `/employee`, `/employee/*`.
+- Controller chính: `EmployeePortalController`.
+- JSP: `Views/Employee/EmployeeHome.jsp`, `Tasks.jsp`, `Leaves.jsp`, `Payroll.jsp`, `Contract.jsp`, `Attendance.jsp`, `EmployeeProfile.jsp`.
 
-## Allowed Status Updates
-Employee may update their assigned task to supported DB statuses:
-- `Waiting`
-- `In Progress`
-- `Completed`
+## Hiện trạng code
+- Route chuẩn là `/employee/tasks` trong `EmployeePortalController`.
+- DAO dùng truy vấn task theo employee để tránh xem task người khác.
+- Route legacy `/viewTask` không nên dùng cho Employee.
 
-`Rejected` should be reserved for manager-side handling unless a separate rejection flow is approved.
+## Quy tắc nghiệp vụ chuẩn
+- Employee chỉ thao tác task được giao cho mình.
+- Status phải nằm trong enum task hiện có.
+- Cập nhật task nên tạo notification cho Dept Manager nếu nghiệp vụ yêu cầu.
 
-## Main Flow
-1. Employee opens `/employee/tasks`.
-2. System loads tasks assigned to the employee's `EmployeeID`.
-3. Employee changes status on a task.
-4. System verifies the task is assigned to this employee.
-5. System updates status through `TaskDAO`.
-6. Page redirects back with success/error message.
+## Code còn lệch spec hoặc cần bổ sung
+- Xóa hoặc đổi mapping servlet legacy `employee.ViewTask`.
+- Cần test sửa URL taskId của employee khác.
 
-## Security Rules
-- Employee can only view tasks assigned to them.
-- Employee can only update tasks assigned to them.
-- Task ID tampering must not update another employee's task.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## Acceptance Criteria
-- [ ] Employee sees assigned tasks.
-- [ ] Employee can update status of their own tasks.
-- [ ] Employee cannot update tasks assigned to another employee.
-- [ ] Invalid task/status returns a friendly error.

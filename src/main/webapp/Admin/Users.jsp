@@ -8,7 +8,9 @@
                 <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý người dùng - HRMS</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/Admin/css/Admin_home.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/Admin/css/unified-layout.css">
@@ -71,6 +73,7 @@
                     </div>
 
                     <div class="top-bar-actions">
+                        <%@ include file="../Views/_NotificationBell.jspf" %>
 
                         <div class="user-menu" onclick="toggleUserMenu()">
                             <div class="user-info">

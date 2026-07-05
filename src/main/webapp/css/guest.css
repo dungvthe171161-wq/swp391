@@ -527,6 +527,119 @@ textarea {
     line-height: 1;
 }
 
+.candidate-schedule-card {
+    margin-bottom: 22px;
+}
+
+.candidate-schedule-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--guest-secondary-soft);
+    color: var(--guest-secondary);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.candidate-schedule-list {
+    display: grid;
+    gap: 12px;
+    padding: 16px 18px 18px;
+}
+
+.candidate-schedule-item {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    padding: 14px;
+    border: 1px solid #d8efe4;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8fffb 0%, #ffffff 100%);
+}
+
+.candidate-schedule-round {
+    min-height: 76px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 9px;
+    background: #fff3d8;
+    color: #8a6418;
+    text-align: center;
+}
+
+.candidate-schedule-round strong {
+    display: block;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.candidate-schedule-round span {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.candidate-schedule-content {
+    min-width: 0;
+}
+
+.candidate-schedule-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.candidate-schedule-title h3 {
+    margin: 0;
+    color: var(--guest-primary);
+    font-size: 16px;
+    line-height: 1.25;
+}
+
+.candidate-schedule-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 10px;
+}
+
+.candidate-schedule-meta span,
+.candidate-schedule-meta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--guest-muted);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.candidate-schedule-meta i {
+    color: var(--guest-secondary);
+}
+
+.candidate-schedule-meta a {
+    color: var(--guest-secondary);
+    font-weight: 800;
+}
+
+.candidate-schedule-note {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f7f5f1;
+    color: var(--guest-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
 .candidate-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 330px;
@@ -1222,6 +1335,30 @@ textarea {
 
     .candidate-hero h1 {
         font-size: 28px;
+    }
+
+    .candidate-schedule-list {
+        padding: 14px;
+    }
+
+    .candidate-schedule-item {
+        grid-template-columns: 1fr;
+    }
+
+    .candidate-schedule-round {
+        min-height: 54px;
+        grid-auto-flow: column;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .candidate-schedule-round span {
+        margin-top: 0;
+    }
+
+    .candidate-schedule-title {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .candidate-job-grid,

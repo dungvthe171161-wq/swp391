@@ -1,30 +1,32 @@
-# Feature: HR Manager xem CV va ung vien
-Status: Partial
-Actor: HR Manager
-Priority: Medium
-Related Code: `ViewCV`, `Views/hr/ViewCV.jsp`, `GuestDAO`
+# Tính năng HR Manager: Xem CV ứng viên
 
-## Route
-- `GET /viewCV`
-- `POST /viewCV`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong chinh
-1. HR Manager mo `/viewCV`.
-2. Controller lay thong tin candidate/CV theo id.
-3. Forward den `/Views/hr/ViewCV.jsp`.
-4. HR Manager xem thong tin de ra quyet dinh tuyen dung.
+## Actor và phạm vi
+- HR Manager xem hồ sơ và CV ứng viên để review tuyển dụng.
 
-## Hien trang code
-- `RoleAuthorizationFilter` cho role 2 va role 4 vao `/viewCV`.
-- JSP hien tai nam trong `/Views/hr/ViewCV.jsp`.
-- Trang lien quan HR Manager phai dung tieng Viet va BetterHR theme.
+## Route, controller và JSP liên quan
+- `/HrHomeController`, `/viewRecruitment`, `/viewCV`, `/hr/employee-list`, `/hr/create-employee`.
+- `/hr/approve-reject-contracts`, `/hr/payroll-approval`, `/hr/leaves` và các route `/hr/*`.
+- Controller: `HrHomeController`, `ViewRecruitment`, `ViewCV`, `EmployeeListController`, `CreateEmployeeController`, `ApproveRejectContractController`, `PayrollApprovalController`.
 
-## Acceptance Criteria
-- [ ] HR Manager xem duoc CV hop le.
-- [ ] Id candidate khong hop le hien thong bao loi.
-- [ ] Chua login bi chuyen ve login.
+## Hiện trạng code
+- `ViewCV` mapping `/viewCV` và dùng `VIEW_RECRUITMENT`.
+- GET hiện nhận `guestId` và enrich từ latest application/profile.
+- POST cập nhật `Guest.Status` thành Hired/Rejected.
 
-## Missing Work
-- [ ] Dinh nghia ro action approve/reject candidate neu HR Manager la nguoi quyet dinh.
-- [ ] Tach view CV rieng cho HR Staff/HR Manager neu UI khac nhau.
-- [ ] Chuan hoa message email gui ung vien neu approve/reject.
+## Quy tắc nghiệp vụ chuẩn
+- CV phải thuộc đúng application đang review.
+- Trạng thái tuyển dụng phải cập nhật `Application`, không cập nhật `Guest` legacy.
+- HR Manager phải có quyền review phù hợp.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Sửa tham số từ `guestId` sang `applicationId` hoặc kiểm tra application rõ ràng.
+- Bỏ cập nhật `Guest.Status` cho workflow mới.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

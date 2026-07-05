@@ -12,6 +12,7 @@
 <div class="employee-shell">
     <%@ include file="_EmployeeSidebar.jspf" %>
     <main class="employee-main">
+        <%@ include file="_EmployeeTopbar.jspf" %>
         <div class="content">
             <h1 class="page-title">Hợp đồng</h1>
             <p class="page-note">Hiển thị hợp đồng mới nhất theo EmployeeID của nhân viên.</p>

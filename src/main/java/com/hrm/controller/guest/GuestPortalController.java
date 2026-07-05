@@ -9,9 +9,14 @@ import com.hrm.dao.InterviewDAO;
 import com.hrm.dao.NotificationDAO;
 import com.hrm.dao.OfferDAO;
 import com.hrm.dao.RecruitmentDAO;
+import com.hrm.dao.SystemUserDAO;
 import com.hrm.model.entity.CandidateProfile;
 import com.hrm.model.entity.Guest;
+import com.hrm.model.entity.Notification;
+import com.hrm.model.entity.Offer;
 import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -61,6 +66,9 @@ public class GuestPortalController extends HttpServlet {
     private final transient OfferDAO offerDAO = new OfferDAO();
     private final transient NotificationDAO notificationDAO = new NotificationDAO();
     private final transient RecruitmentDAO recruitmentDAO = new RecruitmentDAO();
+    private final transient NotificationService notificationService = new NotificationService();
+    private final transient NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
+    private final transient SystemUserDAO systemUserDAO = new SystemUserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -80,8 +88,10 @@ public class GuestPortalController extends HttpServlet {
         loadBaseData(request, currentUser);
 
         switch (path) {
-            case "/guest/applications" ->
+            case "/guest/applications" -> {
+                    setApplicationMessages(request);
                     request.getRequestDispatcher("/Views/Guest/Applications.jsp").forward(request, response);
+            }
             case "/guest/profile" -> {
                 setProfileMessages(request);
                 request.getRequestDispatcher("/Views/Guest/Profile.jsp").forward(request, response);
@@ -194,8 +204,10 @@ public class GuestPortalController extends HttpServlet {
         request.setAttribute("upcomingInterviews", upcomingInterviews);
         request.setAttribute("pendingOffers", pendingOffers);
         request.setAttribute("notifications", notificationDAO.findByUserId(currentUser.getUserId(), 5));
+        request.setAttribute("appNotifications", notificationService.recentForUser(currentUser.getUserId(), 5));
         request.setAttribute("recommendedRecruitments", recruitmentDAO.getLatestThree());
         request.setAttribute("unreadNotifications", notificationDAO.countUnreadByUserId(currentUser.getUserId()));
+        request.setAttribute("appNotificationCount", String.valueOf(notificationService.unreadCount(currentUser.getUserId())));
         request.setAttribute("totalApplications", applicationDAO.countByUserId(currentUser.getUserId()));
         request.setAttribute("processingApplications", applicationDAO.countActiveByUserId(currentUser.getUserId()));
         request.setAttribute("hiredApplications", applicationDAO.countByUserIdAndStatus(currentUser.getUserId(), "Hired"));
@@ -219,6 +231,15 @@ public class GuestPortalController extends HttpServlet {
             request.setAttribute("error", "Không thể lưu hồ sơ. Vui lòng thử lại.");
         } else if ("avatar".equals(error)) {
             request.setAttribute("error", "Ảnh đại diện phải là PNG, JPG, JPEG, WEBP hoặc GIF và không quá 5MB.");
+        }
+    }
+
+    private void setApplicationMessages(HttpServletRequest request) {
+        if ("1".equals(request.getParameter("offerUpdated"))) {
+            request.setAttribute("success", "Da cap nhat phan hoi offer cua ban.");
+        }
+        if ("offer".equals(request.getParameter("error"))) {
+            request.setAttribute("error", "Khong the cap nhat offer. Offer co the da het han hoac da duoc phan hoi.");
         }
     }
 
@@ -508,12 +529,74 @@ public class GuestPortalController extends HttpServlet {
         try {
             int offerId = Integer.parseInt(request.getParameter("offerId"));
             String status = request.getParameter("status");
+            Offer offer = offerDAO.findById(offerId);
             boolean updated = offerDAO.respondOffer(offerId, currentUser.getUserId(), status);
+            if (updated && offer != null) {
+                ApplicationDAO.CandidateApplicationView applicationView =
+                        applicationDAO.findCandidateApplicationById(offer.getApplicationId());
+                notifyHrAboutOfferResponse(currentUser, applicationView, status);
+            }
             response.sendRedirect(request.getContextPath() + "/guest/applications?"
                     + (updated ? "offerUpdated=1" : "error=offer"));
         } catch (NumberFormatException ex) {
             response.sendRedirect(request.getContextPath() + "/guest/applications?error=offer");
         }
+    }
+
+    private void notifyHrAboutOfferResponse(SystemUser currentUser,
+                                            ApplicationDAO.CandidateApplicationView applicationView,
+                                            String status) {
+        if (applicationView == null || applicationView.getApplication() == null) {
+            return;
+        }
+        boolean accepted = "Accepted".equals(status);
+        String candidateName = candidateName(applicationView, currentUser);
+        String jobTitle = firstNonBlank(applicationView.getJobTitle(), "vi tri tuyen dung");
+        String decisionText = accepted ? "chap nhan" : "tu choi";
+        String title = accepted ? "Ung vien da chap nhan offer" : "Ung vien da tu choi offer";
+        String message = candidateName + " da " + decisionText + " offer cho " + jobTitle + ".";
+
+        List<Integer> recipients = new java.util.ArrayList<>();
+        recipients.addAll(notificationRecipientService.hrStaffUsers());
+        recipients.addAll(notificationRecipientService.hrManagerUsers());
+        Notification template = notificationService.buildNotification(
+                0,
+                currentUser.getUserId(),
+                "Offer",
+                applicationView.getApplication().getApplicationId(),
+                "Offer",
+                title,
+                message,
+                "/candidates?filterStatus=" + (accepted ? "Hired" : "Rejected"),
+                accepted ? "High" : "Normal"
+        );
+        template.setApplicationId(applicationView.getApplication().getApplicationId());
+        notificationService.notifyUsers(recipients, template);
+
+        sendOfferResponseEmailsToHr(title, message);
+    }
+
+    private void sendOfferResponseEmailsToHr(String subject, String message) {
+        List<String> emails = systemUserDAO.findActiveEmailsByRoleNames(List.of("HR Staff", "HR Manager"));
+        for (String email : emails) {
+            try {
+                EmailSender.sendEmail(email, subject, message);
+            } catch (Exception ignored) {
+                // Offer response is already saved; mail failure must not block the candidate flow.
+            }
+        }
+    }
+
+    private String candidateName(ApplicationDAO.CandidateApplicationView applicationView, SystemUser currentUser) {
+        CandidateProfile profile = applicationView.getCandidateProfile();
+        Guest guest = applicationView.getGuest();
+        return firstNonBlank(
+                profile != null ? profile.getFullName() : null,
+                guest != null ? guest.getFullName() : null,
+                currentUser.getUsername(),
+                currentUser.getEmail(),
+                "Ung vien"
+        );
     }
 
     private String requireText(String value, String message) {

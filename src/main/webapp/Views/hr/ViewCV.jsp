@@ -145,23 +145,60 @@
                                 <p><strong>Họ và tên:</strong> ${g.fullName}</p>
                                 <p><strong>Email:</strong> ${g.email}</p>
                                 <p><strong>Điện thoại:</strong> ${g.phone}</p>
-                                <p><strong>Trạng thái:</strong> ${g.status}</p>
+                                <c:set var="cvStatusKey" value="${fn:toLowerCase(g.status)}" />
+<p><strong>Trạng thái:</strong>
+    <c:choose>
+        <c:when test="${cvStatusKey eq 'applied'}">Đã nộp</c:when>
+        <c:when test="${cvStatusKey eq 'screening'}">Sàng lọc CV</c:when>
+        <c:when test="${cvStatusKey eq 'interview'}">Phỏng vấn</c:when>
+        <c:when test="${cvStatusKey eq 'offered'}">Chờ phản hồi offer</c:when>
+        <c:when test="${cvStatusKey eq 'hired'}">Đã nhận offer</c:when>
+        <c:when test="${cvStatusKey eq 'rejected'}">Từ chối</c:when>
+        <c:otherwise>${g.status}</c:otherwise>
+    </c:choose>
+</p>
                                 <p><strong>Ngày ứng tuyển:</strong> ${g.appliedDate}</p>
                             </div>
 
                             <div class="action-buttons">
-                                <c:if test="${g.status eq 'Processing' and r.applicant > 0}">
-                                    <form action="${pageContext.request.contextPath}/viewCV" method="post">
-                                        <input name="action" value="apply" type="hidden">
-                                        <input name="guestId" value="${g.guestId}" type="hidden">
-                                        <button type="submit" class="btn btn-success w-100">Accept</button>
-                                    </form>
-                                    <form action="${pageContext.request.contextPath}/viewCV" method="post">
-                                        <input name="action" value="reject" type="hidden">
-                                        <input name="guestId" value="${g.guestId}" type="hidden">
-                                        <button type="submit" class="btn btn-danger w-100">Reject</button>
-                                    </form>
-                                </c:if>
+                                <c:choose>
+                                    <c:when test="${not empty application}">
+                                        <c:if test="${cvStatusKey eq 'applied' or cvStatusKey eq 'screening'}">
+                                            <a href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${application.applicationId}" class="btn btn-success w-100 mb-2">
+                                                Đặt lịch phỏng vấn
+                                            </a>
+                                            <form action="${pageContext.request.contextPath}/viewCV" method="post" onsubmit="return confirm('Bạn chắc chắn muốn loại CV này? Hồ sơ sẽ chuyển sang trạng thái Từ chối.');">
+                                                <input name="action" value="reject" type="hidden">
+                                                <input name="applicationId" value="${application.applicationId}" type="hidden">
+                                                <button type="submit" class="btn btn-danger w-100">Loại CV</button>
+                                            </form>
+                                        </c:if>
+                                        <c:if test="${cvStatusKey eq 'interview'}">
+                                            <a href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${application.applicationId}" class="btn btn-success w-100 mb-2">
+                                                Xem lịch phỏng vấn
+                                            </a>
+                                        </c:if>
+                                        <c:if test="${cvStatusKey eq 'offered'}">
+                                            <a href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${application.applicationId}" class="btn btn-success w-100 mb-2">
+                                                Xem offer
+                                            </a>
+                                        </c:if>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:if test="${g.status eq 'Processing' and r.applicant > 0}">
+                                            <form action="${pageContext.request.contextPath}/viewCV" method="post">
+                                                <input name="action" value="apply" type="hidden">
+                                                <input name="guestId" value="${g.guestId}" type="hidden">
+                                                <button type="submit" class="btn btn-success w-100">Duyệt CV</button>
+                                            </form>
+                                            <form action="${pageContext.request.contextPath}/viewCV" method="post" onsubmit="return confirm('Bạn chắc chắn muốn loại CV này?');">
+                                                <input name="action" value="reject" type="hidden">
+                                                <input name="guestId" value="${g.guestId}" type="hidden">
+                                                <button type="submit" class="btn btn-danger w-100">Loại CV</button>
+                                            </form>
+                                        </c:if>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
 
                             <div class="recruitment-info">

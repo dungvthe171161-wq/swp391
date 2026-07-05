@@ -17,9 +17,7 @@ import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -57,18 +55,10 @@ public class CreateEmployeeController extends HttpServlet {
             return;
         }
         try {
-            // Get only guests with HIRED status
-            // Try both "Hired" and "HIRED" to handle different case variations
-            List<Guest> hiredGuests = new ArrayList<>();
-            hiredGuests.addAll(guestDAO.getByStatus("Hired"));
-            hiredGuests.addAll(guestDAO.getByStatus("HIRED"));
-            
-            // Remove duplicates based on guestId
-            Map<Integer, Guest> uniqueGuests = new LinkedHashMap<>();
+            List<Guest> hiredGuests = guestDAO.findOfferAcceptedGuestsReadyForEmployee();
             for (Guest guest : hiredGuests) {
-                uniqueGuests.put(guest.getGuestId(), guest);
+                guest.setStatus("Offer Accepted");
             }
-            hiredGuests = new ArrayList<>(uniqueGuests.values());
             
             // Get all departments for the dropdown, excluding Human Resources
             // (This page is for creating regular employees, not HR staff)
@@ -145,20 +135,17 @@ public class CreateEmployeeController extends HttpServlet {
             String address = request.getParameter("address");
             String departmentIdStr = request.getParameter("departmentId");
             String position = request.getParameter("position");
-            String status = request.getParameter("status");
+            String status = "Probation";
             String username = request.getParameter("username");
             String password = request.getParameter("password");
             String hireDateStr = request.getParameter("hireDate");
             String endDateStr = request.getParameter("endDate");
             
-            // Validate required fields
+            // Validate required fields. Username/password are only required when the candidate has no existing account.
             if (guestIdStr == null || guestIdStr.trim().isEmpty() ||
                 fullName == null || fullName.trim().isEmpty() ||
                 email == null || email.trim().isEmpty() ||
                 departmentIdStr == null || departmentIdStr.trim().isEmpty() ||
-                status == null || status.trim().isEmpty() ||
-                username == null || username.trim().isEmpty() ||
-                password == null || password.trim().isEmpty() ||
                 hireDateStr == null || hireDateStr.trim().isEmpty()) {
                 
                 request.setAttribute(ERROR_ATTRIBUTE, "Please fill in all required fields.");
@@ -171,7 +158,38 @@ public class CreateEmployeeController extends HttpServlet {
             int departmentId = Integer.parseInt(departmentIdStr);
             LocalDate dob = dobStr != null && !dobStr.trim().isEmpty() ? LocalDate.parse(dobStr) : null;
             LocalDate hireDate = LocalDate.parse(hireDateStr); // Required field, already validated
-            LocalDate endDate = endDateStr != null && !endDateStr.trim().isEmpty() ? LocalDate.parse(endDateStr) : null;
+            LocalDate endDate = endDateStr != null && !endDateStr.trim().isEmpty() ? LocalDate.parse(endDateStr) : hireDate.plusDays(7);
+
+            if (!guestDAO.isOfferAcceptedGuestReadyForEmployee(guestId)) {
+                request.setAttribute(ERROR_ATTRIBUTE,
+                        "á»¨ng viÃªn chá»‰ Ä‘Æ°á»£c táº¡o nhÃ¢n viÃªn sau khi Ä‘Ã£ pass phá»ng váº¥n, nháº­n offer vÃ  cháº¥p nháº­n offer.");
+                doGet(request, response);
+                return;
+            }
+
+            Guest selectedGuest = guestDAO.findOfferAcceptedGuestReadyForEmployeeByGuestId(guestId);
+            if (selectedGuest == null) {
+                request.setAttribute(ERROR_ATTRIBUTE, "KhÃ´ng tÃ¬m tháº¥y á»©ng viÃªn guest Ä‘Ã£ chá»n.");
+                doGet(request, response);
+                return;
+            }
+            if (fullName == null || fullName.isBlank()) {
+                fullName = selectedGuest.getFullName();
+            }
+            if (email == null || email.isBlank()) {
+                email = selectedGuest.getEmail();
+            }
+            if (phone == null || phone.isBlank()) {
+                phone = selectedGuest.getPhone();
+            }
+            if (dob == null && selectedGuest.getDateOfBirth() != null) {
+                dob = selectedGuest.getDateOfBirth();
+            }
+            if ((address == null || address.isBlank())
+                    && selectedGuest.getAddress() != null
+                    && !selectedGuest.getAddress().isBlank()) {
+                address = selectedGuest.getAddress();
+            }
             
             // Validate end date is after start date if both are provided
             if (endDate != null && endDate.isBefore(hireDate)) {
@@ -184,40 +202,28 @@ public class CreateEmployeeController extends HttpServlet {
             String employmentPeriod = "";
             if (hireDateStr != null && !hireDateStr.trim().isEmpty()) {
                 employmentPeriod = hireDateStr;
-                if (endDateStr != null && !endDateStr.trim().isEmpty()) {
-                    employmentPeriod += " - " + endDateStr;
+                if (endDate != null) {
+                    employmentPeriod += " - " + endDate;
                 }
             }
             
             email = email.trim().toLowerCase();
-            username = username.trim();
+            username = username != null ? username.trim() : "";
+            password = password != null ? password.trim() : "";
 
             SystemUser existingUserByEmail = dao.getAccountByEmail(email);
-            SystemUser existingUserByUsername = dao.getAccountByUsername(username);
-            if (existingUserByUsername != null
-                    && (existingUserByEmail == null
-                    || existingUserByUsername.getUserId() != existingUserByEmail.getUserId())) {
-                request.setAttribute(ERROR_ATTRIBUTE, "Username already exists. Please choose a different username.");
-                doGet(request, response);
-                return;
+            boolean promoteExistingAccount = existingUserByEmail != null;
+            if (!promoteExistingAccount) {
+                username = generateEmployeeUsername(email, fullName);
+                password = generateTemporaryPassword(guestId);
             }
 
-            int guestRoleId = dao.getOrCreateRoleIdByName("Guest");
             int employeeRoleId = dao.getOrCreateRoleIdByName("Employee");
-            if (existingUserByEmail != null
-                    && (existingUserByEmail.getEmployeeId() != null || existingUserByEmail.getRoleId() != guestRoleId)) {
-                request.setAttribute(ERROR_ATTRIBUTE, "Email already belongs to a non-guest account.");
+            if (existingUserByEmail != null && existingUserByEmail.getEmployeeId() != null) {
+                request.setAttribute(ERROR_ATTRIBUTE, "This account is already linked to an employee.");
                 doGet(request, response);
                 return;
             }
-            
-            // Check if email already exists in Employee table
-            if (employeeDAO.isEmailExists(email)) {
-                request.setAttribute(ERROR_ATTRIBUTE, "Email already exists in the system. Please use a different email.");
-                doGet(request, response);
-                return;
-            }
-            
             // Create employee object
             Employee employee = new Employee();
             // Don't set EmployeeID - let database auto-generate it
@@ -258,12 +264,10 @@ public class CreateEmployeeController extends HttpServlet {
             System.out.println("Employee inserted successfully with ID: " + insertedEmployee.getEmployeeId());
             
             boolean userCreated;
-            if (existingUserByEmail != null) {
-                userCreated = dao.promoteGuestToEmployee(
+            if (promoteExistingAccount) {
+                userCreated = dao.promoteExistingUserToEmployee(
                         existingUserByEmail.getUserId(),
                         insertedEmployee.getEmployeeId(),
-                        username,
-                        password,
                         employeeRoleId);
             } else {
                 userCreated = dao.createEmployeeUser(insertedEmployee.getEmployeeId(), username, password, employeeRoleId);
@@ -277,8 +281,8 @@ public class CreateEmployeeController extends HttpServlet {
                 return;
             }
             
-            // Delete the guest from database since they are now an employee
-            guestDAO.delete(guestId);
+            // Keep Guest/Application history for audit; hide from this screen through eligibility query.
+            guestDAO.updateStatus(guestId, "Converted");
             
             // Set success message and redirect to employee list
             request.getSession().setAttribute("success", "Employee created successfully! Name: " + fullName);
@@ -296,6 +300,29 @@ public class CreateEmployeeController extends HttpServlet {
         }
     }
     
+    private String generateEmployeeUsername(String email, String fullName) {
+        String base = email != null && email.contains("@")
+                ? email.substring(0, email.indexOf('@'))
+                : fullName;
+        if (base == null || base.isBlank()) {
+            base = "employee";
+        }
+        base = base.trim().toLowerCase().replaceAll("[^a-z0-9]+", "");
+        if (base.isBlank()) {
+            base = "employee";
+        }
+
+        String candidate = base;
+        int suffix = 1;
+        while (dao.getAccountByUsername(candidate) != null) {
+            candidate = base + suffix++;
+        }
+        return candidate;
+    }
+
+    private String generateTemporaryPassword(int guestId) {
+        return "Temp@" + guestId + "123";
+    }
     private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         return PermissionUtil.ensurePermission(request, response, REQUIRED_PERMISSION, DENIED_MESSAGE);
@@ -310,3 +337,4 @@ public class CreateEmployeeController extends HttpServlet {
         return "Create Employee Controller";
     }
 }
+

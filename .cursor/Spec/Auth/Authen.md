@@ -1,31 +1,35 @@
-# Đặc tả Phân hệ: Xác thực (Authentication)
-Trạng thái: Đã phê duyệt
-Tác nhân: Guest, SystemUser
+# Đặc tả module: Xác thực
 
-## Phạm vi
-Phân hệ Xác thực (Auth) bao gồm các chức năng đăng nhập, đăng ký, đăng xuất, Google Login, định tuyến trang chủ (homepage routing), quên mật khẩu, xác minh mã PIN và đổi mật khẩu.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Các tập tin đặc tả tính năng (Feature files)
-- `feature-login.spec.md`
-- `feature-register.spec.md`
-- `feature-logout.spec.md`
-- `feature-homepage-routing.spec.md`
-- `feature-password-recovery-change.spec.md`
-- `feature-google-login.spec.md`
+## Actor và phạm vi
+- Người dùng chưa đăng nhập và mọi actor đăng nhập vào HRMS.
 
-## Nguyên tắc đúng với mã nguồn hiện tại
-- Tài khoản đăng nhập bằng tham số tên đăng nhập `user` và tham số mật khẩu `pass`.
-- Đăng nhập cục bộ (local login) chấp nhận tên đăng nhập (username) hoặc email.
-- Đăng ký cục bộ (local register) sử dụng tuyến đường (route) `/register`, tiến hành tạo tài khoản `SystemUser` và gửi email BetterHR nếu cấu hình SMTP chính xác.
-- Phiên đăng nhập (session) lưu trữ thuộc tính `systemUser`.
-- Mật khẩu trong mã nguồn hiện tại được xác thực qua hàm `DAO.checkPassword` và lưu/cập nhật tại trường `SystemUser.PasswordHash` theo logic lưu văn bản thuần (plain text) hiện tại của dự án.
-- Luồng quên mật khẩu sử dụng `SystemUser.Email`, mã PIN phiên làm việc `pinCode`, và cờ xác thực `recoveryVerified` trước khi cho phép truy cập vào `/changepassRE`.
-- `/homepage` đóng vai trò là cổng truy cập trung tâm để hiển thị các bảng điều khiển (dashboard) được cấp quyền tương ứng với vai trò (role), hệ thống không tự động chuyển hướng bắt buộc theo vai trò.
-- Mã nguồn dự án sử dụng Jakarta Servlet, không sử dụng `javax.servlet`.
+## Route, controller và JSP liên quan
+- `/login`, `/logout`, `/register`, `/homepage`, `/ForgotPassword`, `/Recovery`, `/changepass`, `/changepassRE`.
+- `/auth/google`, `/auth/google/callback`, `/loginByGmail`.
+- Controller: `LoginController`, `LogoutController`, `RegisterController`, `GoogleAuthController`, `HomepageController` và controller đổi/quên mật khẩu.
 
-## Các lưu ý/cảnh báo
-- Chức năng tự động nhớ đăng nhập (Remember-me) hiện tại mới chỉ lưu trữ cookie tên đăng nhập `username`, không lưu trữ mật khẩu.
-- Chức năng đăng nhập Google (Google Login) đã có sẵn servlet OAuth2 và callback tương ứng.
-- Đăng nhập đã được tích hợp đếm số lần thất bại `FailedLoginAttempt`, khóa tài khoản đến thời điểm `LockedUntil`, và thời điểm đăng nhập cuối `LastLogin` theo `SystemUser`.
-- Cấu hình SMTP gửi mail phải sử dụng biến môi trường (environment variable) hoặc tập tin cấu hình cục bộ được thiết lập ignore (bỏ qua không đẩy lên git), không được viết cứng (hardcode) mã bí mật trong code Java.
-- Vai trò mặc định cho tài khoản đăng ký mới là `Guest` và trường `EmployeeID = NULL`; tài khoản này chỉ được chuyển sang vai trò `Employee` và gán mã nhân viên `EmployeeID` sau khi bộ phận HR Manager phê duyệt/tạo thông tin nhân viên mới.
+## Hiện trạng code
+- Đăng nhập local đọc `SystemUser` và so sánh mật khẩu bằng `DAO.checkPassword`.
+- Role redirect hiện dùng `RoleRedirectUtil`.
+- Google Login đã có backend OAuth2.
+- Mật khẩu hiện lưu/so sánh dạng plain text trong cột `PasswordHash`.
+
+## Quy tắc nghiệp vụ chuẩn
+- Đăng nhập thành công phải set session `systemUser` và redirect đúng dashboard.
+- Đăng xuất phải invalidate session.
+- Đăng ký local mặc định role Guest, `EmployeeID = NULL`.
+- Mật khẩu thiết kế chuẩn phải hash, không lưu plain text.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần nâng cấp hashing mật khẩu và migration tương thích.
+- Cần rate limit login/quên mật khẩu.
+- Cần đảm bảo Google config lấy từ môi trường khi deploy.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

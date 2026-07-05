@@ -1,94 +1,32 @@
-# Feature: Employee leave requests
-Status: Approved
-Actor: Employee
-Approver: Dept Manager
-Administrative viewer: HR Manager / HR Staff
-Priority: High
-Related code: `EmployeePortalController`, `MailRequestDAO`, `MailRequest`, `Views/Employee/Leaves.jsp`, future Dept Manager approval page
+# Tính năng Employee: Quản lý đơn nghỉ phép
 
-## Goal
-Employees can submit leave requests, see their request history, and track approval status. Dept Manager is the primary approver because they manage team workload and schedule. HR/payroll uses approved requests for payroll calculation.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Routes
-- Employee create/view: `GET /employee/leaves`
-- Employee submit: `POST /employee/leaves`
-- Dept Manager approval route should be added as: `GET/POST /dept/leaves`
-- HR route `/hr/leaves` may remain read-only or administrative, but should not be the primary approval owner.
+## Actor và phạm vi
+- Employee tạo và xem đơn nghỉ phép của mình.
 
-## Database
-Use existing table `MailRequest`.
+## Route, controller và JSP liên quan
+- `/employee`, `/employee/*`.
+- Controller chính: `EmployeePortalController`.
+- JSP: `Views/Employee/EmployeeHome.jsp`, `Tasks.jsp`, `Leaves.jsp`, `Payroll.jsp`, `Contract.jsp`, `Attendance.jsp`, `EmployeeProfile.jsp`.
 
-Required fields:
-- `EmployeeID`
-- `RequestType = 'Leave'`
-- `LeaveType`: technical values stay in English: `Annual`, `Sick`, `Maternity`, `Unpaid`, `Other`
-- `StartDate`
-- `EndDate`
-- `Reason`
-- `Status`: `Pending`, `Approved`, `Rejected`
-- `ApprovedBy`: approver user/employee reference when available
+## Hiện trạng code
+- `EmployeePortalController` xử lý `/employee/leaves`.
+- Code validate ngày và kiểm tra overlap.
+- Có luồng gửi notification cho Dept Manager.
 
-Do not create a separate `Leave` table unless schema refactor is approved.
+## Quy tắc nghiệp vụ chuẩn
+- Ngày kết thúc không được trước ngày bắt đầu.
+- Nghỉ có lương phải kiểm tra số buổi còn lại.
+- Employee chỉ xem đơn của mình.
 
-## Employee Form
-Employee enters:
-- Leave type.
-- Leave detail: full day, morning, afternoon.
-- Start date.
-- End date.
-- Handover person email.
-- Handover work details.
-- Reason.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test đơn overlap, hết phép, ngày quá khứ nếu nghiệp vụ cấm.
+- Cần test notification gửi đúng người duyệt.
 
-The UI text is Vietnamese, but backend status/type values remain technical English to avoid breaking payroll logic.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## Main Flow
-1. Employee opens `/employee/leaves`.
-2. System shows the employee's own leave history.
-3. Employee submits a new leave request.
-4. System validates required fields and valid date range.
-5. System saves the request to `MailRequest` with `Status = 'Pending'`.
-6. Dept Manager reviews pending requests for employees in their department.
-7. Dept Manager approves or rejects the request.
-8. Approved leave requests are included in payroll leave calculation.
-
-## Approval Rule
-- Primary approver: Dept Manager.
-- Dept Manager can only approve/reject requests from employees in their department.
-- HR Manager can view all leave requests for audit/administration.
-- Payroll reads only `Status = 'Approved'` leave requests.
-
-## Validation Rules
-- Start date is required.
-- End date is required.
-- Start date and end date cannot be in the past.
-- End date cannot be before start date.
-- Handover person email is required and must be a valid email.
-- Handover work details are required.
-- Reason is required.
-- Duplicate or overlapping pending/approved leave ranges should be blocked.
-- Rejected requests do not block a new request for the same date range.
-- Paid leave requests cannot exceed the employee's remaining leave sessions.
-- Full-day leave counts as 2 sessions per day.
-- Morning or afternoon leave counts as 1 session per day.
-- Pending paid leave requests are counted against remaining sessions to prevent overbooking.
-
-## Payroll Rules
-- Paid leave types: `Annual`, `Sick`, `Maternity`.
-- Unpaid leave type: `Unpaid`.
-- `Other` should be reviewed carefully by approver; payroll behavior must be explicit before production.
-- Payroll must ignore `Pending` and `Rejected` requests.
-- When a leave request is created successfully, the system sends an email to the handover person with the leave dates and handover work details.
-
-## Acceptance Criteria
-- [ ] Employee can submit a leave request.
-- [ ] Employee can see only their own leave requests.
-- [ ] New request defaults to `Pending`.
-- [ ] Employee cannot submit leave dates in the past.
-- [ ] Employee cannot submit paid leave beyond remaining leave sessions.
-- [ ] Handover email, handover details, and reason are required.
-- [ ] Handover email receives the handover details after successful submission.
-- [ ] Dept Manager can approve/reject department requests.
-- [ ] HR can view leave requests for tracking.
-- [ ] Approved leave affects payroll calculation.
-- [ ] UI labels are Vietnamese while DB enum values remain valid.

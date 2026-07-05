@@ -7,14 +7,18 @@ package com.hrm.controller.hr;
 
 import com.hrm.dao.DepartmentDAO;
 import com.hrm.dao.EmployeeDAO;
+import com.hrm.dao.MailRequestDAO;
 import com.hrm.dao.PayrollDAO;
 import com.hrm.model.entity.Department;
 import com.hrm.model.entity.Employee;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +32,9 @@ public class HrHomeController extends HttpServlet {
     
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
     private final DepartmentDAO departmentDAO = new DepartmentDAO();
+    private final MailRequestDAO mailRequestDAO = new MailRequestDAO();
     private final PayrollDAO payrollDAO = new PayrollDAO();
+    private final NotificationService notificationService = new NotificationService();
    
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
@@ -41,6 +47,7 @@ public class HrHomeController extends HttpServlet {
     throws ServletException, IOException {
         try {
             System.out.println("HrHomeController: Starting processRequest...");
+            populateNotificationAttributes(request);
             
             List<Employee> employees = employeeDAO.getAll();
             System.out.println("HrHomeController: Loaded " + employees.size() + " employees");
@@ -50,6 +57,7 @@ public class HrHomeController extends HttpServlet {
             
             String section = request.getParameter("section");
             String payrollStatus = request.getParameter("payrollStatus");
+            String requestStatus = request.getParameter("requestStatus");
             String employeeFilter = request.getParameter("employeeFilter");
             String monthFilter = request.getParameter("monthFilter");
             String successMessage = request.getParameter("success");
@@ -95,6 +103,8 @@ public class HrHomeController extends HttpServlet {
                 request.setAttribute("payrollMonthFilter", "");
             }
             
+            populateRequestApprovalAttributes(request, requestStatus);
+            pullRequestFlashMessages(request);
             request.setAttribute("employees", employees);
             request.setAttribute("departments", departments);
             request.setAttribute("section", section != null ? section : "hr-home");
@@ -116,6 +126,96 @@ public class HrHomeController extends HttpServlet {
         }
     } 
 
+    private void populateNotificationAttributes(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        SystemUser systemUser = session != null ? (SystemUser) session.getAttribute("systemUser") : null;
+        if (systemUser == null || systemUser.getUserId() <= 0) {
+            request.setAttribute("appNotificationCount", "0");
+            request.setAttribute("appNotifications", java.util.Collections.emptyList());
+            return;
+        }
+        request.setAttribute("appNotificationCount",
+                String.valueOf(notificationService.unreadCount(systemUser.getUserId())));
+        request.setAttribute("appNotifications",
+                notificationService.recentForUser(systemUser.getUserId(), 5));
+    }
+
+
+    private void populateRequestApprovalAttributes(HttpServletRequest request, String requestedStatus) {
+        String status = normalizeRequestStatus(requestedStatus);
+        request.setAttribute("requestStatus", status);
+        request.setAttribute("mailRequests", mailRequestDAO.getAllRequests(status));
+        request.setAttribute("requestPendingCount", mailRequestDAO.countRequestsByStatus("Pending"));
+        request.setAttribute("requestApprovedCount", mailRequestDAO.countRequestsByStatus("Approved"));
+        request.setAttribute("requestRejectedCount", mailRequestDAO.countRequestsByStatus("Rejected"));
+    }
+
+    private void handleRequestDecision(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false);
+        SystemUser currentUser = session != null ? (SystemUser) session.getAttribute("systemUser") : null;
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        int requestId = parseInt(request.getParameter("requestId"), -1);
+        String decision = request.getParameter("decision");
+        boolean validDecision = "Approved".equals(decision) || "Rejected".equals(decision);
+        boolean success = requestId > 0
+                && validDecision
+                && mailRequestDAO.updateRequestStatus(requestId, decision, resolveApproverId(currentUser));
+
+        session.setAttribute(success ? "hrRequestSuccess" : "hrRequestError",
+                success
+                        ? ("Approved".equals(decision) ? "Da duyet yeu cau moi nhat." : "Da tu choi yeu cau.")
+                        : "Khong the cap nhat yeu cau nay. Co the yeu cau da duoc xu ly truoc do.");
+
+        String status = normalizeRequestStatus(request.getParameter("requestStatus"));
+        response.sendRedirect(request.getContextPath()
+                + "/HrHomeController?section=requests-approval&requestStatus=" + status);
+    }
+
+    private void pullRequestFlashMessages(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
+        Object success = session.getAttribute("hrRequestSuccess");
+        Object error = session.getAttribute("hrRequestError");
+        if (success != null) {
+            request.setAttribute("hrRequestSuccess", success);
+            session.removeAttribute("hrRequestSuccess");
+        }
+        if (error != null) {
+            request.setAttribute("hrRequestError", error);
+            session.removeAttribute("hrRequestError");
+        }
+    }
+
+    private Integer resolveApproverId(SystemUser currentUser) {
+        if (currentUser.getEmployeeId() != null) {
+            return currentUser.getEmployeeId();
+        }
+        if (currentUser.getEmployee() != null) {
+            return currentUser.getEmployee().getEmployeeId();
+        }
+        return null;
+    }
+
+    private String normalizeRequestStatus(String status) {
+        if ("Approved".equals(status) || "Rejected".equals(status)) {
+            return status;
+        }
+        return "Pending";
+    }
+
+    private int parseInt(String value, int fallback) {
+        try {
+            return value == null || value.isBlank() ? fallback : Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            return fallback;
+        }
+    }
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /** 
      * Handles the HTTP <code>GET</code> method.
@@ -140,6 +240,10 @@ public class HrHomeController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
+        if ("updateRequestStatus".equals(request.getParameter("action"))) {
+            handleRequestDecision(request, response);
+            return;
+        }
         processRequest(request, response);
     }
 

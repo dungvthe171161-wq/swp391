@@ -1,4 +1,19 @@
 <%@ page pageEncoding="UTF-8" %>
+<%@ page import="com.hrm.model.entity.Notification" %>
+<%@ page import="java.util.List" %>
+<%!
+    private String hrStaffEsc(Object value) {
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+%>
 <%
     String __hrStaffPageTitle = request.getAttribute("hrStaffPageTitle") != null
             ? String.valueOf(request.getAttribute("hrStaffPageTitle"))
@@ -11,27 +26,82 @@
             : "Quản trị hồ sơ";
     String __hrStaffNotificationCount = request.getAttribute("hrStaffNotificationCount") != null
             ? String.valueOf(request.getAttribute("hrStaffNotificationCount"))
-            : "5";
+            : "0";
+    int __hrStaffUnreadCount;
+    try {
+        __hrStaffUnreadCount = Integer.parseInt(__hrStaffNotificationCount);
+    } catch (NumberFormatException ex) {
+        __hrStaffUnreadCount = 0;
+    }
+    Object __hrStaffNotificationAttr = request.getAttribute("hrStaffNotifications");
+    List<Notification> __hrStaffNotifications = __hrStaffNotificationAttr instanceof List
+            ? (List<Notification>) __hrStaffNotificationAttr
+            : java.util.Collections.emptyList();
+    String __hrStaffReturnUrl = request.getRequestURI();
+    if (request.getQueryString() != null && !request.getQueryString().isBlank()) {
+        __hrStaffReturnUrl += "?" + request.getQueryString();
+    }
 %>
 <header class="topbar">
     <div class="topbar-title">
         <div class="topbar-icon"><i class="fa-solid fa-briefcase"></i></div>
-        <h1><%= __hrStaffPageTitle %></h1>
+        <h1><%= hrStaffEsc(__hrStaffPageTitle) %></h1>
     </div>
     <div class="topbar-actions">
         <label class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" placeholder="<%= __hrStaffSearchPlaceholder %>" aria-label="<%= __hrStaffSearchPlaceholder %>">
+            <input type="search" placeholder="<%= hrStaffEsc(__hrStaffSearchPlaceholder) %>" aria-label="<%= hrStaffEsc(__hrStaffSearchPlaceholder) %>">
         </label>
-        <button class="icon-button" type="button" aria-label="Thông báo">
-            <i class="fa-solid fa-bell"></i>
-            <span class="notification-dot"><%= __hrStaffNotificationCount %></span>
-        </button>
+        <div class="notification-menu" data-notification-menu>
+            <button class="icon-button notification-trigger" type="button" aria-label="Thông báo" aria-haspopup="true" aria-expanded="false" data-notification-trigger>
+                <i class="fa-solid fa-bell"></i>
+                <span class="notification-dot <%= __hrStaffUnreadCount <= 0 ? "is-zero" : "" %>"><%= __hrStaffNotificationCount %></span>
+            </button>
+            <div class="notification-dropdown" role="menu" aria-label="Danh sách thông báo" hidden data-notification-dropdown>
+                <div class="notification-dropdown-header">
+                    <div>
+                        <strong>Thông báo</strong>
+                        <span><%= __hrStaffUnreadCount %> chưa đọc</span>
+                    </div>
+                    <% if (__hrStaffUnreadCount > 0) { %>
+                        <form method="post" action="<%= request.getContextPath() %>/notifications/read-all">
+                            <input type="hidden" name="redirect" value="<%= hrStaffEsc(__hrStaffReturnUrl) %>">
+                            <button type="submit">Đánh dấu đọc</button>
+                        </form>
+                    <% } %>
+                </div>
+                <div class="notification-list">
+                    <% if (__hrStaffNotifications.isEmpty()) { %>
+                        <div class="notification-empty">
+                            <i class="fa-regular fa-bell"></i>
+                            <span>Chưa có thông báo mới</span>
+                        </div>
+                    <% } else { %>
+                        <% for (Notification __notification : __hrStaffNotifications) { %>
+                            <form class="notification-item <%= __notification.isRead() ? "" : "unread" %>" method="post" action="<%= request.getContextPath() %>/notifications/read">
+                                <input type="hidden" name="notificationId" value="<%= __notification.getNotificationId() %>">
+                                <input type="hidden" name="targetUrl" value="<%= hrStaffEsc(__notification.getTargetUrl()) %>">
+                                <input type="hidden" name="redirect" value="<%= hrStaffEsc(__hrStaffReturnUrl) %>">
+                                <button type="submit">
+                                    <span class="notification-item-icon">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </span>
+                                    <span class="notification-item-copy">
+                                        <strong><%= hrStaffEsc(__notification.getTitle()) %></strong>
+                                        <span><%= hrStaffEsc(__notification.getMessage()) %></span>
+                                    </span>
+                                </button>
+                            </form>
+                        <% } %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
         <div class="avatar-chip" aria-label="Tài khoản hiện tại">
             <div class="avatar">HR</div>
             <div>
                 <strong>Nhân viên nhân sự</strong>
-                <span><%= __hrStaffProfileSubtitle %></span>
+                <span><%= hrStaffEsc(__hrStaffProfileSubtitle) %></span>
             </div>
         </div>
         <a class="home-button" href="<%=request.getContextPath()%>/homepage">
@@ -40,3 +110,92 @@
         </a>
     </div>
 </header>
+<script>
+    (function () {
+        var menus = document.querySelectorAll('[data-notification-menu]');
+
+        function updateNotificationDropdownPosition(menu) {
+            var trigger = menu.querySelector('[data-notification-trigger]');
+            var dropdown = menu.querySelector('[data-notification-dropdown]');
+            if (!trigger || !dropdown) {
+                return;
+            }
+
+            var triggerRect = trigger.getBoundingClientRect();
+            var panelWidth = Math.min(320, window.innerWidth - 24);
+            var left = Math.min(
+                Math.max(12, triggerRect.right - panelWidth),
+                window.innerWidth - panelWidth - 12
+            );
+
+            dropdown.style.setProperty('--notification-panel-left', left + 'px');
+            dropdown.style.setProperty('--notification-panel-top', (triggerRect.bottom + 10) + 'px');
+        }
+
+        function updateOpenNotificationMenus() {
+            menus.forEach(function (menu) {
+                if (menu.classList.contains('is-open')) {
+                    updateNotificationDropdownPosition(menu);
+                }
+            });
+        }
+
+        function closeMenu(menu) {
+            var trigger = menu.querySelector('[data-notification-trigger]');
+            var dropdown = menu.querySelector('[data-notification-dropdown]');
+            menu.classList.remove('is-open');
+            if (dropdown) {
+                dropdown.hidden = true;
+            }
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        menus.forEach(function (menu) {
+            var trigger = menu.querySelector('[data-notification-trigger]');
+            if (!trigger || trigger.dataset.notificationBound === 'true') {
+                return;
+            }
+
+            trigger.dataset.notificationBound = 'true';
+            trigger.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                menus.forEach(function (otherMenu) {
+                    if (otherMenu !== menu) {
+                        closeMenu(otherMenu);
+                    }
+                });
+
+                var dropdown = menu.querySelector('[data-notification-dropdown]');
+                var isOpen = menu.classList.toggle('is-open');
+                if (dropdown) {
+                    dropdown.hidden = !isOpen;
+                }
+                if (isOpen) {
+                    updateNotificationDropdownPosition(menu);
+                }
+                trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            menu.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+        });
+
+        document.addEventListener('click', function () {
+            menus.forEach(closeMenu);
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                menus.forEach(closeMenu);
+            }
+        });
+
+        window.addEventListener('resize', updateOpenNotificationMenus);
+        window.addEventListener('scroll', updateOpenNotificationMenus, true);
+    }());
+</script>

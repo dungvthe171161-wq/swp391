@@ -1,45 +1,33 @@
-# Feature: Ung vien nop don ung tuyen
-Status: Approved
-Actor: Logged-in Candidate
-Priority: High
-Related Code: `RecruitmentController`, `GuestDAO`, `Views/ApplyForm.jsp`
+# Tính năng legacy: Ứng viên public nộp hồ sơ
 
-## Route
-- `GET /RecruitmentController?action=apply&id={recruitmentId}` hoac route apply theo code hien tai.
-- `POST /RecruitmentController`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong GET
-1. User da dang nhap bam `Ung tuyen ngay` o danh sach job.
-2. Controller kiem tra session `systemUser`.
-3. Controller lay chi tiet recruitment theo id.
-4. Forward den `/Views/ApplyForm.jsp`.
+## Actor và phạm vi
+- Ứng viên public gửi hồ sơ ứng tuyển từ trang tuyển dụng.
 
-## Luong chua dang nhap
-1. Guest chua dang nhap bam `Ung tuyen ngay`.
-2. He thong redirect sang `/login?error=login_required`.
-3. Sau khi dang nhap thanh cong, user quay ve `/homepage` theo luong auth hien tai; neu can quay lai job cu thi can bo sung returnUrl sau nay.
+## Route, controller và JSP liên quan
+- `/homepage`, `/RecruitmentController` và các route public nộp hồ sơ nếu có.
+- Spec này là legacy; spec chính cho ứng viên có tài khoản nằm trong thư mục `Guest`.
+- JSP public và trang thành công ứng tuyển.
 
-## Luong POST
-1. User da dang nhap nhap ho ten, email, phone va cac thong tin apply.
-2. User upload CV neu form yeu cau.
-3. Controller validate du lieu.
-4. Luu candidate/application qua DAO.
-5. Thanh cong redirect `/Views/Success.jsp`.
+## Hiện trạng code
+- PublicCandidate là tên spec cũ cho ứng viên public.
+- Code hiện đã có actor Guest rõ hơn với role `Guest` và portal `/guest/*`.
+- Luồng public vẫn có thể dùng `RecruitmentController`.
 
-## Validation
-- Ho ten bat buoc.
-- Email dung format.
-- Phone dung format co ban.
-- Recruitment id phai ton tai.
-- CV neu upload phai dung dinh dang cho phep.
+## Quy tắc nghiệp vụ chuẩn
+- Ứng viên public được xem job đang mở.
+- Nếu nộp hồ sơ cần tạo hoặc liên kết Guest/Application theo thiết kế mới.
+- Không dùng spec PublicCandidate làm nguồn chính nếu mâu thuẫn với Guest.
 
-## Acceptance Criteria
-- [ ] Ung vien submit du lieu hop le thanh cong.
-- [ ] Chua login khong mo duoc form apply.
-- [ ] Thieu email/ho ten/phone hien loi.
-- [ ] Recruitment id khong ton tai khong tao application.
-- [ ] Submit thanh cong sang success page.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần hợp nhất dần spec PublicCandidate vào Guest.
+- Cần xác định route public nào còn được dùng thật.
+- Cần đảm bảo không tạo dữ liệu ứng viên trùng.
 
-## Missing Work
-- [ ] Gioi han kich thuoc upload CV.
-- [ ] Chong nop trung email cho cung mot job neu business rule yeu cau.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

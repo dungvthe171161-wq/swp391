@@ -11,6 +11,9 @@ import com.hrm.dao.SystemLogDAO;
 import com.hrm.model.entity.Contract;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.SystemLog;
+import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -49,6 +52,8 @@ public class ApproveRejectContractController extends HttpServlet {
     
     private final transient ContractDAO contractDAO = new ContractDAO();
     private final transient SystemLogDAO systemLogDAO = new SystemLogDAO();
+    private final transient NotificationService notificationService = new NotificationService();
+    private final transient NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
     private static final Pattern SALARY_PATTERN = Pattern.compile("(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*VND");
 
     /** 
@@ -235,6 +240,7 @@ public class ApproveRejectContractController extends HttpServlet {
                     
                     // Get employee name for success message
                     String employeeName = getEmployeeName(contract.getEmployeeId());
+                    notifyHrStaffAboutContractDecision(request, contractId, employeeName, STATUS_ACTIVE);
                     
                     String successMsg = "✅ Contract approved successfully!" + 
                         (employeeName.isEmpty() ? "" : " Contract for " + employeeName + " has been approved and changed to Active status.");
@@ -261,6 +267,7 @@ public class ApproveRejectContractController extends HttpServlet {
                 if (success) {
                     // Get employee name for success message
                     String employeeName = getEmployeeName(contract.getEmployeeId());
+                    notifyHrStaffAboutContractDecision(request, contractId, employeeName, STATUS_REJECTED);
                     
                     String successMsg = "✅ Contract rejected successfully!" + 
                         (employeeName.isEmpty() ? "" : " Contract for " + employeeName + " has been rejected.") +
@@ -369,6 +376,20 @@ public class ApproveRejectContractController extends HttpServlet {
     private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         return PermissionUtil.ensurePermission(request, response, REQUIRED_PERMISSION, DENIED_MESSAGE);
+    }
+
+    private void notifyHrStaffAboutContractDecision(HttpServletRequest request,
+                                                    int contractId,
+                                                    String employeeName,
+                                                    String decision) {
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        notificationService.notifyContractDecisionForHrStaff(
+                notificationRecipientService.hrStaffUsers(),
+                currentUser != null ? currentUser.getUserId() : 0,
+                contractId,
+                employeeName,
+                decision
+        );
     }
 
     /** 

@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260627-1">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260630-1">
     <style>
         :root {
             --bh-primary: #00482f;
@@ -391,11 +391,12 @@
 
         .eyebrow {
             margin: 0 0 8px;
-            color: var(--bh-mint);
+            color: #d8f7e7 !important;
             font-size: 13px;
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
         .hero h2 {
@@ -404,13 +405,16 @@
             font-size: clamp(30px, 4vw, 46px);
             line-height: 1.05;
             letter-spacing: -0.04em;
+            color: #fff !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
         }
 
         .hero p {
             margin: 14px 0 0;
             max-width: 720px;
-            color: rgba(255, 255, 255, 0.78);
+            color: rgba(255, 255, 255, 0.94) !important;
             line-height: 1.7;
+            font-weight: 600;
         }
 
         .hero-actions {

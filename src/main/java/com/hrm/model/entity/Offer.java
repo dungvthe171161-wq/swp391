@@ -131,4 +131,14 @@ public class Offer implements Serializable {
             default -> status;
         };
     }
+
+    public String getStartDateInputValue() {
+        return startDate != null ? startDate.toString() : "";
+    }
+
+    public String getExpiredAtInputValue() {
+        return expiredAt != null
+                ? expiredAt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                : "";
+    }
 }

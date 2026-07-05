@@ -337,23 +337,41 @@ CREATE TABLE IF NOT EXISTS `Offer` (
 CREATE TABLE IF NOT EXISTS `Notification` (
     NotificationID INT AUTO_INCREMENT PRIMARY KEY,
     UserID INT NOT NULL,
+    ActorUserID INT NULL,
     ApplicationID INT NULL,
+    EntityType VARCHAR(50) NULL,
+    EntityID INT NULL,
     Title VARCHAR(200) NOT NULL,
     Message TEXT NOT NULL,
     Type ENUM(
         'Application',
         'Interview',
         'Offer',
+        'Leave',
+        'Payroll',
+        'Task',
+        'Contract',
+        'Recruitment',
+        'Permission',
+        'User',
         'System'
     ) DEFAULT 'System',
+    TargetUrl VARCHAR(255) NULL,
+    Priority ENUM('Low','Normal','High') DEFAULT 'Normal',
     IsRead BOOLEAN DEFAULT FALSE,
     CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     ReadDate DATETIME NULL,
+    ExpiresAt DATETIME NULL,
     INDEX idx_notification_user_read (UserID, IsRead, CreatedDate),
     INDEX idx_notification_application (ApplicationID),
+    INDEX idx_notification_entity (EntityType, EntityID),
+    INDEX idx_notification_priority (Priority, CreatedDate),
     CONSTRAINT fk_notification_user FOREIGN KEY (UserID)
         REFERENCES SystemUser(UserID)
         ON DELETE CASCADE,
+    CONSTRAINT fk_notification_actor_user FOREIGN KEY (ActorUserID)
+        REFERENCES SystemUser(UserID)
+        ON DELETE SET NULL,
     CONSTRAINT fk_notification_application FOREIGN KEY (ApplicationID)
         REFERENCES `Application`(ApplicationID)
         ON DELETE SET NULL

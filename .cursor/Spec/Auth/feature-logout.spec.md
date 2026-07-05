@@ -1,35 +1,32 @@
-# Tính năng: Đăng xuất hệ thống (Logout)
-Trạng thái: Đã phê duyệt
-Tác nhân: Người dùng đã đăng nhập (Authenticated User)
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `LogoutController`
+# Tính năng Auth: Đăng xuất
 
-## Mục tiêu
-Cho phép người dùng đã đăng nhập thoát khỏi hệ thống bằng cách hủy phiên làm việc `HttpSession` và quay trở lại trang chủ công khai (public homepage).
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Các Route
-- `GET /logout`
-- `POST /logout`
+## Actor và phạm vi
+- User đăng xuất khỏi HRMS.
 
-## Luồng chính
-1. Người dùng nhấp chọn đăng xuất.
-2. Lớp điều khiển `LogoutController` lấy phiên làm việc hiện tại bằng lệnh `request.getSession(false)`.
-3. Nếu tồn tại phiên làm việc, hệ thống thực hiện hủy phiên làm việc (invalidate session).
-4. Hệ thống chuyển hướng (redirect) người dùng về trang chủ `/homepage`.
-
-## Luồng lỗi
-- Nếu không tồn tại phiên làm việc, hệ thống vẫn chuyển hướng người dùng về trang chủ `/homepage`.
+## Route, controller và JSP liên quan
+- `/login`, `/logout`, `/register`, `/homepage`, `/ForgotPassword`, `/Recovery`, `/changepass`, `/changepassRE`.
+- `/auth/google`, `/auth/google/callback`, `/loginByGmail`.
+- Controller: `LoginController`, `LogoutController`, `RegisterController`, `GoogleAuthController`, `HomepageController` và controller đổi/quên mật khẩu.
 
 ## Hiện trạng code
-- Đã có sẵn các tuyến đường xử lý `GET /logout` và `POST /logout`.
-- Đã thực hiện hủy phiên làm việc (invalidate session) của người dùng.
-- Chưa xử lý xóa (clear) các cookie tự động nhớ đăng nhập `username` và `password`.
+- `LogoutController` mapping `/logout`.
+- Luồng chính invalidate session rồi redirect về login/homepage.
+- Không thay đổi dữ liệu nghiệp vụ.
 
-## Tiêu chí nghiệm thu
-- [ ] Sau khi đăng xuất, phiên làm việc (session) cũ không còn giá trị sử dụng.
-- [ ] Sau khi đăng xuất, người dùng được chuyển hướng về trang chủ công khai `/homepage`.
-- [ ] Truy cập đường dẫn `/logout` khi chưa thực hiện đăng nhập không gây ra lỗi hệ thống (server error).
+## Quy tắc nghiệp vụ chuẩn
+- Đăng xuất phải hủy session hiện tại.
+- Sau logout không được quay lại trang bảo vệ bằng nút Back nếu session đã hết.
+- Thông báo sau logout nên ngắn gọn bằng tiếng Việt.
 
-## Các phần việc còn thiếu
-- [ ] Thực hiện xóa cookie remember-me khi người dùng đăng xuất.
-- [ ] Nếu bổ sung cơ chế token remember-me, phải thực hiện thu hồi (revoke) token tương ứng trong cơ sở dữ liệu.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra cache header nếu trình duyệt còn hiển thị trang cũ.
+- Cần test logout trên mọi actor.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

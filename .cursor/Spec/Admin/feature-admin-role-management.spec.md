@@ -1,39 +1,32 @@
-# Tính năng: Quản lý vai trò (Role management)
-Trạng thái: Đã phê duyệt
-Tác nhân: Admin
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `RoleServlet`, `RoleDAO`, `Admin/Roles.jsp`
+# Tính năng Admin: Quản lý vai trò
 
-## Các Route
-- `GET /admin/role/*`
-- `POST /admin/role/*`
-- `PUT /admin/role/*`
-- `DELETE /admin/role/*`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng danh sách
-1. Admin truy cập màn hình quản lý vai trò (role).
-2. Bộ lọc (Filter) yêu cầu quyền `VIEW_ROLES`.
-3. `RoleServlet` lấy danh sách vai trò (role).
-4. Phân trang với kích thước trang mặc định `DEFAULT_PAGE_SIZE = 10`.
-5. Chuyển tiếp (forward) đến `Admin/Roles.jsp` hoặc trả về dữ liệu dạng JSON tùy theo yêu cầu của API.
+## Actor và phạm vi
+- Admin quản lý danh sách role trong hệ thống.
 
-## Luồng CRUD (Thêm, Đọc, Sửa, Xóa)
-1. Admin tạo vai trò (role) mới bằng phương thức `POST`.
-2. Admin xem chi tiết vai trò bằng phương thức `GET` có chứa tham số ID.
-3. Admin cập nhật vai trò bằng phương thức `PUT`.
-4. Admin xóa vai trò bằng phương thức `DELETE` nếu vai trò đó không có ràng buộc dữ liệu.
+## Route, controller và JSP liên quan
+- `/admin`, `/admin/users`, `/admin/role/*`, `/admin/role-permissions/api`, `/departments`.
+- Controller: `AdminController`, `UserController`, `RoleServlet`, `RolePermissionServlet`, `DepartmentController`.
+- JSP: `AdminHome.jsp`, `Users.jsp`, `RolePermissionManager.jsp` và các trang Admin liên quan.
 
 ## Hiện trạng code
-- Đã có `RoleServlet` xử lý tuyến đường `/admin/role/*`.
-- Đã thiết lập loại nội dung JSON (JSON content type) cho API.
-- Bộ lọc quyền (Permission filter) nhận diện API vai trò khi đường dẫn (path) có ID hoặc sử dụng phương thức (method) khác `GET`.
+- `RoleServlet` xử lý `/admin/role/*`.
+- `ModulePermissionFilter` yêu cầu `VIEW_ROLES` cho route role.
+- Role seed gồm 6 actor chính.
 
-## Tiêu chí nghiệm thu
-- [ ] Danh sách vai trò hiển thị đúng số lượng 10 bản ghi trên mỗi trang (page size = 10).
-- [ ] Các hành động tạo/sửa/xóa vai trò trả về kết quả JSON rõ ràng.
-- [ ] Người dùng thiếu quyền `VIEW_ROLES` sẽ bị chặn truy cập.
-- [ ] Lỗi xác thực (validation error) không cho phép tạo vai trò có tên rỗng.
+## Quy tắc nghiệp vụ chuẩn
+- Role phải có tên rõ nghĩa và không phá vỡ `RoleRedirectUtil`.
+- Không xóa role đang có user nếu chưa xử lý dữ liệu liên quan.
+- Thay đổi role phải cập nhật permission tương ứng.
 
-## Các phần việc còn thiếu
-- [ ] Định nghĩa quy tắc không cho phép xóa vai trò (role) đang có người dùng gán vào.
-- [ ] Thêm nhật ký hoạt động (audit log) khi có thay đổi liên quan đến vai trò.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra controller có phân biệt quyền xem và quyền sửa role chưa.
+- Cần audit cho mọi thay đổi role.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

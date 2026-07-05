@@ -12,6 +12,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/Admin/css/admin-dashboard-redesign.css?v=20260618c">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -75,9 +76,7 @@
                     </div>
 
                     <div class="top-bar-actions">
-                        <button class="icon-button notification-btn" type="button" aria-label="Thông báo">
-                            <span class="material-symbols-outlined">notifications</span>
-                        </button>
+                        <%@ include file="../Views/_NotificationBell.jspf" %>
                         <a class="icon-button" href="${pageContext.request.contextPath}/admin?action=profile" aria-label="Cài đặt">
                             <span class="material-symbols-outlined">settings</span>
                         </a>

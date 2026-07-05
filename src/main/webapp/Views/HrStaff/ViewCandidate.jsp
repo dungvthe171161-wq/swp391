@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <!DOCTYPE html>
@@ -301,6 +301,95 @@
                 min-width: 720px;
             }
 
+            body.hr-staff-page-shell .staff-content .candidate-table-card {
+                overflow: hidden !important;
+            }
+
+            body.hr-staff-page-shell .staff-content .candidate-table-wrapper {
+                overflow-x: auto !important;
+                background: #fff !important;
+            }
+
+            body.hr-staff-page-shell .staff-content table.candidate-table {
+                width: 100% !important;
+                min-width: 1120px !important;
+                table-layout: fixed !important;
+                border-collapse: separate !important;
+                border-spacing: 0 !important;
+            }
+
+            body.hr-staff-page-shell .staff-content .candidate-table th,
+            body.hr-staff-page-shell .staff-content .candidate-table td {
+                padding: 12px 14px !important;
+                vertical-align: middle !important;
+                line-height: 1.45 !important;
+                white-space: normal !important;
+                overflow-wrap: anywhere !important;
+                word-break: normal !important;
+            }
+
+            body.hr-staff-page-shell .staff-content .candidate-table thead th {
+                background: #fbf8f2 !important;
+                color: #5f6c64 !important;
+                font-size: 12px !important;
+                font-weight: 900 !important;
+                letter-spacing: 0.04em !important;
+                text-transform: uppercase !important;
+            }
+
+            body.hr-staff-page-shell .staff-content .candidate-table tbody td {
+                color: #1f2d2a !important;
+                font-size: 13px !important;
+            }
+
+            .candidate-id,
+            .candidate-phone,
+            .candidate-cv,
+            .candidate-status {
+                white-space: nowrap !important;
+            }
+
+            .candidate-name {
+                font-weight: 700 !important;
+            }
+
+            .candidate-email,
+            .candidate-job {
+                font-size: 13px !important;
+                line-height: 1.4 !important;
+            }
+
+            .candidate-date {
+                font-size: 13px !important;
+                color: #4f5d58 !important;
+            }
+
+            .candidate-actions {
+                min-width: 132px !important;
+            }
+
+            .candidate-action-stack {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+
+            body.hr-staff-page-shell .staff-content .candidate-action-stack .btn {
+                width: 100% !important;
+                min-height: 34px !important;
+                justify-content: center !important;
+                padding: 0 10px !important;
+                border-radius: 999px !important;
+                font-size: 12px !important;
+                font-weight: 900 !important;
+                line-height: 1.1 !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+
             thead {
                 background: #f9fafb;
                 text-transform: uppercase;
@@ -330,9 +419,19 @@
                 text-transform: uppercase;
             }
 
-            .status-processing { background: #eef2ff; color: #4338ca; }
+            .status {
+                white-space: nowrap;
+                text-transform: none;
+                font-weight: 800;
+            }
+            .status-applied { background: #eff6ff; color: #1d4ed8; }
+            .status-screening { background: #f5f3ff; color: #6d28d9; }
+            .status-interview { background: #ecfeff; color: #0e7490; }
+            .status-offered { background: #fff7ed; color: #c2410c; }
             .status-hired { background: #dcfce7; color: #166534; }
             .status-rejected { background: #fee2e2; color: #b91c1c; }
+            .status-withdrawn { background: #f3f4f6; color: #4b5563; }
+            .status-processing,
             .status-default { background: #f3f4f6; color: #374151; }
 
             .empty-state {
@@ -348,6 +447,16 @@
                 background: #fee2e2;
                 color: #991b1b;
                 font-weight: 600;
+            }
+
+            .message.success {
+                background: #dcfce7;
+                color: #166534;
+            }
+
+            .message.warning {
+                background: #fef3c7;
+                color: #92400e;
             }
 
             .pagination {
@@ -431,7 +540,7 @@
             }
         </style>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260627-1">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260630-1">
     </head>
     <body class="hr-staff-page-shell">
         <%
@@ -481,7 +590,7 @@
                     <div class="page-header">
                         <div>
                             <h1 class="page-title">Danh sách ứng viên</h1>
-                            <p class="muted">Theo dõi và quản lý các ứng viên đã nộp hồ sơ tuyển dụng</p>
+                            <p class="muted">Theo dõi và quản lý toàn bộ hồ sơ ứng viên trong quy trình tuyển dụng.</p>
                         </div>
                     </div>
                 </section>
@@ -497,9 +606,12 @@
                                 <label for="filterStatus">Trạng thái</label>
                                 <select id="filterStatus" name="filterStatus">
                                     <option value="">Tất cả</option>
-                                    <option value="processing" <c:if test="${param.filterStatus eq 'processing'}">selected</c:if>>Đang xử lý</option>
-                                    <option value="hired" <c:if test="${param.filterStatus eq 'hired'}">selected</c:if>>Đã tuyển</option>
-                                    <option value="rejected" <c:if test="${param.filterStatus eq 'rejected'}">selected</c:if>>Từ chối</option>
+                                    <option value="Applied" <c:if test="${param.filterStatus eq 'Applied'}">selected</c:if>>Đã nộp</option>
+                                    <option value="Screening" <c:if test="${param.filterStatus eq 'Screening'}">selected</c:if>>Sàng lọc</option>
+                                    <option value="Interview" <c:if test="${param.filterStatus eq 'Interview'}">selected</c:if>>Phỏng vấn</option>
+                                    <option value="Offered" <c:if test="${param.filterStatus eq 'Offered'}">selected</c:if>>Đã gửi offer</option>
+                                    <option value="Hired" <c:if test="${param.filterStatus eq 'Hired'}">selected</c:if>>Đã nhận offer</option>
+                                    <option value="Rejected" <c:if test="${param.filterStatus eq 'Rejected'}">selected</c:if>>Từ chối</option>
                                 </select>
                             </div>
                             <div class="filter-field" style="grid-column: span 2;">
@@ -518,24 +630,35 @@
                     </form>
                 </section>
 
-                <section class="card table-card">
+                <section class="card table-card candidate-table-card">
                     <div class="table-header">
                         <h2 style="margin:0;">Danh sách ứng viên</h2>
-                        <span class="muted">Hiển thị ${guest != null ? fn:length(guest) : 0} ứng viên trên trang này</span>
+                        <span class="muted">Hiển thị ${applications != null ? fn:length(applications) : 0} hồ sơ trên trang này</span>
                     </div>
-                    <div class="table-wrapper">
+                    <div class="table-wrapper candidate-table-wrapper">
                         <c:choose>
-                            <c:when test="${empty guest}">
+                            <c:when test="${empty applications}">
                                 <div class="empty-state">
                                     <div style="font-size:42px;">🗃️</div>
                                     <p>Không có ứng viên phù hợp với bộ lọc hiện tại.</p>
                                 </div>
                             </c:when>
                             <c:otherwise>
-                                <table>
+                                <table class="candidate-table">
+                                    <colgroup>
+                                        <col style="width: 80px;">
+                                        <col style="width: 150px;">
+                                        <col style="width: 220px;">
+                                        <col style="width: 115px;">
+                                        <col style="width: 60px;">
+                                        <col style="width: 125px;">
+                                        <col style="width: 140px;">
+                                        <col style="width: 140px;">
+                                        <col style="width: 130px;">
+                                    </colgroup>
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
+                                            <th>Application</th>
                                             <th>Họ và tên</th>
                                             <th>Email</th>
                                             <th>Số điện thoại</th>
@@ -543,29 +666,58 @@
                                             <th>Ngày ứng tuyển</th>
                                             <th>Trạng thái</th>
                                             <th>Tin tuyển dụng</th>
+                                            <th>Phỏng vấn</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <c:forEach var="g" items="${guest}">
+                                        <c:forEach var="app" items="${applications}">
                                             <tr>
-                                                <td>#${g.guestId}</td>
-                                                <td>${g.fullName}</td>
-                                                <td>${g.email}</td>
-                                                <td>${g.phone}</td>
-                                                <td><a href="${pageContext.request.contextPath}/viewCV?guestId=${g.guestId}" style="color:var(--accent);font-weight:600;text-decoration:none;">Xem</a></td>
-                                                <td>${g.appliedDate}</td>
-                                                <td>
-                                                    <c:set var="statusKey" value="${fn:toLowerCase(g.status)}"/>
+                                                <td class="candidate-id">#${app.application.applicationId}</td>
+                                                <td class="candidate-name">
+                                                    <c:choose>
+                                                        <c:when test="${not empty app.candidateProfile.fullName}">${app.candidateProfile.fullName}</c:when>
+                                                        <c:otherwise>${app.guest.fullName}</c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="candidate-email">
+                                                    <c:choose>
+                                                        <c:when test="${not empty app.candidateProfile.email}">${app.candidateProfile.email}</c:when>
+                                                        <c:otherwise>${app.guest.email}</c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="candidate-phone">
+                                                    <c:choose>
+                                                        <c:when test="${not empty app.candidateProfile.phone}">${app.candidateProfile.phone}</c:when>
+                                                        <c:otherwise>${app.guest.phone}</c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="candidate-cv"><a href="${pageContext.request.contextPath}/viewCV?applicationId=${app.application.applicationId}" style="color:var(--accent);font-weight:600;text-decoration:none;">Xem</a></td>
+                                                <td class="candidate-date">${app.application.appliedDate}</td>
+                                                <td class="candidate-status">
+                                                    <c:set var="statusKey" value="${fn:toLowerCase(app.application.status)}"/>
                                                     <span class="status status-${statusKey != null ? statusKey : 'default'}">
                                                         <c:choose>
-                                                            <c:when test="${statusKey eq 'processing'}">Đang xử lý</c:when>
-                                                            <c:when test="${statusKey eq 'hired'}">Đã tuyển</c:when>
+                                                            <c:when test="${statusKey eq 'applied'}">Đã nộp</c:when>
+                                                            <c:when test="${statusKey eq 'screening'}">Sàng lọc CV</c:when>
+                                                            <c:when test="${statusKey eq 'interview'}">Phỏng vấn</c:when>
+                                                            <c:when test="${statusKey eq 'offered'}">Chờ phản hồi offer</c:when>
+                                                            <c:when test="${statusKey eq 'hired'}">Đã nhận offer</c:when>
                                                             <c:when test="${statusKey eq 'rejected'}">Từ chối</c:when>
-                                                            <c:otherwise>${g.status}</c:otherwise>
+                                                            <c:otherwise>${app.application.status}</c:otherwise>
                                                         </c:choose>
                                                     </span>
                                                 </td>
-                                                <td>${g.recruitmentId}</td>
+                                                <td class="candidate-job">${app.jobTitle}</td>
+                                                <td class="candidate-actions">
+                                                    <div class="candidate-action-stack">
+                                                        <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${app.application.applicationId}">
+                                                            Đặt lịch
+                                                        </a>
+                                                        <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${app.application.applicationId}">
+                                                            Offer
+                                                        </a>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </c:forEach>
                                     </tbody>
@@ -576,6 +728,12 @@
 
                     <c:if test="${not empty mess}">
                         <div class="message">${mess}</div>
+                    </c:if>
+                    <c:if test="${not empty success}">
+                        <div class="message success">${success}</div>
+                    </c:if>
+                    <c:if test="${not empty warning}">
+                        <div class="message warning">${warning}</div>
                     </c:if>
 
                     <c:if test="${totalPages > 1}">

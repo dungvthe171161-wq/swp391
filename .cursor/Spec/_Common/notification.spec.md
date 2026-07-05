@@ -1,77 +1,33 @@
-# Common Spec: Notification
-Status: Approved
-Actor: All authenticated actors
-Priority: Medium
-Related Data: `Notification`, `SystemUser`, optional `Application`
+# Đặc tả dùng chung: Thông báo hệ thống
 
-## Muc tieu
-`Notification` la module thong bao dung chung cho toan bo BetterHR, khong thuoc rieng Guest.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-Moi thong bao gan voi mot account trong `SystemUser` thong qua `UserID`. Cac module khac co the tao notification khi co su kien can bao cho user.
+## Actor và phạm vi
+- Mọi actor có chuông thông báo hoặc nhận sự kiện nghiệp vụ theo `SystemUser.UserID`.
 
-## Database
-Bang `Notification` gom:
-- `NotificationID`
-- `UserID`
-- `ApplicationID`
-- `Title`
-- `Message`
-- `Type`
-- `IsRead`
-- `CreatedDate`
-- `ReadDate`
+## Route, controller và JSP liên quan
+- `NotificationService`, `NotificationDAO`, `NotificationController`.
+- `AppNotificationFilter`, `HrStaffNotificationFilter` và JSP `_NotificationBell.jspf`.
+- `NotificationRedirectUtil`: điều hướng theo `TargetUrl` hoặc entity.
 
-Rang buoc:
-- `UserID` bat buoc, tham chieu `SystemUser.UserID`.
-- `ApplicationID` optional, chi dung cho thong bao lien quan ung tuyen.
-- Neu sau nay thong bao can gan voi Task, Payroll, Leave, Contract thi them cot tham chieu rieng hoac dung bang lien ket moi, khong nhan nhet nhieu object id vao `ApplicationID`.
+## Hiện trạng code
+- Schema Notification đã có trường mở rộng cho actor, entity, URL đích, priority và hạn dùng.
+- Filter đã nạp số lượng chưa đọc cho một số layout.
+- Một số sự kiện tuyển dụng, phỏng vấn và nghỉ phép đã tạo notification.
 
-## Type
-Type hien tai:
-- `Application`
-- `Interview`
-- `Offer`
-- `System`
+## Quy tắc nghiệp vụ chuẩn
+- Notification phải gắn đúng người nhận, đúng entity và URL có thể mở được.
+- Đánh dấu đã đọc chỉ được thao tác trên notification của user hiện tại.
+- Sự kiện quan trọng phải tạo notification cùng transaction với thay đổi trạng thái nếu có thể.
 
-Mo rong sau nay:
-- `Task`
-- `Payroll`
-- `Leave`
-- `Contract`
-- `Security`
+## Code còn lệch spec hoặc cần bổ sung
+- Chưa phải mọi workflow đều phát notification đầy đủ.
+- Cần chuẩn hóa danh sách event bắt buộc cho tuyển dụng, payroll, contract, leave và task.
+- Cần test redirect notification theo từng actor.
 
-## Actor su dung
-- Guest: ho so ung tuyen, lich phong van, offer.
-- Employee: task, cham cong, luong, nghi phep.
-- Dept Manager: task nhom, lich nhom, yeu cau nghi phep.
-- HR Staff: ung vien, hop dong, bang luong.
-- HR Manager: phe duyet hop dong, payroll, nhan su.
-- Admin: bao mat, phan quyen, system log can chu y.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## DAO chung
-Nen tao `NotificationDAO`, khong dat logic notification trong DAO cua tung actor.
-
-Method toi thieu:
-- `create(Notification notification)`
-- `findByUserId(int userId, int limit)`
-- `countUnreadByUserId(int userId)`
-- `markRead(int notificationId, int userId)`
-- `markAllRead(int userId)`
-
-## Security rule
-- User chi doc notification co `Notification.UserID = session.systemUser.userID`.
-- Admin co the xem/tim notification cua user khac neu co man hinh quan tri rieng.
-- Moi update read state phai loc theo `UserID` de tranh user danh dau notification cua nguoi khac.
-
-## UI rule
-- Moi actor co the co icon chuong/thong bao tren dashboard rieng.
-- Thong bao phai hien tieng Viet.
-- Notification unread phai co trang thai ro rang.
-- Neu chua co notification, hien empty state than thien.
-
-## Acceptance Criteria
-- [ ] Notification gan voi `SystemUser.UserID`.
-- [ ] Notification co the dung cho tat ca actor.
-- [ ] Notification lien quan ung tuyen co the gan them `ApplicationID`.
-- [ ] User khong doc/cap nhat duoc notification cua nguoi khac.
-- [ ] DAO notification dung chung, khong copy logic theo tung actor.

@@ -1,46 +1,32 @@
-# Feature: Employee attendance
-Status: Approved
-Actor: Employee
-Priority: High
-Related code: `EmployeePortalController`, `AttendanceDAO`, `Views/Employee/Attendance.jsp`
+# Tính năng Employee: Chấm công
 
-## Goal
-Employees can check in, check out, see today's attendance state, and review attendance history.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Routes
-- View attendance: `GET /employee/attendance`
-- Check in/out: `POST /employee/attendance`
+## Actor và phạm vi
+- Employee xem dữ liệu chấm công của chính mình.
 
-## Data Shown
-- Today's status: not checked in, checked in, checked out.
-- Check-in time.
-- Check-out time.
-- Late status.
-- Early leave status.
-- Monthly summary.
-- Recent attendance history.
+## Route, controller và JSP liên quan
+- `/employee`, `/employee/*`.
+- Controller chính: `EmployeePortalController`.
+- JSP: `Views/Employee/EmployeeHome.jsp`, `Tasks.jsp`, `Leaves.jsp`, `Payroll.jsp`, `Contract.jsp`, `Attendance.jsp`, `EmployeeProfile.jsp`.
 
-## Main Flow
-1. Employee opens `/employee/attendance`.
-2. System shows today's attendance status.
-3. Employee clicks check in.
-4. System creates today's attendance record if none exists.
-5. Employee clicks check out.
-6. System updates today's attendance record.
-7. System shows full recent attendance history.
+## Hiện trạng code
+- `/employee/attendance` hiển thị JSP `Attendance.jsp`.
+- Dữ liệu attendance phụ thuộc bảng chấm công hiện có.
+- Route nằm dưới `/employee/*` nên được filter theo Employee/Admin.
 
-## Business Rules
-- Employee can check in only once per day.
-- Employee can check out only after checking in.
-- Employee can check out only once per day.
-- Late arrival is calculated from company shift start time.
-- Early leave is calculated from company shift end time.
-- Attendance history must be filtered by current `EmployeeID`.
+## Quy tắc nghiệp vụ chuẩn
+- Employee chỉ xem attendance của mình.
+- Không cho sửa công nếu chưa có quy trình duyệt.
+- Bộ lọc tháng/năm phải validate.
 
-## Acceptance Criteria
-- [ ] Employee can check in once per day.
-- [ ] Employee cannot check in multiple times.
-- [ ] Employee can check out after check-in.
-- [ ] Employee cannot check out before check-in.
-- [ ] UI shows checked-in / not-checked-out state.
-- [ ] History shows check-in, check-out, late, early leave values.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần bổ sung test khi không có dữ liệu attendance.
+- Cần làm rõ actor nào được sửa/chốt công.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

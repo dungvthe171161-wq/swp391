@@ -1,36 +1,32 @@
-# Feature: HR Manager xem va xu ly recruitment
-Status: Approved
-Actor: HR Manager
-Priority: High
-Related Code: `ViewRecruitment`, `DetailWaitingRecruitment`, `RecruitmentDAO`, `Views/hr/ViewRecruitment.jsp`, `Views/hr/DetailWaitingRecruitment.jsp`
+# Tính năng HR Manager: Xem và xử lý tuyển dụng
 
-## Route
-- `GET /viewRecruitment`
-- `POST /viewRecruitment`
-- `GET /detailWaitingRecruitment`
-- `POST /detailWaitingRecruitment`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong danh sach
-1. HR Manager vao `/viewRecruitment`.
-2. Controller kiem tra permission `VIEW_RECRUITMENT`.
-3. Lay danh sach recruitment.
-4. Forward den `/Views/hr/ViewRecruitment.jsp`.
-5. JSP hien thi tieng Viet va dung BetterHR theme.
+## Actor và phạm vi
+- HR Manager xem danh sách recruitment/application và trạng thái tuyển dụng.
 
-## Luong chi tiet/phe duyet
-1. HR Manager mo `/detailWaitingRecruitment?id=...`.
-2. Controller lay recruitment theo id.
-3. Forward den `/Views/hr/DetailWaitingRecruitment.jsp`.
-4. Neu submit action, controller cap nhat recruitment theo logic hien co.
+## Route, controller và JSP liên quan
+- `/HrHomeController`, `/viewRecruitment`, `/viewCV`, `/hr/employee-list`, `/hr/create-employee`.
+- `/hr/approve-reject-contracts`, `/hr/payroll-approval`, `/hr/leaves` và các route `/hr/*`.
+- Controller: `HrHomeController`, `ViewRecruitment`, `ViewCV`, `EmployeeListController`, `CreateEmployeeController`, `ApproveRejectContractController`, `PayrollApprovalController`.
 
-## Acceptance Criteria
-- [ ] HR Manager co permission xem duoc recruitment.
-- [ ] Thieu permission bi dua den AccessDenied.
-- [ ] Id sai khong lam crash servlet.
-- [ ] Nut quay lai/HR Home tro ve `/HrHomeController`.
-- [ ] Khong loi font tieng Viet tren danh sach va chi tiet recruitment.
+## Hiện trạng code
+- `ViewRecruitment` mapping `/viewRecruitment` và dùng `VIEW_RECRUITMENT`.
+- Route cũng nằm trong pattern cho HR Manager/Admin.
+- Một số route candidate/CV dùng chung với HR Staff.
 
-## Missing Work
-- [ ] Chuan hoa status recruitment: Pending, Approved, Rejected, Closed.
-- [ ] Ghi ly do tu choi neu reject.
-- [ ] Chuan hoa logging thay vi `System.out`/`printStackTrace`.
+## Quy tắc nghiệp vụ chuẩn
+- HR Manager chỉ thực hiện hành động được phân quyền.
+- Xem application phải theo `ApplicationID` khi có nhiều lần ứng tuyển.
+- Không cập nhật `Guest.Status` thay cho application.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần tách rõ quyền HR Manager và HR Staff trên `/candidates`/`/viewCV`.
+- Cần chuyển CV sang application-based.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

@@ -5,8 +5,7 @@
 
 package com.hrm.controller.hrstaff;
 
-import com.hrm.dao.DAO;
-import com.hrm.model.entity.Guest;
+import com.hrm.dao.ApplicationDAO;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.util.PermissionUtil;
 import jakarta.servlet.ServletException;
@@ -35,6 +34,7 @@ public class ViewCandidateController extends HttpServlet {
     private static final String PARAM_FILTER_STATUS = "filterStatus";
     private static final String PARAM_START_DATE = "startDate";
     private static final String PARAM_END_DATE = "endDate";
+    private final transient ApplicationDAO applicationDAO = new ApplicationDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -59,29 +59,14 @@ public class ViewCandidateController extends HttpServlet {
         String filterStatus = request.getParameter(PARAM_FILTER_STATUS);
         String startDate = request.getParameter(PARAM_START_DATE);
         String endDate = request.getParameter(PARAM_END_DATE);
-
-        List<Guest> gList;
-        int totalCandidates;
-
-        // Check if any search parameter is provided
-        boolean hasSearch = (searchByName != null && !searchByName.trim().isEmpty())
-                || (filterStatus != null && !filterStatus.trim().isEmpty())
-                || (startDate != null && !startDate.trim().isEmpty())
-                || (endDate != null && !endDate.trim().isEmpty());
-
-        if (hasSearch) {
-            // Get filtered candidates
-            gList = DAO.getInstance().searchCandidates(searchByName, filterStatus, startDate, endDate, page, pageSize);
-            totalCandidates = DAO.getInstance().searchCountCandidates(searchByName, filterStatus, startDate, endDate);
-        } else {
-            // Get all candidates
-            gList = DAO.getInstance().getAllCandidates(page, pageSize);
-            totalCandidates = DAO.getInstance().getCountCandidate();
-        }
+        var applications = applicationDAO.findCandidateApplicationsForHr(
+                searchByName, filterStatus, startDate, endDate, page, pageSize);
+        int totalCandidates = applicationDAO.countCandidateApplicationsForHr(
+                searchByName, filterStatus, startDate, endDate);
 
         int totalPages = (int) Math.ceil((double) totalCandidates / pageSize);
 
-        request.setAttribute("guest", gList);
+        request.setAttribute("applications", applications);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
@@ -90,6 +75,7 @@ public class ViewCandidateController extends HttpServlet {
         request.setAttribute(PARAM_FILTER_STATUS, filterStatus);
         request.setAttribute(PARAM_START_DATE, startDate);
         request.setAttribute(PARAM_END_DATE, endDate);
+        setMessages(request);
         request.getRequestDispatcher("/Views/HrStaff/ViewCandidate.jsp").forward(request, response);
     }
 
@@ -104,7 +90,35 @@ public class ViewCandidateController extends HttpServlet {
         String startDate = request.getParameter(PARAM_START_DATE);
         String endDate = request.getParameter(PARAM_END_DATE);
 
-        StringBuilder redirectUrl = new StringBuilder(request.getContextPath()).append("/candidates");
+        response.sendRedirect(buildRedirectUrl(request, "/candidates", searchByName, filterStatus, startDate, endDate));
+    }
+
+    @Override
+    public String getServletInfo() {
+        return "Danh sách ứng viên";
+    }
+
+    private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + LOGIN_PATH);
+            return false;
+        }
+        return PermissionUtil.ensurePermission(request, response, REQUIRED_PERMISSION, PERMISSION_DENIED_MESSAGE);
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String buildRedirectUrl(HttpServletRequest request,
+                                    String path,
+                                    String searchByName,
+                                    String filterStatus,
+                                    String startDate,
+                                    String endDate) {
+        StringBuilder redirectUrl = new StringBuilder(request.getContextPath()).append(path);
         List<String> queryParts = new ArrayList<>();
 
         if (searchByName != null && !searchByName.trim().isEmpty()) {
@@ -123,34 +137,20 @@ public class ViewCandidateController extends HttpServlet {
         if (!queryParts.isEmpty()) {
             redirectUrl.append("?").append(String.join("&", queryParts));
         }
-
-        response.sendRedirect(redirectUrl.toString());
+        return redirectUrl.toString();
     }
 
-    @Override
-    public String getServletInfo() {
-        return "Danh sách ứng viên";
-    }
-
-    private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + LOGIN_PATH);
-            return false;
+    private void setMessages(HttpServletRequest request) {
+        if ("1".equals(request.getParameter("interviewScheduled"))) {
+            request.setAttribute("success", "Đã đặt lịch phỏng vấn cho ứng viên.");
         }
-        return PermissionUtil.ensureRolePermission(
-                request,
-                response,
-                PermissionUtil.ROLE_HR_STAFF,
-                REQUIRED_PERMISSION,
-                REQUIRED_ROLE_MESSAGE,
-                PERMISSION_DENIED_MESSAGE
-        );
-    }
-
-    private String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+        if ("failed".equals(request.getParameter("mail"))) {
+            request.setAttribute("warning", "Lịch đã lưu nhưng chưa gửi được email cho ứng viên. Vui lòng kiểm tra cấu hình mail.");
+        }
+        String error = request.getParameter("error");
+        if ("invalid_application".equals(error)) {
+            request.setAttribute("mess", "Không tìm thấy hồ sơ ứng tuyển.");
+        }
     }
 }
 

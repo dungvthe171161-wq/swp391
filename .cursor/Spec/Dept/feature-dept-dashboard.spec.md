@@ -1,25 +1,32 @@
-# Tính năng: Bảng điều khiển phòng ban (Department Dashboard)
-Trạng thái: Đã phê duyệt
-Tác nhân: Trưởng phòng (Dept Manager)
-Độ ưu tiên: Trung bình
-Mã nguồn liên quan: `DeptController`, `Views/DeptManager/deptHome.jsp`
+# Tính năng Dept: Bảng điều khiển phòng ban
 
-## Các Route
-- `GET /dept`
-- `GET /dept?action=dashboard`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng chính
-1. Trưởng phòng (Dept Manager) truy cập `/dept`.
-2. Hệ thống kiểm tra phiên làm việc (session) `systemUser`.
-3. Bộ lọc (Filter) kiểm tra vai trò/quyền hạn (role/permission).
-4. Controller lấy dữ liệu cần thiết cho phòng ban.
-5. Chuyển tiếp (forward) đến `/Views/DeptManager/deptHome.jsp`.
+## Actor và phạm vi
+- Dept Manager xem tổng quan phòng ban.
+
+## Route, controller và JSP liên quan
+- `/dept`, `/dept/*`, `/taskManager`, `/postTask`, `/viewTask`, `/dept/leaves`.
+- Controller: `DeptController`, `TaskManager`, `PostTask`, `ViewTask`, `DeptLeaveController`.
+- JSP: `Views/DeptManager/*`.
 
 ## Hiện trạng code
-- Đã xây dựng `DeptController`.
-- Đã có cơ chế chuyển hướng (redirect) về trang đăng nhập khi chưa có session.
+- `DeptController` xử lý `/dept`.
+- Dashboard phải nạp số liệu theo phòng ban của manager.
+- Route được filter theo role Dept/Admin và permission `VIEW_DEPARTMENTS`.
 
-## Tiêu chí nghiệm thu
-- [ ] Trưởng phòng (Dept Manager) truy cập thành công bảng điều khiển phòng ban.
-- [ ] Người dùng chưa đăng nhập bị hệ thống chuyển về trang login.
-- [ ] Người dùng không đúng vai trò/quyền hạn bị bộ lọc (filter) chặn lại.
+## Quy tắc nghiệp vụ chuẩn
+- Không hiển thị dữ liệu phòng ban khác.
+- Link thao tác task/leave phải dùng controller.
+- Thông báo UI phải là tiếng Việt có dấu.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần kiểm tra số liệu dashboard đã scope đúng phòng ban chưa.
+- Cần chuẩn hóa route legacy trên dashboard.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

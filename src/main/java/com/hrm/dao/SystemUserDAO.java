@@ -265,6 +265,135 @@ public class SystemUserDAO {
         return false;
     }
 
+    public List<Integer> findActiveUserIdsByRoleName(String roleName) {
+        List<Integer> userIds = new ArrayList<>();
+        if (roleName == null || roleName.trim().isEmpty()) {
+            return userIds;
+        }
+        String sql = """
+            SELECT su.UserID
+            FROM SystemUser su
+            JOIN Role r ON su.RoleID = r.RoleID
+            WHERE su.IsActive = TRUE
+              AND r.RoleName = ?
+            ORDER BY su.UserID
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, roleName.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    userIds.add(rs.getInt("UserID"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return userIds;
+    }
+
+    public List<String> findActiveEmailsByRoleName(String roleName) {
+        List<String> emails = new ArrayList<>();
+        if (roleName == null || roleName.trim().isEmpty()) {
+            return emails;
+        }
+        String sql = """
+            SELECT DISTINCT COALESCE(NULLIF(su.Email, ''), e.Email) AS RecipientEmail
+            FROM SystemUser su
+            JOIN Role r ON su.RoleID = r.RoleID
+            LEFT JOIN Employee e ON su.EmployeeID = e.EmployeeID
+            WHERE su.IsActive = TRUE
+              AND r.RoleName = ?
+              AND COALESCE(NULLIF(su.Email, ''), e.Email) IS NOT NULL
+            ORDER BY RecipientEmail
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, roleName.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String email = rs.getString("RecipientEmail");
+                    if (email != null && !email.isBlank()) {
+                        emails.add(email);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return emails;
+    }
+
+    public List<String> findActiveEmailsByRoleNames(List<String> roleNames) {
+        List<String> emails = new ArrayList<>();
+        if (roleNames == null || roleNames.isEmpty()) {
+            return emails;
+        }
+        for (String roleName : roleNames) {
+            for (String email : findActiveEmailsByRoleName(roleName)) {
+                if (!emails.contains(email)) {
+                    emails.add(email);
+                }
+            }
+        }
+        return emails;
+    }
+
+    public List<Integer> findActiveUserIdsByRoleAndDepartment(String roleName, int departmentId) {
+        List<Integer> userIds = new ArrayList<>();
+        if (roleName == null || roleName.trim().isEmpty() || departmentId <= 0) {
+            return userIds;
+        }
+        String sql = """
+            SELECT su.UserID
+            FROM SystemUser su
+            JOIN Role r ON su.RoleID = r.RoleID
+            JOIN Employee e ON su.EmployeeID = e.EmployeeID
+            WHERE su.IsActive = TRUE
+              AND r.RoleName = ?
+              AND e.DepartmentID = ?
+            ORDER BY su.UserID
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, roleName.trim());
+            ps.setInt(2, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    userIds.add(rs.getInt("UserID"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return userIds;
+    }
+
+    public Integer findActiveUserIdByEmployeeId(int employeeId) {
+        if (employeeId <= 0) {
+            return null;
+        }
+        String sql = """
+            SELECT UserID
+            FROM SystemUser
+            WHERE EmployeeID = ?
+              AND IsActive = TRUE
+            LIMIT 1
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("UserID");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public boolean isUsernameExists(String username) {
         String sql = "SELECT COUNT(*) FROM SystemUser WHERE Username=?";
 

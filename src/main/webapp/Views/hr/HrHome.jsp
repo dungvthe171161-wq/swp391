@@ -1299,6 +1299,51 @@
                 background: #dbeafe;
                 color: #1e40af;
             }
+
+            .request-info h4 {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+            }
+
+            .request-action-form {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .request-processed-note {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+                padding: 0 1rem;
+                border-radius: 999px;
+                background: #eef2f7;
+                color: #475569;
+                font-weight: 700;
+            }
+
+            .alert.success,
+            .alert.error {
+                margin: 1rem 0;
+                padding: 0.9rem 1rem;
+                border-radius: 12px;
+                font-weight: 700;
+            }
+
+            .alert.success {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .alert.error {
+                background: #fee2e2;
+                color: #991b1b;
+            }
             
             .payroll-card-details {
                 display: grid;
@@ -2064,10 +2109,7 @@
                             <i class="fas fa-search"></i>
                             <input type="text" placeholder="Tìm nhân viên, phòng ban...">
                         </div>
-                        <div class="notification-bell">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-count">5</span>
-                        </div>
+                        <%@ include file="../_NotificationBell.jspf" %>
                         <div class="user-profile">
                             <img src="https://i.pravatar.cc/40" alt="Người dùng HR">
                             <span>Quản lý HR</span>
@@ -2325,62 +2367,108 @@
                     <section id="requests-approval" class="content-section">
                         <div class="section-header">
                             <h2>Yêu cầu và đề xuất</h2>
-                            <p>Rà soát, phê duyệt hoặc từ chối các yêu cầu đã gửi</p>
+                            <p>Rà soát, phê duyệt hoặc từ chối các yêu cầu mới nhất đã gửi</p>
                         </div>
-                        
+
                         <div class="requests-tabs">
-                            <button class="tab-btn active" data-tab="pending-requests">Chờ duyệt</button>
-                            <button class="tab-btn" data-tab="approved-requests">Đã duyệt</button>
-                            <button class="tab-btn" data-tab="rejected-requests">Từ chối</button>
+                            <a class="status-tab-btn ${requestStatus == 'Pending' ? 'active' : ''}" href="${pageContext.request.contextPath}/HrHomeController?section=requests-approval&requestStatus=Pending">
+                                Chờ duyệt <span class="badge">${requestPendingCount != null ? requestPendingCount : 0}</span>
+                            </a>
+                            <a class="status-tab-btn ${requestStatus == 'Approved' ? 'active' : ''}" href="${pageContext.request.contextPath}/HrHomeController?section=requests-approval&requestStatus=Approved">
+                                Đã duyệt <span class="badge">${requestApprovedCount != null ? requestApprovedCount : 0}</span>
+                            </a>
+                            <a class="status-tab-btn ${requestStatus == 'Rejected' ? 'active' : ''}" href="${pageContext.request.contextPath}/HrHomeController?section=requests-approval&requestStatus=Rejected">
+                                Từ chối <span class="badge">${requestRejectedCount != null ? requestRejectedCount : 0}</span>
+                            </a>
                         </div>
-                        
+
+                        <c:if test="${not empty hrRequestSuccess}">
+                            <div class="alert success">${hrRequestSuccess}</div>
+                        </c:if>
+                        <c:if test="${not empty hrRequestError}">
+                            <div class="alert error">${hrRequestError}</div>
+                        </c:if>
+
                         <div class="tab-content">
-                            <div id="pending-requests" class="tab-panel active">
+                            <div id="requests-panel" class="tab-panel active">
                                 <div class="request-list">
-                                    <div class="request-item">
-                                        <div class="request-info">
-                                            <h4>Yêu cầu nghỉ phép</h4>
-                                            <p><strong>Người gửi:</strong> Nguyen Van E - Phòng IT</p>
-                                            <p><strong>Loại yêu cầu:</strong> Nghỉ việc cá nhân</p>
-                                            <p><strong>Thời gian:</strong> 15/12/2024 - 20/12/2024</p>
-                                            <p><strong>Lý do:</strong> Việc gia đình</p>
+                                    <c:forEach var="item" items="${mailRequests}">
+                                        <div class="request-item">
+                                            <div class="request-info">
+                                                <h4>
+                                                    <c:choose>
+                                                        <c:when test="${item.requestType eq 'Leave'}">Yêu cầu nghỉ phép</c:when>
+                                                        <c:when test="${item.requestType eq 'Resignation'}">Yêu cầu nghỉ việc</c:when>
+                                                        <c:when test="${item.requestType eq 'Petition'}">Đề xuất / kiến nghị</c:when>
+                                                        <c:otherwise>${item.requestType}</c:otherwise>
+                                                    </c:choose>
+                                                    <span class="status-badge-item ${item.status}">
+                                                        <c:choose>
+                                                            <c:when test="${item.status eq 'Pending'}">Chờ duyệt</c:when>
+                                                            <c:when test="${item.status eq 'Approved'}">Đã duyệt</c:when>
+                                                            <c:when test="${item.status eq 'Rejected'}">Từ chối</c:when>
+                                                            <c:otherwise>${item.status}</c:otherwise>
+                                                        </c:choose>
+                                                    </span>
+                                                </h4>
+                                                <p><strong>Người gửi:</strong> ${item.employeeName} - ${empty item.departmentName ? 'Chưa có phòng ban' : item.departmentName}</p>
+                                                <p>
+                                                    <strong>Loại yêu cầu:</strong>
+                                                    <c:choose>
+                                                        <c:when test="${item.requestType eq 'Leave'}">
+                                                            <c:choose>
+                                                                <c:when test="${item.leaveType eq 'Annual'}">Nghỉ phép năm</c:when>
+                                                                <c:when test="${item.leaveType eq 'Sick'}">Nghỉ ốm</c:when>
+                                                                <c:when test="${item.leaveType eq 'Maternity'}">Nghỉ thai sản</c:when>
+                                                                <c:when test="${item.leaveType eq 'Unpaid'}">Nghỉ không lương</c:when>
+                                                                <c:otherwise>${empty item.leaveType ? 'Nghỉ phép khác' : item.leaveType}</c:otherwise>
+                                                            </c:choose>
+                                                        </c:when>
+                                                        <c:when test="${item.requestType eq 'Resignation'}">Đơn nghỉ việc</c:when>
+                                                        <c:when test="${item.requestType eq 'Petition'}">Đề xuất / kiến nghị</c:when>
+                                                        <c:otherwise>${item.requestType}</c:otherwise>
+                                                    </c:choose>
+                                                </p>
+                                                <c:if test="${not empty item.startDate or not empty item.endDate}">
+                                                    <p><strong>Thời gian:</strong> ${empty item.startDate ? 'Đang cập nhật' : item.startDate} - ${empty item.endDate ? 'Đang cập nhật' : item.endDate}</p>
+                                                </c:if>
+                                                <p><strong>Lý do:</strong> ${empty item.reason ? 'Không có ghi chú' : item.reason}</p>
+                                            </div>
+                                            <div class="request-actions">
+                                                <c:choose>
+                                                    <c:when test="${item.status eq 'Pending'}">
+                                                        <form method="POST" action="${pageContext.request.contextPath}/HrHomeController" class="request-action-form">
+                                                            <input type="hidden" name="action" value="updateRequestStatus">
+                                                            <input type="hidden" name="requestStatus" value="${requestStatus}">
+                                                            <input type="hidden" name="requestId" value="${item.requestId}">
+                                                            <button class="btn-approve" type="submit" name="decision" value="Approved" onclick="return confirm('Duyệt yêu cầu này?')">
+                                                                <i class="fas fa-check"></i>
+                                                                Duyệt
+                                                            </button>
+                                                            <button class="btn-reject" type="submit" name="decision" value="Rejected" onclick="return confirm('Từ chối yêu cầu này?')">
+                                                                <i class="fas fa-times"></i>
+                                                                Từ chối
+                                                            </button>
+                                                        </form>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="request-processed-note">Đã xử lý</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
                                         </div>
-                                        <div class="request-actions">
-                                            <button class="btn-approve">
-                                                <i class="fas fa-check"></i>
-                                                Duyệt
-                                            </button>
-                                            <button class="btn-reject">
-                                                <i class="fas fa-times"></i>
-                                                Từ chối
-                                            </button>
+                                    </c:forEach>
+                                    <c:if test="${empty mailRequests}">
+                                        <div class="no-data">
+                                            <i class="fas fa-inbox"></i>
+                                            <h3>Không có yêu cầu</h3>
+                                            <p>Không có yêu cầu nào trong trạng thái đang chọn.</p>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="request-item">
-                                        <div class="request-info">
-                                            <h4>Đề xuất tăng lương</h4>
-                                            <p><strong>Người gửi:</strong> Tran Thi F - Phòng Marketing</p>
-                                            <p><strong>Loại yêu cầu:</strong> Đề xuất điều chỉnh lương</p>
-                                            <p><strong>Mức đề xuất:</strong> 15%</p>
-                                            <p><strong>Lý do:</strong> Hoàn thành tốt dự án và có đóng góp tích cực</p>
-                                        </div>
-                                        <div class="request-actions">
-                                            <button class="btn-approve">
-                                                <i class="fas fa-check"></i>
-                                                Duyệt
-                                            </button>
-                                            <button class="btn-reject">
-                                                <i class="fas fa-times"></i>
-                                                Từ chối
-                                            </button>
-                                        </div>
-                                    </div>
+                                    </c:if>
                                 </div>
                             </div>
                         </div>
                     </section>
-
                     <!-- Payroll Management Section -->
                     <section id="payroll-management" class="content-section">
                         <div class="section-header">

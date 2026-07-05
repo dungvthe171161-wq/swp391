@@ -131,6 +131,31 @@ public class ContractDAO {
         }
     }
 
+    public int findLatestContractIdForEmployee(int employeeId) {
+        if (employeeId <= 0) {
+            return 0;
+        }
+        String sql = """
+            SELECT ContractID
+            FROM Contract
+            WHERE EmployeeID = ?
+            ORDER BY ContractID DESC
+            LIMIT 1
+        """;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("ContractID");
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return 0;
+    }
+
     /**
      * Get all contracts with employee information
      */

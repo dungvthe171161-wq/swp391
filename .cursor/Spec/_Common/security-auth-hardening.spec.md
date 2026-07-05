@@ -1,77 +1,35 @@
-# Cross-cutting Spec: Auth Security Hardening
-Status: Approved
-Priority: High
-Related Code: `LoginController`, `RegisterController`, `LogoutController`, `DAO`, `SessionSecurityFilter`, `ForgotPassController`, `RecoveryController`, `ChangePassREController`, `EmailSender`
+# Đặc tả dùng chung: Bảo mật xác thực
 
-## Muc tieu
-Lam ro cac yeu cau bao mat cho dang nhap, session, cookie, reset password va cau hinh SMTP.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Hien trang dang dung
-- Password nam trong `SystemUser.PasswordHash`.
-- Theo quyet dinh hien tai cua du an, `DAO.checkPassword` va `DAO.changePassword` dang xu ly plain text, chua dung BCrypt/SHA.
-- Khong con `PasswordMigrationNotAuto`.
-- Login thanh cong invalidate session cu truoc khi tao session moi.
-- Session login luu `systemUser`.
-- Remember-me hien tai chi luu cookie `username`, khong luu password.
-- Login co check `IsActive`.
-- Login co check `LockedUntil`.
-- Login sai goi `recordFailedLogin`, khoa tam thoi sau 5 lan sai trong 15 phut.
-- Quen mat khau dung `SystemUser.Email`, PIN session `pinCode`, flag `recoveryVerified`.
-- Route recovery public o filter nhung controller van chan bang session recovery.
-- Email SMTP lay tu bien moi truong hoac file local ignored, khong hardcode secret trong Java code.
+## Actor và phạm vi
+- Actor Auth, Admin và mọi user đăng nhập; spec này chốt chuẩn bảo mật cho login, session, đổi mật khẩu và reset password.
 
-## Route public can co
-- `/login`
-- `/register`
-- `/auth/google`
-- `/auth/google/callback`
-- `/loginByGmail`
-- `/homepage`
-- `/ForgotPassword`
-- `/Recovery`
-- `/changepassRE`
-- `/Views/ForgotPassword.jsp`
-- `/Views/Register.jsp`
+## Route, controller và JSP liên quan
+- `LoginController`, `RegisterController`, `ForgotPassController`, `RecoveryController`, `ChangePassController`, `ChangePassREController`.
+- `DAO` và `SystemUserDAO` đọc/ghi `SystemUser.PasswordHash`.
+- `SessionSecurityFilter` và `RoleAuthorizationFilter` xử lý session và route.
 
-## Reset password security
-1. User nhap email tai `/ForgotPassword`.
-2. Chi email ton tai trong `SystemUser.Email` moi duoc gui PIN.
-3. PIN luu trong session `pinCode`.
-4. Session recovery timeout 600 giay.
-5. PIN dung set `recoveryVerified = true`.
-6. `/changepassRE` phai yeu cau ca `recoveryEmail` va `recoveryVerified`.
-7. Doi mat khau thanh cong phai xoa `recoveryEmail`, `pinCode`, `recoveryVerified`.
+## Hiện trạng code
+- `DAO.hashPassword` hiện trả lại plain text; `DAO.checkPassword` so sánh plain text.
+- Admin reset password trả mật khẩu tạm thời trong JSON response.
+- Google Login có backend OAuth2 và tạo user theo `LoginProvider`.
+- Session đăng nhập dùng `systemUser`.
 
-## Email config security
-- File mau: `src/main/resources/META-INF/mail.example.properties`.
-- File that local: `src/main/resources/META-INF/mail.local.properties`.
-- `mail.local.properties` phai nam trong `.gitignore`.
-- Gmail phai dung App Password.
-- Khong commit Gmail password/app password.
+## Quy tắc nghiệp vụ chuẩn
+- Mật khẩu phải được hash bằng thuật toán mạnh như BCrypt trước khi ghi database.
+- Reset password không được trả mật khẩu plain text qua response; nên dùng link hoặc token một lần.
+- Luồng quên mật khẩu cần giới hạn số lần thử mã và thời hạn mã.
+- Đăng xuất phải invalidate session hiện tại.
 
-## Hardening de xuat sau nay
-1. Chuyen `PasswordHash` sang BCrypt hoac Argon2.
-2. Viet migration rieng cho password seed/data mau neu can.
-3. Them bang remember-token neu muon remember-me that.
-4. Them rate limit gui PIN theo email/IP.
-5. Luu reset token/PIN vao DB voi expiry/revoked thay vi chi dung session neu can bao mat cao hon.
-6. Them audit log cho `LOGIN_SUCCESS`, `LOGIN_FAILED`, `RESET_PASSWORD`, `CHANGE_PASSWORD`.
-7. Them rate limit/captcha cho public register neu bi spam.
+## Code còn lệch spec hoặc cần bổ sung
+- Code hiện chưa hash mật khẩu dù cột tên là `PasswordHash`.
+- Cần migration hoặc cơ chế tương thích khi chuyển từ plain text sang hash.
+- Cần bổ sung rate limit và audit cho reset password, đổi mật khẩu, login thất bại.
 
-## Acceptance Criteria
-- [ ] Cookie remember-me khong chua password.
-- [ ] Logout invalidate session.
-- [ ] Login sai khong tao session.
-- [ ] Inactive account khong tao session.
-- [ ] Locked account khong tao session.
-- [ ] PIN sai khong vao duoc `/changepassRE`.
-- [ ] Mo truc tiep `/changepassRE` khi chua verify PIN bi redirect ve `/ForgotPassword`.
-- [ ] SMTP secret khong nam trong Java source.
-- [ ] File mail config local khong bi commit.
-- [ ] Register public validate duplicate username/email, tao role `Guest` va khong tu gan `EmployeeID`.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## Missing Work
-- [ ] Chua co BCrypt/Argon2, day la hardening tuong lai neu project doi yeu cau.
-- [ ] Chua co bang reset token rieng.
-- [ ] Chua co rate limit gui PIN.
-- [ ] Chua co audit log day du cho auth events.

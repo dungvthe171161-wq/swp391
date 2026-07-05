@@ -870,10 +870,7 @@
                             <i class="fas fa-search"></i>
                             <input type="text" placeholder="Tìm bảng lương...">
                         </div>
-                        <div class="notification-bell">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-count">3</span>
-                        </div>
+                        <%@ include file="../_NotificationBell.jspf" %>
                         <div class="user-profile">
                             <img src="https://i.pravatar.cc/40" alt="Người dùng HR">
                             <span>Quản lý HR</span>

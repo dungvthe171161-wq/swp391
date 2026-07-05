@@ -1047,6 +1047,24 @@ public boolean updateGoogleAccount(int userId, String googleId, String avatarUrl
     }
 }
 
+public boolean promoteExistingUserToEmployee(int userId, int employeeId, int employeeRoleId) {
+    String sql = """
+        UPDATE SystemUser
+        SET RoleID = ?, EmployeeID = ?, IsActive = TRUE, UpdatedDate = NOW()
+        WHERE UserID = ? AND EmployeeID IS NULL
+    """;
+
+    try (Connection connection = DBConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, employeeRoleId);
+        ps.setInt(2, employeeId);
+        ps.setInt(3, userId);
+        return ps.executeUpdate() > 0;
+    } catch (SQLException e) {
+        System.err.println("Error promoting existing user to employee: " + e.getMessage());
+        return false;
+    }
+}
 public boolean promoteGuestToEmployee(int userId, int employeeId, String username, String password, int employeeRoleId) {
     String sql = """
         UPDATE SystemUser

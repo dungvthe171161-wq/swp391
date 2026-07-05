@@ -128,4 +128,10 @@ public class Interview implements Serializable {
             default -> status;
         };
     }
+
+    public String getScheduledAtInputValue() {
+        return scheduledAt != null
+                ? scheduledAt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                : "";
+    }
 }

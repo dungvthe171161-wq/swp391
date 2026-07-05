@@ -1,53 +1,32 @@
-# Tính năng: Bảng điều khiển của Khách (Guest Dashboard)
-Trạng thái: Bản thảo
-Tác nhân: Ứng viên tự do (Guest Candidate)
-Độ ưu tiên: Trung bình
-Mã nguồn liên quan: `GuestPortalController`, `ApplicationDAO`, `InterviewDAO`, `OfferDAO`, `NotificationDAO`
+# Tính năng Guest: Bảng điều khiển ứng viên
 
-## Tuyến đường mục tiêu (Target Route)
-- `GET /guest/dashboard`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Mục tiêu
-Xây dựng một trang tổng quan riêng biệt dành cho Guest sau khi đăng nhập thành công. Trang này hoàn toàn độc lập, không dùng chung giao diện với phân hệ Admin, HR hay Employee.
+## Actor và phạm vi
+- Guest xem tổng quan hồ sơ, application, interview, offer và notification.
 
-## Danh sách Menu trên thanh bên (Sidebar)
-- Tổng quan
-- Việc làm tuyển dụng
-- Hồ sơ đã nộp
-- Lịch phỏng vấn
-- Thư mời nhận việc
-- Thông báo hệ thống
-- Hồ sơ cá nhân
-- Đổi mật khẩu
-- Đăng xuất
+## Route, controller và JSP liên quan
+- `/guest`, `/guest/dashboard`, `/guest/applications`, `/guest/profile`, `/guest/notification/read`, `/guest/offer/respond`.
+- `/RecruitmentController` cho trang tuyển dụng và nộp hồ sơ.
+- Controller: `GuestPortalController`, `RecruitmentController`; JSP: `Views/Guest/*`.
 
-## Nguồn dữ liệu Giai đoạn 1 (Phase 1)
-Vì mã nguồn của Giai đoạn 1 chưa sử dụng bảng `Application`, các số liệu trên bảng điều khiển Giai đoạn 1 sẽ được tổng hợp tạm thời từ bảng `Guest`:
-- Tổng số hồ sơ đã nộp: Đếm số lượng bản ghi trong bảng `Guest` theo mã tài khoản `UserID` hoặc địa chỉ email.
-- Đang xử lý: Bản ghi có trạng thái `Guest.Status = 'Processing'`.
-- Đã duyệt/tuyển dụng: Bản ghi có trạng thái `Guest.Status = 'Hired'`.
-- Bị từ chối: Bản ghi có trạng thái `Guest.Status = 'Rejected'`.
+## Hiện trạng code
+- `GuestPortalController.loadBaseData` nạp profile, applications, interviews, offers, notifications.
+- Dashboard dùng `Views/Guest/Dashboard.jsp`.
+- Có số lượng application active, hired, rejected và offer pending.
 
-## Nguồn dữ liệu Giai đoạn 2 (Phase 2)
-Khi chạy script migration dữ liệu và chuyển đổi code sang luồng công việc mới của Giai đoạn 2, bảng điều khiển sẽ lấy số liệu trực tiếp từ:
-- Tổng số hồ sơ ứng tuyển (application).
-- Số lượng hồ sơ ứng tuyển đang trong quá trình xử lý.
-- Danh sách lịch phỏng vấn sắp tới.
-- Thư mời nhận việc đang chờ phản hồi từ ứng viên.
-- Các thông báo mới nhất.
+## Quy tắc nghiệp vụ chuẩn
+- Dashboard chỉ hiển thị dữ liệu của user hiện tại.
+- Không cho xem application của Guest khác qua sửa URL.
+- Notification phải mở đúng route đích.
 
-Các hàm truy vấn dữ liệu Giai đoạn 2:
-- `ApplicationDAO.countByUserId(systemUser.UserID)`.
-- `ApplicationDAO.countActiveByUserId(systemUser.UserID)`.
-- `InterviewDAO.findUpcomingByUserId(systemUser.UserID, limit)`.
-- `OfferDAO.findPendingByUserId(systemUser.UserID)`.
-- `NotificationDAO.findByUserId(systemUser.UserID, limit)`.
-- `NotificationDAO.countUnreadByUserId(systemUser.UserID)`.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test user chưa có Guest profile.
+- Cần test user có nhiều application.
 
-## Tiêu chí nghiệm thu
-- [ ] Chỉ cho phép tài khoản Guest đã đăng nhập thành công truy cập bảng điều khiển.
-- [ ] Admin được cấp quyền truy cập để phục vụ việc kiểm tra hoặc xem trước giao diện nếu hệ thống hỗ trợ cơ chế giả danh (impersonate) hoặc preview.
-- [ ] Người dùng Guest tuyệt đối không xem được dữ liệu của Guest khác.
-- [ ] Các chỉ số hiển thị bình thường và không gặp lỗi khi Guest chưa nộp bất kỳ hồ sơ ứng tuyển nào.
-- [ ] Giao diện người dùng sử dụng đúng chủ đề BetterHR theme và hiển thị bằng tiếng Việt có dấu.
-- [ ] Khi chuyển sang Giai đoạn 2, bảng điều khiển bắt buộc phải lấy dữ liệu từ các bảng mới, không tổng hợp theo cột `Guest.Status` cũ nữa.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

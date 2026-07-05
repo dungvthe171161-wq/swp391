@@ -1,36 +1,32 @@
-# Tính năng: Cập nhật công việc (task) phòng ban
-Trạng thái: Đã phê duyệt
-Tác nhân: Trưởng phòng (Dept Manager)
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `com.hrm.controller.dept.ViewTask`, `DAO`, `Views/DeptManager/viewTask.jsp`
+# Tính năng Dept: Cập nhật công việc
 
-## Các Route
-- `GET /viewTask?id={taskId}`
-- `POST /viewTask`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luồng GET
-1. Trưởng phòng (Dept Manager) mở trang chi tiết công việc bằng mã định danh công việc (id).
-2. Controller kiểm tra phiên làm việc (session) của người dùng.
-3. Tiến hành lấy thông tin công việc theo id.
-4. Chuyển tiếp (forward) đến `/Views/DeptManager/viewTask.jsp`.
+## Actor và phạm vi
+- Dept Manager xem/cập nhật chi tiết task của phòng ban.
 
-## Luồng POST
-1. Trưởng phòng (Dept Manager) gửi (submit) các thông tin gồm: `taskId`, `title`, `description`, `startDate`, `dueDate`.
-2. Controller thực hiện phân tích cú pháp (parse) mã `taskId`.
-3. Gọi hàm `DAO.updateTask` để cập nhật dữ liệu.
-4. Nếu cập nhật thành công, gọi tiếp hàm `DAO.deleteTaskAssignments(taskId)` để xóa bỏ và thiết lập lại các phân công công việc cũ (reset assignment).
-5. Chuyển hướng (redirect) về tuyến đường `/viewTask?id={taskId}&mess=Task updated successfully`.
-6. Nếu cập nhật thất bại, chuyển hướng (redirect) về tuyến đường `/viewTask?id={taskId}&error=Failed to update task`.
+## Route, controller và JSP liên quan
+- `/dept`, `/dept/*`, `/taskManager`, `/postTask`, `/viewTask`, `/dept/leaves`.
+- Controller: `DeptController`, `TaskManager`, `PostTask`, `ViewTask`, `DeptLeaveController`.
+- JSP: `Views/DeptManager/*`.
 
 ## Hiện trạng code
-- Đã xây dựng hoàn thiện luồng cập nhật thông tin công việc và đặt lại phân công nhân sự.
-- Chưa tích hợp xử lý riêng mã lỗi HTTP 400 khi xảy ra ngoại lệ chuyển đổi kiểu số `NumberFormatException` đối với ID công việc.
+- `ViewTask` Dept đang dùng `/viewTask`.
+- Route này bị Employee servlet dùng trùng.
+- Filter đang coi `/viewTask` là route Dept với `VIEW_DEPARTMENTS`.
 
-## Tiêu chí nghiệm thu
-- [ ] Cập nhật công việc thành công chuyển hướng người dùng kèm theo thông điệp thông báo `mess`.
-- [ ] Cập nhật công việc thất bại chuyển hướng người dùng kèm theo thông điệp thông báo lỗi `error`.
-- [ ] Người dùng chưa đăng nhập bị chuyển hướng về trang đăng nhập `/Views/Login.jsp`.
+## Quy tắc nghiệp vụ chuẩn
+- Cập nhật phải kiểm tra task thuộc scope manager.
+- Không cập nhật task đã đóng nếu nghiệp vụ không cho phép.
+- Mọi thay đổi trạng thái nên có audit/notification nếu cần.
 
-## Các phần việc còn thiếu
-- [ ] Bắt các lỗi khi truyền sai ID công việc và trả về thông báo giao diện thân thiện với người dùng.
-- [ ] Kiểm tra xác thực đảm bảo công việc phải thuộc phòng ban quản lý của Trưởng phòng đó trước khi cho phép chỉnh sửa.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần sửa trùng servlet name/mapping.
+- Cần route riêng `/dept/tasks/detail` hoặc tương đương.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

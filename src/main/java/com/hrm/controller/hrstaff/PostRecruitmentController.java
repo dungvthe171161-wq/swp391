@@ -8,6 +8,8 @@ package com.hrm.controller.hrstaff;
 import com.hrm.dao.DAO;
 import com.hrm.model.entity.Recruitment;
 import com.hrm.model.entity.SystemUser;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -28,6 +30,8 @@ public class PostRecruitmentController extends HttpServlet {
     private static final String REQUIRED_ROLE_MESSAGE = "Khu vực này chỉ dành cho nhân viên nhân sự.";
     private static final String PERMISSION_DENIED_MESSAGE = "Bạn không có quyền quản lý tin tuyển dụng.";
     private static final String LOGIN_PATH = "/login";
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -42,6 +46,14 @@ public class PostRecruitmentController extends HttpServlet {
                 int recruitmentId = Integer.parseInt(idStr);
 
                 DAO.getInstance().updateRecruitmentStatus(recruitmentId, "Waiting");
+                Recruitment rec = DAO.getInstance().getRecruitmentById(recruitmentId);
+                SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+                notificationService.notifyRecruitmentPendingForHrManagers(
+                        notificationRecipientService.hrManagerUsers(),
+                        currentUser != null ? currentUser.getUserId() : 0,
+                        recruitmentId,
+                        rec != null ? rec.getTitle() : "Tin tuyen dung"
+                );
                 request.setAttribute("mess", "Gửi duyệt thành công!");
             } catch (Exception e) {
                 e.printStackTrace();

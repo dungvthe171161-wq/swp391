@@ -1,47 +1,33 @@
-# Feature: HR Manager quan ly nhan vien
-Status: Partial
-Actor: HR Manager
-Priority: High
-Related Code: `EmployeeListController`, `CreateEmployeeController`, `Views/hr/EmployeeList.jsp`, `Views/hr/CreateEmployee.jsp`
+# Tính năng HR Manager: Quản lý nhân viên
 
-## Route
-- `GET /hr/employee-list`
-- `POST /hr/employee-list`
-- `GET /hr/create-employee`
-- `POST /hr/create-employee`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong danh sach
-1. HR Manager vao `/hr/employee-list`.
-2. `EmployeeListController` kiem tra permission `VIEW_EMPLOYEES`.
-3. Controller lay danh sach nhan vien, thong ke va filter/search neu co.
-4. Forward den `/Views/hr/EmployeeList.jsp`.
-5. HR Manager co the xem chi tiet, cap nhat trang thai, sua thong tin hoac xoa theo action POST hien co.
+## Actor và phạm vi
+- HR Manager xem danh sách nhân viên và tạo employee từ ứng viên đã tuyển.
 
-## Luong tao employee
-1. HR Manager vao `/hr/create-employee`.
-2. `CreateEmployeeController` kiem tra permission `VIEW_EMPLOYEES`.
-3. Controller load guest co status `Hired`/`HIRED` va danh sach department hop le.
-4. HR Manager nhap thong tin employee va account neu form yeu cau.
-5. Controller validate guest, fullName, email, departmentId, status, username, password, hireDate.
-6. Controller tao `Employee`.
-7. Neu email da co account role `Guest`, controller cap nhat account do sang role `Employee` va gan `EmployeeID`.
-8. Neu email chua co account, controller tao `SystemUser` moi role `Employee` va gan `EmployeeID`.
-9. Thanh cong redirect ve `/hr/employee-list`.
+## Route, controller và JSP liên quan
+- `/HrHomeController`, `/viewRecruitment`, `/viewCV`, `/hr/employee-list`, `/hr/create-employee`.
+- `/hr/approve-reject-contracts`, `/hr/payroll-approval`, `/hr/leaves` và các route `/hr/*`.
+- Controller: `HrHomeController`, `ViewRecruitment`, `ViewCV`, `EmployeeListController`, `CreateEmployeeController`, `ApproveRejectContractController`, `PayrollApprovalController`.
 
-## UI contract
-- JSP lien quan phai theo BetterHR theme va hien thi tieng Viet.
-- Nut quay lai HR Home tro ve `/HrHomeController`.
-- Khong doi ten input/form action khi chi sua giao dien.
+## Hiện trạng code
+- `EmployeeListController` dùng `/hr/employee-list` và `VIEW_EMPLOYEES`.
+- `CreateEmployeeController` dùng `/hr/create-employee` và `VIEW_EMPLOYEES`.
+- Create employee hiện insert employee, tạo/promote user, rồi xóa Guest.
 
-## Acceptance Criteria
-- [ ] HR Manager xem duoc danh sach employee.
-- [ ] Tao employee thieu thong tin bat buoc bi tu choi.
-- [ ] Email/phone neu co rule unique phai duoc validate.
-- [ ] Guest da duoc tuyen moi xuat hien trong nguon tao employee.
-- [ ] Neu user da dang ky truoc bang email do, he thong khong tao duplicate account ma chuyen account Guest sang Employee.
-- [ ] Tao employee thanh cong quay ve `/hr/employee-list`.
+## Quy tắc nghiệp vụ chuẩn
+- Tạo employee nên yêu cầu `CREATE_EMPLOYEE`.
+- Không xóa Guest nếu cần giữ lịch sử tuyển dụng.
+- Phải chạy transaction để tránh employee/user/application cập nhật dở dang.
 
-## Missing Work
-- [ ] Xem lai permission `VIEW_EMPLOYEES` co du cho create/update/delete hay can them `MANAGE_EMPLOYEES`.
-- [ ] Them audit log khi tao employee.
-- [ ] Cap nhat `CreateEmployeeController`/DAO neu hien tai chua ho tro chuyen account Guest co san sang Employee.
+## Code còn lệch spec hoặc cần bổ sung
+- Sửa permission create employee.
+- Giữ Guest và liên kết application hired employee nếu có migration.
+- Hash mật khẩu user mới.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

@@ -12,6 +12,7 @@
 <div class="employee-shell">
     <%@ include file="_EmployeeSidebar.jspf" %>
     <main class="employee-main">
+        <%@ include file="_EmployeeTopbar.jspf" %>
         <div class="content">
             <h1 class="page-title">Ch&#7845;m c&#244;ng</h1>
             <p class="page-note">V&#224;o ca / ra ca &#273;&#432;&#7907;c l&#432;u trong b&#7843;ng Attendance v&#224; d&#249;ng cho t&#237;nh l&#432;&#417;ng.</p>

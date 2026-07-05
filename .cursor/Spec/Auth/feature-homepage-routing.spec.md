@@ -1,49 +1,32 @@
-# Tính năng: Định tuyến trang chủ (Homepage) hiển thị quyền theo vai trò (role)
-Trạng thái: Đã phê duyệt
-Tác nhân: Guest, Admin, HR Manager, HR Staff, Dept Manager, Employee
-Độ ưu tiên: Cao
-Mã nguồn liên quan: `HomepageController`, `Views/Homepage.jsp`
+# Tính năng Auth: Điều hướng trang chủ theo vai trò
 
-## Mục tiêu
-Sử dụng đường dẫn `/homepage` làm cổng truy cập trung tâm của hệ thống. Sau tất cả các luồng đăng nhập (đăng nhập cục bộ hoặc Google Login) hoặc đổi mật khẩu thành công, người dùng sẽ được đưa về login/homepage theo luồng xác thực (auth flow), và trang chủ sẽ hiển thị các khu vực/bảng điều khiển (dashboard) mà vai trò hiện tại được cấp quyền truy cập.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Các Route
-- `GET /homepage`
+## Actor và phạm vi
+- User sau login hoặc user truy cập homepage public.
 
-## Luồng cho khách truy cập (Guest flow)
-1. Khách truy cập vào `/homepage`.
-2. Nếu chưa tồn tại đối tượng `systemUser` trong session, `HomepageController` sẽ thiết lập đối tượng quyền truy cập `dashboardAccess` mặc định dành cho khách (guest).
-3. Hệ thống chuyển tiếp (forward) yêu cầu đến `/Views/Homepage.jsp`.
-4. Khách xem trang công khai (public) và danh sách các liên kết công khai.
-5. Nút `Đăng ký` trên trang chủ trỏ chính xác tới tuyến đường `/register`, không trỏ nhầm về `/login`.
-
-## Luồng người dùng đã đăng nhập (Logged-in user flow)
-1. Người dùng truy cập vào `/homepage`.
-2. `HomepageController` tiến hành lấy đối tượng `systemUser` từ session.
-3. Controller lấy vai trò (role) hiện tại và khởi tạo đối tượng quyền truy cập `dashboardAccess`.
-4. Hệ thống forward yêu cầu đến `/Views/Homepage.jsp`, không tự động chuyển hướng bắt buộc theo vai trò (auto redirect).
-5. Trang JSP hiển thị các nút chức năng/bảng điều khiển (dashboard) tương ứng:
-   - Admin: Khu vực Admin, phân hệ HR/HR Staff nếu được cấp quyền, khu vực Employee, Guest.
-   - HR Manager: Khu vực HR Manager, Employee, Guest.
-   - HR Staff: Khu vực HR Staff, Employee, Guest.
-   - Dept Manager: Khu vực Dept Manager/Employee/Guest nếu logic phân quyền cho phép.
-   - Employee: Khu vực Employee và Guest.
-   - Guest (vai trò): Chỉ hiển thị khu vực Guest/public.
+## Route, controller và JSP liên quan
+- `/login`, `/logout`, `/register`, `/homepage`, `/ForgotPassword`, `/Recovery`, `/changepass`, `/changepassRE`.
+- `/auth/google`, `/auth/google/callback`, `/loginByGmail`.
+- Controller: `LoginController`, `LogoutController`, `RegisterController`, `GoogleAuthController`, `HomepageController` và controller đổi/quên mật khẩu.
 
 ## Hiện trạng code
-- Đã có sẵn tuyến đường (route) `/homepage`.
-- Đã thực hiện forward về `/Views/Homepage.jsp`.
-- Đã sử dụng đối tượng `dashboardAccess` để render menu tương ứng với từng vai trò.
-- Đăng nhập cục bộ (local login) và đăng nhập Google đều chuyển hướng về `/homepage` sau khi khởi tạo thành công session.
+- `HomepageController` và `RoleRedirectUtil` quyết định route.
+- Dashboard map theo `RoleID` 1-6.
+- Guest đi `/guest/dashboard`, Employee đi `/employee`.
 
-## Tiêu chí nghiệm thu
-- [ ] Khách truy cập (Guest) vào `/homepage` nhìn thấy giao diện trang công khai.
-- [ ] Người dùng đã đăng nhập truy cập vào `/homepage` vẫn ở lại trang chủ, không bị hệ thống tự động chuyển hướng bắt buộc sang trang khác.
-- [ ] Trang chủ hiển thị đúng dashboard/menu tương ứng với vai trò hiện tại của người dùng.
-- [ ] Vai trò không hợp lệ hoặc thiếu thông tin vai trò sẽ tự động được đưa về quyền hạn của khách/công khai (Guest/public).
-- [ ] Các nút bấm/đường liên kết dashboard trên trang chủ trỏ đúng tuyến đường trong code hiện tại.
-- [ ] Nút `Đăng ký` trên trang chủ mở đúng đường dẫn `/register`.
+## Quy tắc nghiệp vụ chuẩn
+- Role không hợp lệ hoặc chưa login đi về homepage/login phù hợp.
+- Không link trực tiếp JSP dashboard nếu controller cần nạp dữ liệu.
+- Điều hướng phải thống nhất giữa login local và Google login.
 
-## Các phần việc còn thiếu
-- [ ] Chuẩn hóa việc ánh xạ mã vai trò (role ID) và tên vai trò (role name) trong tài liệu hệ thống để tránh nhầm lẫn.
-- [ ] Bổ sung mã kiểm thử (test) cho đối tượng quyền truy cập `dashboardAccess` đối với từng vai trò.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần cập nhật spec và code cùng lúc nếu đổi dashboard actor.
+- Cần test tất cả 6 role seed.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

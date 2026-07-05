@@ -47,6 +47,7 @@
                     <strong>${guestProfile.fullName}</strong>
                     <span>${currentUser.email}</span>
                 </div>
+                <%@ include file="../_NotificationBell.jspf" %>
                 <a class="candidate-avatar" href="${pageContext.request.contextPath}/guest/profile">
                     <c:choose>
                         <c:when test="${not empty guestProfile.avatar}">

@@ -10,6 +10,9 @@ import com.hrm.dao.TaskDAO;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.MailRequest;
 import com.hrm.model.entity.SystemUser;
+import com.hrm.model.entity.Task;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -34,6 +37,8 @@ public class EmployeePortalController extends HttpServlet {
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final MailRequestDAO mailRequestDAO = new MailRequestDAO();
     private final TaskDAO taskDAO = new TaskDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -201,9 +206,13 @@ public class EmployeePortalController extends HttpServlet {
         leave.setStartDate(startDate);
         leave.setEndDate(endDate);
         leave.setReason(buildLeaveReason(request));
-        boolean success = mailRequestDAO.insert(leave);
+        int requestId = mailRequestDAO.insertAndReturnId(leave);
+        boolean success = requestId > 0;
 
         if (success) {
+            Employee currentEmployee = (Employee) request.getAttribute("currentEmployee");
+            SystemUser currentUser = (SystemUser) request.getAttribute("currentUser");
+            notifyDeptManagersAboutLeave(requestId, currentEmployee, currentUser, startDate, endDate);
             String mailWarning = sendHandoverEmail(request, handoverEmail, startDate, endDate, leaveDetail,
                     handoverWork, reason);
             request.getSession().setAttribute(mailWarning == null ? "employeeSuccess" : "employeeError",
@@ -220,10 +229,42 @@ public class EmployeePortalController extends HttpServlet {
             throws IOException {
         int taskId = parseInt(request.getParameter("taskId"), -1);
         String status = request.getParameter("status");
+        Task task = taskId > 0 ? taskDAO.getAssignedTaskById(taskId, employeeId) : null;
         boolean success = taskId > 0 && taskDAO.updateAssignedTaskStatus(taskId, employeeId, status);
+        if (success) {
+            Employee currentEmployee = (Employee) request.getAttribute("currentEmployee");
+            SystemUser currentUser = (SystemUser) request.getAttribute("currentUser");
+            List<Integer> managerUserIds = currentEmployee != null
+                    ? notificationRecipientService.deptManagersByDepartment(currentEmployee.getDepartmentId())
+                    : List.of();
+            notificationService.notifyTaskStatusUpdatedForManagers(
+                    managerUserIds,
+                    currentUser != null ? currentUser.getUserId() : 0,
+                    taskId,
+                    task != null ? task.getTitle() : "Cong viec",
+                    status,
+                    currentEmployee != null ? currentEmployee.getFullName() : "Nhan vien"
+            );
+        }
         request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
                 success ? "Da cap nhat trang thai cong viec." : "Khong the cap nhat cong viec nay.");
         response.sendRedirect(request.getContextPath() + "/employee/tasks");
+    }
+
+    private void notifyDeptManagersAboutLeave(int requestId, Employee employee, SystemUser currentUser,
+                                              LocalDate startDate, LocalDate endDate) {
+        if (employee == null || employee.getDepartmentId() <= 0) {
+            return;
+        }
+        List<Integer> managerUserIds = notificationRecipientService.deptManagersByDepartment(employee.getDepartmentId());
+        notificationService.notifyNewLeaveRequestForDeptManagers(
+                managerUserIds,
+                currentUser != null ? currentUser.getUserId() : 0,
+                requestId,
+                employee.getFullName(),
+                String.valueOf(startDate),
+                String.valueOf(endDate)
+        );
     }
 
     private String buildLeaveReason(HttpServletRequest request) {

@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import com.hrm.model.entity.Employee;
+import com.hrm.service.NotificationRecipientService;
+import com.hrm.service.NotificationService;
 import com.hrm.util.PermissionUtil;
 
 /**
@@ -41,6 +43,8 @@ public class PayrollApprovalController extends HttpServlet {
     
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
+    private final NotificationService notificationService = new NotificationService();
+    private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -225,6 +229,7 @@ public class PayrollApprovalController extends HttpServlet {
                 boolean success = payrollDAO.approvePayroll(payrollId, approvedBy, LocalDate.now());
                 
                 if (success) {
+                    notifyHrStaffAboutPayrollDecision(currentUser, payrollId, "Approved");
                     redirectToPayrollPage(request, response, "Approved", employeeFilter, monthFilter,
                             "success", "Payroll approved successfully!");
                 } else {
@@ -250,6 +255,7 @@ public class PayrollApprovalController extends HttpServlet {
                 boolean success = payrollDAO.rejectPayroll(payrollId, approvedBy, LocalDate.now(), rejectNote);
                 
                 if (success) {
+                    notifyHrStaffAboutPayrollDecision(currentUser, payrollId, "Rejected");
                     redirectToPayrollPage(request, response, "Rejected", employeeFilter, monthFilter,
                             "success", "Payroll rejected successfully!");
                 } else {
@@ -380,6 +386,7 @@ public class PayrollApprovalController extends HttpServlet {
                 
                 boolean success = payrollDAO.approvePayroll(payrollId, approvedBy, LocalDate.now());
                 if (success) {
+                    notifyHrStaffAboutPayrollDecision(currentUser, payrollId, "Approved");
                     successCount++;
                 } else {
                     failCount++;
@@ -494,6 +501,7 @@ public class PayrollApprovalController extends HttpServlet {
                 
                 boolean success = payrollDAO.rejectPayroll(payrollId, approvedBy, LocalDate.now(), rejectNote);
                 if (success) {
+                    notifyHrStaffAboutPayrollDecision(currentUser, payrollId, "Rejected");
                     successCount++;
                 } else {
                     failCount++;
@@ -562,6 +570,15 @@ public class PayrollApprovalController extends HttpServlet {
         }
 
         response.sendRedirect(redirectUrl.toString());
+    }
+
+    private void notifyHrStaffAboutPayrollDecision(SystemUser currentUser, int payrollId, String decision) {
+        notificationService.notifyPayrollDecisionForHrStaff(
+                notificationRecipientService.hrStaffUsers(),
+                currentUser != null ? currentUser.getUserId() : 0,
+                payrollId,
+                decision
+        );
     }
 }
 

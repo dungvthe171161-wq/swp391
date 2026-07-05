@@ -1,73 +1,33 @@
-# Cross-cutting Spec: Test Plan
-Status: Approved
-Priority: Medium
+# Đặc tả dùng chung: Kế hoạch kiểm thử
 
-## Muc tieu
-Dinh nghia bo test toi thieu cho cac module HRMS theo spec.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Auth tests
-- Login dung tao session `systemUser`.
-- Login sai khong tao session.
-- Register thanh cong tao `SystemUser` va redirect `/login?success=registered` neu gui mail thanh cong.
-- Register tao account thanh cong nhung mail fail redirect `/login?success=registered_mail_failed`.
-- Register duplicate username/email bi tu choi.
-- Register public tao role `Guest` va khong tu gan `EmployeeID` neu chua qua luong employee.
-- Logout invalidate session.
-- Remember-me chi luu username, khong luu password.
-- Forgot password chi gui PIN khi email ton tai trong `SystemUser.Email`.
-- PIN sai hoac het session khong duoc vao form tao mat khau moi.
-- PIN dung set `recoveryVerified` va redirect sang `/changepassRE`.
-- Doi mat khau khoi phuc thanh cong cap nhat `SystemUser.PasswordHash` va xoa `recoveryEmail`, `pinCode`, `recoveryVerified`.
-- Mo truc tiep `/changepassRE` khi chua verify PIN bi redirect ve `/ForgotPassword`.
+## Actor và phạm vi
+- Toàn bộ HRMS sau khi sửa code hoặc spec nghiệp vụ.
 
-## Permission tests
-- User khong phai Admin khong vao `/admin`.
-- `/departments` phai bi chan neu chua duoc cap quyen sau khi sua filter.
-- HR Staff khong duoc approve payroll cuoi cung.
-- Employee khong vao duoc route Dept Manager.
+## Route, controller và JSP liên quan
+- Maven build: `mvn -q compile`.
+- Unit/integration test dưới `src/test` nếu có.
+- Manual test theo route actor và dữ liệu seed.
 
-## Admin tests
-- Tao user validate username/password/role/employee.
-- Role permission API POST body sai tra 400.
-- RoleID 1 Admin mo/luu trang phan quyen duoc.
-- Trang phan quyen checkbox bam duoc khi co quyen va khong spam toast trung nhau.
-- Admin dashboard khong bi UI cu de len UI moi.
-- Role list phan trang 10 ban ghi.
+## Hiện trạng code
+- Maven compile hiện pass với warning Jansi/native access.
+- Một số lỗi deploy servlet như trùng mapping có thể không bị compile phát hiện.
+- Test tự động hiện chưa bao phủ đầy đủ workflow tuyển dụng và phân quyền.
 
-## Dept tests
-- Dept Manager tao task thanh cong.
-- Update task thanh cong reset assignment cu.
-- User khong dung phong ban khong sua task neu rule da implement.
+## Quy tắc nghiệp vụ chuẩn
+- Mỗi actor phải có smoke test đăng nhập, mở dashboard, truy cập route bị cấm.
+- Workflow có thay đổi trạng thái phải test cả thành công và thất bại.
+- Spec thay đổi permission phải test role không đủ quyền.
 
-## Employee tests
-- Employee chi xem task duoc giao.
-- Employee khong xem payroll/contract cua nguoi khac.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test container/deploy để bắt lỗi trùng `/viewTask`.
+- Cần test database cho enum Application/Offer/Interview.
+- Cần test bảo mật password sau khi chuyển sang hash.
 
-## HR Staff tests
-- Generate payroll khong crash khi procedure loi.
-- Batch submit/delete payroll list rong bi tu choi.
-- Khong sua allowance/deduction khi payroll `Pending/Approved/Paid`.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## HR Manager tests
-- `/HrHomeController` load HR Home cho role HR Manager.
-- HR Home co quick access dung route: recruitment, create employee, employee list, contract approval, payroll approval.
-- HR Home khong bi duplicate title va khong loi font tieng Viet.
-- Approve/reject recruitment dung status.
-- Approve/reject contract dung role.
-- Approve/reject payroll dung role.
-
-## UI/Language tests
-- Cac JSP da sua khong con mojibake/ky tu replacement.
-- Text hien thi tieng Viet, tru logo `BetterHR` va gia tri ky thuat backend.
-- Form UI update khong doi `action`, `method`, `name`, `value`.
-
-## Public Candidate tests
-- Guest xem job list.
-- Guest chua login bam ung tuyen redirect `/login?error=login_required`.
-- User da login bam ung tuyen mo form apply.
-- Apply job validate email/phone/name.
-- Upload CV sai dinh dang bi tu choi.
-
-## Acceptance Criteria
-- [ ] Moi bug quan trong trong spec co test tuong ung.
-- [ ] Test uu tien route, permission, validation va status workflow.

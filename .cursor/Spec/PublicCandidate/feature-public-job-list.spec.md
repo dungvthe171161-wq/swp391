@@ -1,27 +1,33 @@
-# Feature: Ung vien xem danh sach viec lam
-Status: Approved
-Actor: Guest Candidate
-Priority: Medium
-Related Code: `RecruitmentController`, `Views/Recruitment.jsp`
+# Tính năng legacy: Ứng viên public xem việc làm
 
-## Route
-- `GET /RecruitmentController`
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Luong chinh
-1. Guest truy cap trang recruitment.
-2. Controller lay danh sach recruitment dang mo.
-3. Forward den `/Views/Recruitment.jsp`.
-4. Guest xem title, dia diem, luong, so luong, mo ta, yeu cau.
-5. Guest bam ung tuyen khi chua login thi redirect `/login?error=login_required`.
-6. User da login bam ung tuyen thi sang form apply.
+## Actor và phạm vi
+- Ứng viên public xem danh sách và chi tiết vị trí tuyển dụng.
 
-## Acceptance Criteria
-- [ ] Guest khong can login van xem duoc job list.
-- [ ] Guest chua login bam ung tuyen bi yeu cau dang nhap.
-- [ ] User da login bam ung tuyen mo duoc form apply.
-- [ ] Chi hien thi job dang mo/available theo status code hien tai.
-- [ ] Loi database khong lam lo stack trace ra UI.
+## Route, controller và JSP liên quan
+- `/homepage`, `/RecruitmentController` và các route public nộp hồ sơ nếu có.
+- Spec này là legacy; spec chính cho ứng viên có tài khoản nằm trong thư mục `Guest`.
+- JSP public và trang thành công ứng tuyển.
 
-## Missing Work
-- [ ] Chuan hoa status job public: Available, Closed, Draft.
-- [ ] Them search/filter job neu can.
+## Hiện trạng code
+- PublicCandidate là tên spec cũ cho ứng viên public.
+- Code hiện đã có actor Guest rõ hơn với role `Guest` và portal `/guest/*`.
+- Luồng public vẫn có thể dùng `RecruitmentController`.
+
+## Quy tắc nghiệp vụ chuẩn
+- Ứng viên public được xem job đang mở.
+- Nếu nộp hồ sơ cần tạo hoặc liên kết Guest/Application theo thiết kế mới.
+- Không dùng spec PublicCandidate làm nguồn chính nếu mâu thuẫn với Guest.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Cần hợp nhất dần spec PublicCandidate vào Guest.
+- Cần xác định route public nào còn được dùng thật.
+- Cần đảm bảo không tạo dữ liệu ứng viên trùng.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

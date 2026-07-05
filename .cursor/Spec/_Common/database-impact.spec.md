@@ -1,107 +1,34 @@
-# Cross-cutting Spec: Database Impact Map
-Status: Approved
-Priority: Medium
-Schema Source: `src/data/data.sql`
+# Đặc tả dùng chung: Ảnh hưởng cơ sở dữ liệu
 
-## Muc tieu
-Lap ban do bang du lieu bi doc/ghi theo module de khi implement khong tac dong sai bang. Spec nay dung ten bang va status theo `src/data/data.sql`.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## Bang chinh trong data.sql
-| Nhom | Bang |
-| --- | --- |
-| Core | `Role`, `Department`, `Employee`, `SystemUser`, `SystemLog` |
-| HR | `Contract`, `Recruitment`, `Guest`, `MailRequest` |
-| Guest Phase 2 | `Application`, `Interview`, `Offer` |
-| Common Notification | `Notification` |
-| Task | `Task`, `assignList` |
-| Payroll | `Payroll`, `PayrollAudit`, `Attendance`, `AllowanceType`, `EmployeeAllowance`, `DeductionType`, `EmployeeDeduction`, `InsuranceRate`, `TaxRate`, `Dependent` |
-| Permission | `Permission`, `RolePermission`, `UserPermission` |
+## Actor và phạm vi
+- Tất cả module đọc/ghi MySQL; spec này giúp đối chiếu bảng nào bị tác động khi sửa code.
 
-## Auth
-| Feature | Read | Write |
-| --- | --- | --- |
-| Register local | `SystemUser`, `Role` | `SystemUser` voi `RoleID=Guest`, `EmployeeID=NULL`; email qua SMTP neu cau hinh |
-| Login | `SystemUser`, `Role`, `RolePermission`, `UserPermission` neu check permission | HTTP session, cookie, `SystemUser.LastLogin` neu implement |
-| Logout | HTTP session, cookie | HTTP session, cookie |
-| Change password | `SystemUser` | `SystemUser.PasswordHash` |
-| Forgot password | `SystemUser.Email` | recovery state/session: `recoveryEmail`, `pinCode`, `recoveryVerified` |
+## Route, controller và JSP liên quan
+- `src/data/data.sql`: schema chính và dữ liệu seed.
+- DAO trong `src/main/java/com/hrm/dao`: lớp truy cập dữ liệu.
+- Migration trong `src/data/migrations`: bổ sung Notification phase 1.
 
-## Admin
-| Feature | Read | Write |
-| --- | --- | --- |
-| Dashboard | `Employee`, `Department`, `SystemUser`, `SystemLog`, payroll/recruitment stats neu DAO dung | none |
-| User management | `SystemUser`, `Role`, `Employee`, `Department` | `SystemUser` |
-| Role management | `Role` | `Role` |
-| Role permission | `Role`, `Permission`, `RolePermission` | `RolePermission` |
-| User permission override | `SystemUser`, `Permission`, `UserPermission` | `UserPermission` |
-| Department | `Department`, `Employee` | `Department` |
-| Audit log | `SystemLog` | none |
+## Hiện trạng code
+- Auth/Admin dùng `SystemUser`, `Role`, `Permission`, `RolePermission`, `AuditLog` nếu có.
+- Recruitment dùng `Recruitment`, `Guest`, `CandidateProfile`, `Application`, `Interview`, `Offer`, `Notification`.
+- Employee dùng `Employee`, `Task`, `LeaveRequest`, `Payroll`, `Contract`, `Attendance`.
+- Notification schema đã có `ActorUserID`, `EntityType`, `EntityID`, `TargetUrl`, `Priority`, `ExpiresAt`.
 
-## Dept Manager
-| Feature | Read | Write |
-| --- | --- | --- |
-| Dashboard | `Department`, `Employee`, `Task`, `assignList` | none |
-| Create task | `Employee`, `Department` | `Task`, `assignList` |
-| Task list | `Task`, `assignList`, `Employee` | none |
-| Update task | `Task`, `assignList` | `Task`, `assignList` |
+## Quy tắc nghiệp vụ chuẩn
+- Mọi thay đổi enum phải đi kèm migration và sửa DAO/controller/JSP.
+- Không xóa lịch sử tuyển dụng khi chuyển ứng viên thành nhân viên.
+- Không ghi trạng thái workflow mới vào bảng legacy nếu đã có bảng chuyên trách.
 
-## Employee
-| Feature | Read | Write |
-| --- | --- | --- |
-| View task | `Task`, `assignList`, `Employee` | none |
-| Profile | `Employee`, `SystemUser`, `Department`, `Role` | `Employee`/`SystemUser` neu cho sua |
-| Payroll view | `Payroll`, `PayrollAudit` neu can chi tiet | none |
-| Contract view | `Contract` | none |
-| Leave/mail request | `MailRequest` | `MailRequest` |
+## Code còn lệch spec hoặc cần bổ sung
+- `Offer` đang có unique theo `ApplicationID`, nên chưa hỗ trợ nhiều offer cho một application.
+- `CreateEmployeeController` hiện xóa `Guest` sau khi tạo employee.
+- Một số thao tác phối hợp nhiều DAO chưa chạy trong transaction chung.
 
-## HR Staff
-| Feature | Read | Write |
-| --- | --- | --- |
-| Recruitment post | `Recruitment` | `Recruitment` |
-| Candidate | `Guest`, `Recruitment` | `Guest.Status` |
-| Contract | `Contract`, `Employee` | `Contract` |
-| Payroll list/details | `Payroll`, `PayrollAudit`, `Employee`, `Contract`, `Attendance`, `EmployeeAllowance`, `EmployeeDeduction` | none |
-| Payroll generate | `Employee`, `Contract`, `Attendance`, `MailRequest`, `EmployeeAllowance`, `EmployeeDeduction`, `InsuranceRate`, `TaxRate`, `Dependent` | `Payroll`, `PayrollAudit`, `EmployeeDeduction` |
-| Payroll submit/delete | `Payroll` | `Payroll.Status`, `Payroll` |
-| Allowance/Deduction | `EmployeeAllowance`, `EmployeeDeduction`, `AllowanceType`, `DeductionType`, `Payroll` | `EmployeeAllowance`, `EmployeeDeduction` |
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
 
-## HR Manager
-| Feature | Read | Write |
-| --- | --- | --- |
-| HR Home | `Employee`, `Department`, `Payroll` neu section payroll, `Contract` neu hien pending contract count | none neu chi dashboard |
-| Recruitment review | `Recruitment` | `Recruitment.Status` |
-| CV review | `Guest`, `Recruitment` | `Guest.Status` neu co |
-| Employee management | `Employee`, `Department`, `Role`, `SystemUser` | `Employee`, `SystemUser` |
-| Contract approval | `Contract`, `Employee` | `Contract.Status` |
-| Payroll approval | `Payroll`, `PayrollAudit`, `Employee` | `Payroll.Status`, `Payroll.ApprovedBy`, `Payroll.ApprovedDate` |
-
-## Guest Candidate
-| Feature | Read | Write |
-| --- | --- | --- |
-| Job list | `Recruitment` | none |
-| Apply job Phase 1 | `Recruitment` | `Guest`, uploaded CV path in `Guest.CV` |
-| Apply job Phase 2 | `Recruitment`, `Guest`, `Application` | `Application`, uploaded CV path in `Application.CV`, optional `Notification` |
-| Guest dashboard Phase 2 | `Application`, `Interview`, `Offer`, `Notification` | none |
-| Guest applications Phase 2 | `Application`, `Recruitment`, `Interview`, `Offer` | none |
-| Guest profile | `Guest`, `SystemUser` | `Guest` |
-
-## Common Notification
-| Feature | Read | Write |
-| --- | --- | --- |
-| Notification list | `Notification` by `SystemUser.UserID` | none |
-| Mark notification read | `Notification` by `SystemUser.UserID` | `Notification.IsRead`, `Notification.ReadDate` |
-| Create notification | `SystemUser`, optional related module data | `Notification` |
-
-## Luu y quan trong
-- SQL dung ten bang PascalCase, vi du `SystemUser`, khong phai `system_user`.
-- Bang giao task la `assignList`, khong phai `task_assignment`.
-- Bang nghi phep/yeu cau la `MailRequest`, khong phai `Leave`.
-- Ung vien public nam trong `Guest`, khong co bang `Candidate` rieng.
-- Phase 2 tach moi lan ung tuyen sang `Application`; `Guest` chi la profile ung vien.
-- `Notification` la bang dung chung cho moi actor theo `SystemUser.UserID`, khong thuoc rieng Guest.
-- Payroll generate ghi ca `Payroll` va `PayrollAudit`.
-
-## Acceptance Criteria
-- [ ] Moi feature spec chinh tham chieu dung ten bang trong `data.sql`.
-- [ ] Mutating feature phai co validation va audit log neu nhay cam.
-- [ ] Neu doi schema, phai cap nhat lai spec nay cung luc.

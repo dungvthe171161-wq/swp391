@@ -12,6 +12,7 @@
 <div class="employee-shell">
     <%@ include file="_EmployeeSidebar.jspf" %>
     <main class="employee-main">
+        <%@ include file="_EmployeeTopbar.jspf" %>
         <div class="content">
             <h1 class="page-title">Hồ sơ cá nhân</h1>
             <p class="page-note">Thông tin nhân sự được lấy từ hồ sơ Employee của tài khoản đang đăng nhập.</p>

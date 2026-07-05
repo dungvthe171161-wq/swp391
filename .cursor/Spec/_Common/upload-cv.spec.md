@@ -1,38 +1,33 @@
-# Cross-cutting Spec: Upload CV
-Status: Approved
-Priority: High
-Related Code: `RecruitmentController`, `GuestDAO`, `Views/ApplyForm.jsp`, `Upload/cvs`
+# Đặc tả dùng chung: Tải lên CV
 
-## Muc tieu
-Dam bao ung vien public upload CV an toan khi nop don ung tuyen.
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
-## File rule
-- Dinh dang cho phep: `.pdf`, `.doc`, `.docx`.
-- MIME type phai duoc validate o backend neu co the.
-- Size toi da de xuat: 5MB.
-- Ten file luu phai random/UUID, khong dung truc tiep ten file client.
-- Khong cho path traversal bang `../` hoac absolute path.
+## Actor và phạm vi
+- Guest/PublicCandidate nộp hồ sơ và HR xem CV ứng viên.
 
-## Luong upload
-1. Ung vien submit application kem file CV.
-2. Controller validate recruitment id va thong tin ca nhan.
-3. Controller validate file.
-4. Luu file vao folder upload hop le.
-5. Luu path tuong doi vao database.
-6. Thanh cong redirect success.
+## Route, controller và JSP liên quan
+- `RecruitmentController`: nhận hồ sơ ứng tuyển public/guest.
+- `GuestPortalController`: lưu `CandidateProfile` và CV ở `/guest/profile`.
+- `ViewCV`: HR xem CV qua route `/viewCV`.
 
-## Loi upload
-- File rong neu CV bat buoc: bao loi validation.
-- Sai dinh dang: bao loi validation.
-- Qua dung luong: bao loi validation.
-- Luu file that bai: khong tao application hoac rollback ban ghi neu da tao.
+## Hiện trạng code
+- Guest profile chấp nhận CV `pdf`, `doc`, `docx` tối đa 10MB.
+- File được lưu dưới thư mục upload và tên file được sinh UUID ở một số luồng.
+- `ViewCV` hiện nhận `guestId`, chưa nhận `applicationId`.
 
-## Acceptance Criteria
-- [ ] Khong chap nhan file ngoai `.pdf`, `.doc`, `.docx`.
-- [ ] Khong luu ten file goc lam ten file chinh.
-- [ ] Khong chap nhan path traversal.
-- [ ] Submit loi khong tao application mo coi khong co CV neu CV bat buoc.
+## Quy tắc nghiệp vụ chuẩn
+- CV của lần ứng tuyển phải gắn với `Application`, không chỉ với `Guest`.
+- HR xem CV phải xem đúng CV của application đang xét.
+- File upload phải kiểm tra extension, kích thước và đường dẫn lưu an toàn.
 
-## Missing Work
-- [ ] Xac nhan max file size trong `@MultipartConfig`.
-- [ ] Them test upload file hop le/sai dinh dang/qua size.
+## Code còn lệch spec hoặc cần bổ sung
+- Cần chuyển `/viewCV` sang tham số `applicationId` hoặc kiểm tra rõ application.
+- Cần thống nhất nơi lưu CV giữa `CandidateProfile` và `Application`.
+- Cần test nhiều application của cùng một Guest.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

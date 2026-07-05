@@ -41,7 +41,7 @@ $hrStaffPages = @(
 
 foreach ($page in $hrStaffPages) {
     $content = Read-ProjectFile $page
-    Assert-Contains $content '<link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260627-1">' "$page must load the cache-busted shared HR Staff theme stylesheet."
+    Assert-Contains $content '<link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260630-1">' "$page must load the cache-busted shared HR Staff theme stylesheet."
     Assert-Contains $content '<%@ include file="_HrStaffSidebar.jspf" %>' "$page must statically include the shared HR Staff dashboard sidebar."
     Assert-Contains $content '<%@ include file="_HrStaffTopbar.jspf" %>' "$page must statically include the shared HR Staff dashboard topbar."
     Assert-Contains $content 'hrStaffSidebarActive' "$page must set hrStaffSidebarActive before including the shared sidebar."
@@ -96,6 +96,9 @@ $expectedTopbarSnippets = @(
 foreach ($snippet in $expectedTopbarSnippets) {
     Assert-Contains $topbar $snippet "Shared HR Staff topbar must contain snippet '$snippet'."
 }
+Assert-Contains $topbar 'data-notification-menu' "Shared HR Staff topbar notification menu must have a stable JS hook."
+Assert-Contains $topbar 'data-notification-dropdown' "Shared HR Staff topbar notification dropdown must have a stable JS hook."
+Assert-Contains $topbar 'updateNotificationDropdownPosition' "Shared HR Staff topbar must position notification dropdown outside normal layout flow."
 
 $theme = Read-ProjectFile "src/main/webapp/css/hr-theme.css"
 Assert-Contains $theme '.staff-shell' "hr-theme.css must define the shared HR Staff dashboard shell."
@@ -104,6 +107,9 @@ Assert-Contains $theme '.staff-main' "hr-theme.css must style the shared HR Staf
 Assert-Contains $theme '.staff-content' "hr-theme.css must normalize HR Staff child page content."
 Assert-Contains $theme '#00482f' "hr-theme.css must keep the BetterHR dark green token."
 Assert-Contains $theme '#97f6c0' "hr-theme.css must keep the BetterHR mint active token."
+Assert-Contains $theme 'body.hr-staff-page-shell .topbar .notification-dropdown {' "hr-theme.css must style the HR Staff notification dropdown panel."
+Assert-Contains $theme 'position: fixed !important;' "HR Staff notification dropdown must be fixed so opening it does not move the topbar layout."
+Assert-Contains $theme 'width: min(320px, calc(100vw - 24px)) !important;' "HR Staff notification dropdown must render as a compact panel."
 
 $postRecruitmentPage = Read-ProjectFile "src/main/webapp/Views/HrStaff/PostRecruitment.jsp"
 Assert-Contains $postRecruitmentPage 'hr-staff-create-recruitment-action' "PostRecruitment.jsp must show the create recruitment action inside visible page content, not only inside the hidden legacy topbar."

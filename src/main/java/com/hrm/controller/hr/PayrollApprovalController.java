@@ -10,7 +10,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +38,8 @@ import com.hrm.util.PermissionUtil;
 public class PayrollApprovalController extends HttpServlet {
 
     private static final String STATUS_PENDING = "Pending";
-    private static final String REQUIRED_PERMISSION = "VIEW_USERS";
+    private static final String VIEW_PERMISSION = "VIEW_PAYROLLS";
+    private static final String APPROVE_PERMISSION = "APPROVE_PAYROLL";
     
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
@@ -49,18 +49,20 @@ public class PayrollApprovalController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String ajax = request.getParameter("ajax");
+        if ("true".equalsIgnoreCase(ajax)) {
+            handleAjaxDetails(request, response);
+            return;
+        }
+        if (!ensureViewAccess(request, response)) {
+            return;
+        }
         try {
             String statusParam = request.getParameter("status");
             String employeeFilter = request.getParameter("employeeFilter");
             String monthFilter = request.getParameter("payPeriod");
             String success = request.getParameter("success");
             String error = request.getParameter("error");
-
-            String ajax = request.getParameter("ajax");
-            if ("true".equalsIgnoreCase(ajax)) {
-                handleAjaxDetails(request, response);
-                return;
-            }
 
             if (success != null && !success.trim().isEmpty()) {
                 request.setAttribute("success", success);
@@ -161,22 +163,18 @@ public class PayrollApprovalController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Check authentication
-        HttpSession session = request.getSession();
-        SystemUser currentUser = (SystemUser) session.getAttribute("systemUser");
-        
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/Views/Login.jsp");
+        if (!ensureApproveAccess(request, response)) {
             return;
         }
-        
-        // Check if this is a batch operation
+
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+
         String servletPath = request.getServletPath();
         if (servletPath != null && servletPath.contains("/batch-approve")) {
-            handleBatchApprove(request, response);
+            handleBatchApprove(request, response, currentUser);
             return;
         } else if (servletPath != null && servletPath.contains("/batch-reject")) {
-            handleBatchReject(request, response);
+            handleBatchReject(request, response, currentUser);
             return;
         }
         
@@ -210,12 +208,8 @@ public class PayrollApprovalController extends HttpServlet {
                 return;
             }
             
-            // Get current user ID (from employeeId if available, otherwise userId)
-            Integer approvedBy = currentUser.getEmployeeId();
-            if (approvedBy == null) {
-                // If no employeeId, use userId as fallback
-                approvedBy = currentUser.getUserId();
-            }
+            // ApprovedBy FK references Employee — only set when user is linked to an employee record
+            Integer approvedBy = resolveApproverEmployeeId(currentUser);
             
             if ("approve".equals(action)) {
                 // Verify payroll is in Pending status
@@ -284,9 +278,9 @@ public class PayrollApprovalController extends HttpServlet {
                 request,
                 response,
                 PermissionUtil.ROLE_HR_MANAGER,
-                REQUIRED_PERMISSION,
-                "This section is restricted to HR Manager.",
-                "You do not have permission to view payroll details.")) {
+                VIEW_PERMISSION,
+                "Khu vực này chỉ dành cho HR Manager.",
+                "Bạn không có quyền xem chi tiết bảng lương.")) {
             return;
         }
 
@@ -328,16 +322,9 @@ public class PayrollApprovalController extends HttpServlet {
     /**
      * Handle batch approve for multiple payrolls
      */
-    private void handleBatchApprove(HttpServletRequest request, HttpServletResponse response)
+    private void handleBatchApprove(HttpServletRequest request, HttpServletResponse response,
+                                    SystemUser currentUser)
             throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        SystemUser currentUser = (SystemUser) session.getAttribute("systemUser");
-        
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/Views/Login.jsp");
-            return;
-        }
-        
         try {
             String[] payrollIdStrs = request.getParameterValues("payrollIds");
             if (payrollIdStrs == null || payrollIdStrs.length == 0) {
@@ -361,11 +348,7 @@ public class PayrollApprovalController extends HttpServlet {
                 return;
             }
             
-            // Get current user ID
-            Integer approvedBy = currentUser.getEmployeeId();
-            if (approvedBy == null) {
-                approvedBy = currentUser.getUserId();
-            }
+            Integer approvedBy = resolveApproverEmployeeId(currentUser);
             
             int successCount = 0;
             int failCount = 0;
@@ -429,16 +412,9 @@ public class PayrollApprovalController extends HttpServlet {
     /**
      * Handle batch reject for multiple payrolls
      */
-    private void handleBatchReject(HttpServletRequest request, HttpServletResponse response)
+    private void handleBatchReject(HttpServletRequest request, HttpServletResponse response,
+                                   SystemUser currentUser)
             throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        SystemUser currentUser = (SystemUser) session.getAttribute("systemUser");
-        
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/Views/Login.jsp");
-            return;
-        }
-        
         try {
             String[] payrollIdStrs = request.getParameterValues("payrollIds");
             if (payrollIdStrs == null || payrollIdStrs.length == 0) {
@@ -476,11 +452,7 @@ public class PayrollApprovalController extends HttpServlet {
                 return;
             }
             
-            // Get current user ID
-            Integer approvedBy = currentUser.getEmployeeId();
-            if (approvedBy == null) {
-                approvedBy = currentUser.getUserId();
-            }
+            Integer approvedBy = resolveApproverEmployeeId(currentUser);
             
             int successCount = 0;
             int failCount = 0;
@@ -579,6 +551,33 @@ public class PayrollApprovalController extends HttpServlet {
                 payrollId,
                 decision
         );
+    }
+
+    private boolean ensureViewAccess(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        return PermissionUtil.ensureRolePermission(
+                request,
+                response,
+                PermissionUtil.ROLE_HR_MANAGER,
+                VIEW_PERMISSION,
+                "Khu vực này chỉ dành cho HR Manager.",
+                "Bạn không có quyền xem bảng lương.");
+    }
+
+    private boolean ensureApproveAccess(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        return PermissionUtil.ensureRolePermission(
+                request,
+                response,
+                PermissionUtil.ROLE_HR_MANAGER,
+                APPROVE_PERMISSION,
+                "Khu vực này chỉ dành cho HR Manager.",
+                "Bạn không có quyền phê duyệt bảng lương.");
+    }
+
+    /** ApprovedBy column references Employee(EmployeeID), not SystemUser. */
+    private Integer resolveApproverEmployeeId(SystemUser user) {
+        return user != null ? user.getEmployeeId() : null;
     }
 }
 

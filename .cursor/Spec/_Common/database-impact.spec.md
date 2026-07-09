@@ -1,0 +1,34 @@
+# Đặc tả dùng chung: Ảnh hưởng cơ sở dữ liệu
+
+Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
+
+## Actor và phạm vi
+- Tất cả module đọc/ghi MySQL; spec này giúp đối chiếu bảng nào bị tác động khi sửa code.
+
+## Route, controller và JSP liên quan
+- `src/data/data.sql`: schema chính và dữ liệu seed.
+- DAO trong `src/main/java/com/hrm/dao`: lớp truy cập dữ liệu.
+- Migration trong `src/data/migrations`: bổ sung Notification phase 1.
+
+## Hiện trạng code
+- Auth/Admin dùng `SystemUser`, `Role`, `Permission`, `RolePermission`, `AuditLog` nếu có.
+- Recruitment dùng `Recruitment`, `Guest`, `CandidateProfile`, `Application`, `Interview`, `Offer`, `Notification`.
+- Employee dùng `Employee`, `Task`, `LeaveRequest`, `Payroll`, `Contract`, `Attendance`.
+- Notification schema đã có `ActorUserID`, `EntityType`, `EntityID`, `TargetUrl`, `Priority`, `ExpiresAt`.
+
+## Quy tắc nghiệp vụ chuẩn
+- Mọi thay đổi enum phải đi kèm migration và sửa DAO/controller/JSP.
+- Không xóa lịch sử tuyển dụng khi chuyển ứng viên thành nhân viên.
+- Không ghi trạng thái workflow mới vào bảng legacy nếu đã có bảng chuyên trách.
+
+## Code còn lệch spec hoặc cần bổ sung
+- `Offer` đang có unique theo `ApplicationID`, nên chưa hỗ trợ nhiều offer cho một application.
+- `CreateEmployeeController` hiện xóa `Guest` sau khi tạo employee.
+- Một số thao tác phối hợp nhiều DAO chưa chạy trong transaction chung.
+
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
+

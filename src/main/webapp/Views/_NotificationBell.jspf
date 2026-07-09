@@ -1,0 +1,367 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ page import="com.hrm.model.entity.Notification" %>
+<%@ page import="java.util.List" %>
+<%!
+    private String appNoticeEsc(Object value) {
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+%>
+<%
+    String __appNoticeCount = request.getAttribute("appNotificationCount") != null
+            ? String.valueOf(request.getAttribute("appNotificationCount"))
+            : "0";
+    int __appUnreadCount;
+    try {
+        __appUnreadCount = Integer.parseInt(__appNoticeCount);
+    } catch (NumberFormatException ex) {
+        __appUnreadCount = 0;
+    }
+    Object __appNoticeAttr = request.getAttribute("appNotifications");
+    List<Notification> __appNotifications = __appNoticeAttr instanceof List
+            ? (List<Notification>) __appNoticeAttr
+            : java.util.Collections.emptyList();
+    String __appReturnUrl = request.getRequestURI();
+    if (request.getQueryString() != null && !request.getQueryString().isBlank()) {
+        __appReturnUrl += "?" + request.getQueryString();
+    }
+%>
+<style>
+    .bh-notification-menu {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 44px;
+        overflow: visible;
+    }
+    .bh-notification-trigger {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d8d1c7;
+        border-radius: 999px;
+        background: #fff;
+        color: #00482f;
+        box-shadow: 0 8px 18px rgba(30, 57, 50, 0.08);
+        cursor: pointer;
+    }
+    .bh-notification-count {
+        position: absolute;
+        top: -7px;
+        right: -4px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: #c82014;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .bh-notification-count.is-zero { background: #66736d; }
+    .bh-notification-panel[hidden],
+    .bh-notification-menu:not(.is-open) .bh-notification-panel {
+        display: none !important;
+    }
+    .bh-notification-panel {
+        position: fixed;
+        top: var(--bh-notification-top, 72px);
+        left: var(--bh-notification-left, auto);
+        right: auto;
+        width: min(360px, calc(100vw - 24px));
+        max-height: 430px;
+        overflow: hidden;
+        border: 1px solid #d8ded6;
+        border-radius: 12px;
+        background: #fff;
+        color: #1f2d2a;
+        box-shadow: 0 22px 48px rgba(30, 57, 50, 0.2);
+        z-index: 2147483000;
+    }
+    .bh-notification-menu.is-open .bh-notification-panel {
+        display: block;
+    }
+    .bh-notification-head {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #e8ece7;
+        background: #f8faf7;
+    }
+    .bh-notification-head strong {
+        display: block;
+        color: #00482f;
+        font-size: 14px;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+    .bh-notification-head span {
+        display: block;
+        margin-top: 3px;
+        color: #66736d;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .bh-notification-head button {
+        min-height: 30px;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 8px;
+        background: transparent;
+        color: #00754a;
+        box-shadow: none;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .bh-notification-list {
+        max-height: 360px;
+        overflow-y: auto;
+        background: #fff;
+    }
+    .bh-notification-item {
+        display: block;
+        margin: 0;
+        border-bottom: 1px solid #edf1ec;
+    }
+    .bh-notification-item:last-child { border-bottom: 0; }
+    .bh-notification-item button {
+        width: 100%;
+        min-height: 72px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 10px;
+        border: 0;
+        border-radius: 0;
+        padding: 12px 14px;
+        background: #fff;
+        color: #1f2d2a;
+        box-shadow: none;
+        text-align: left;
+        cursor: pointer;
+    }
+    .bh-notification-item.unread button {
+        border-left: 3px solid #00754a;
+        background: #eef8f1;
+    }
+    .bh-notification-item button:hover { background: #e8f4ec; }
+    .bh-notification-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 30px;
+        background: #dff4e9;
+        color: #00754a;
+        font-size: 13px;
+    }
+    .bh-notification-copy {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .bh-notification-copy strong {
+        display: block;
+        color: #00482f;
+        font-size: 13px;
+        line-height: 1.3;
+        font-weight: 900;
+    }
+    .bh-notification-copy span {
+        display: block;
+        margin-top: 4px;
+        color: #4f5d58;
+        font-size: 12px;
+        line-height: 1.35;
+        font-weight: 700;
+    }
+    .bh-notification-empty {
+        min-height: 110px;
+        display: grid;
+        place-items: center;
+        gap: 8px;
+        padding: 18px;
+        color: #66736d;
+        text-align: center;
+        font-weight: 800;
+    }
+
+    .bh-notification-panel,
+    .bh-notification-panel * {
+        box-sizing: border-box !important;
+    }
+
+    .bh-notification-panel form {
+        margin: 0 !important;
+    }
+
+    .bh-notification-panel button {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .bh-notification-item button {
+        width: 100% !important;
+        min-height: 72px !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        padding: 12px 14px !important;
+        background: #ffffff !important;
+        color: #1f2d2a !important;
+        text-align: left !important;
+        cursor: pointer !important;
+    }
+
+    .bh-notification-item.unread button {
+        border-left: 3px solid #00754a !important;
+        background: #f5fbf7 !important;
+    }
+
+    .bh-notification-item button:hover {
+        background: #e8f4ec !important;
+    }
+
+    .bh-notification-copy strong {
+        color: #00482f !important;
+    }
+
+    .bh-notification-copy span {
+        color: #4f5d58 !important;
+    }
+
+    .bh-notification-head button {
+        width: auto !important;
+        min-height: 30px !important;
+        border-radius: 6px !important;
+        background: transparent !important;
+        color: #00754a !important;
+        padding: 0 8px !important;
+    }
+</style>
+<div class="bh-notification-menu">
+    <button class="bh-notification-trigger" type="button" aria-label="Thông báo" aria-haspopup="true" aria-expanded="false">
+        <i class="fa-solid fa-bell"></i>
+        <span class="bh-notification-count <%= __appUnreadCount <= 0 ? "is-zero" : "" %>"><%= __appNoticeCount %></span>
+    </button>
+    <div class="bh-notification-panel" role="menu" aria-label="Danh sách thông báo" hidden>
+        <div class="bh-notification-head">
+            <div>
+                <strong>Thông báo</strong>
+                <span><%= __appUnreadCount %> chưa đọc</span>
+            </div>
+            <% if (__appUnreadCount > 0) { %>
+                <form method="post" action="<%= request.getContextPath() %>/notifications/read-all">
+                    <input type="hidden" name="redirect" value="<%= appNoticeEsc(__appReturnUrl) %>">
+                    <button type="submit">Đánh dấu đọc</button>
+                </form>
+            <% } %>
+        </div>
+        <div class="bh-notification-list">
+            <% if (__appNotifications.isEmpty()) { %>
+                <div class="bh-notification-empty">
+                    <i class="fa-regular fa-bell"></i>
+                    <span>Chưa có thông báo mới</span>
+                </div>
+            <% } else { %>
+                <% for (Notification __notice : __appNotifications) { %>
+                    <form class="bh-notification-item <%= __notice.isRead() ? "" : "unread" %>" method="post" action="<%= request.getContextPath() %>/notifications/read">
+                        <input type="hidden" name="notificationId" value="<%= __notice.getNotificationId() %>">
+                        <input type="hidden" name="targetUrl" value="<%= appNoticeEsc(__notice.getTargetUrl()) %>">
+                        <input type="hidden" name="redirect" value="<%= appNoticeEsc(__appReturnUrl) %>">
+                        <button type="submit">
+                            <span class="bh-notification-icon"><i class="fa-solid fa-circle-info"></i></span>
+                            <span class="bh-notification-copy">
+                                <strong><%= appNoticeEsc(__notice.getTitle()) %></strong>
+                                <span><%= appNoticeEsc(__notice.getMessage()) %></span>
+                            </span>
+                        </button>
+                    </form>
+                <% } %>
+            <% } %>
+        </div>
+    </div>
+</div>
+<script>
+    (function () {
+        var menus = document.querySelectorAll('.bh-notification-menu');
+
+        function closeMenu(menu) {
+            var trigger = menu.querySelector('.bh-notification-trigger');
+            var panel = menu.querySelector('.bh-notification-panel');
+            menu.classList.remove('is-open');
+            if (panel) {
+                panel.hidden = true;
+            }
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        menus.forEach(function (menu) {
+            var trigger = menu.querySelector('.bh-notification-trigger');
+            if (!trigger || trigger.dataset.bound === 'true') {
+                return;
+            }
+            trigger.dataset.bound = 'true';
+            trigger.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                menus.forEach(function (other) {
+                    if (other !== menu) {
+                        closeMenu(other);
+                    }
+                });
+                var panel = menu.querySelector('.bh-notification-panel');
+                var isOpen = menu.classList.toggle('is-open');
+                if (panel) {
+                    if (isOpen) {
+                        var rect = trigger.getBoundingClientRect();
+                        var panelWidth = Math.min(360, window.innerWidth - 24);
+                        var left = Math.max(12, Math.min(rect.right - panelWidth, window.innerWidth - panelWidth - 12));
+                        panel.style.setProperty('--bh-notification-top', (rect.bottom + 10) + 'px');
+                        panel.style.setProperty('--bh-notification-left', left + 'px');
+                    }
+                    panel.hidden = !isOpen;
+                }
+                trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+            menu.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+        });
+
+        document.addEventListener('click', function () {
+            menus.forEach(closeMenu);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                menus.forEach(closeMenu);
+            }
+        });
+    }());
+</script>

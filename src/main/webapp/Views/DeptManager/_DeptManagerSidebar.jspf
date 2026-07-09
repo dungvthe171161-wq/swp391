@@ -1,0 +1,23 @@
+<%@ page pageEncoding="UTF-8" %>
+<aside class="dept-sidebar">
+    <a class="dept-brand" href="${pageContext.request.contextPath}/homepage" aria-label="Về trang chủ BetterHR">
+        <strong>BetterHR</strong>
+        <span>Hệ thống HRM nội bộ</span>
+    </a>
+    <nav class="dept-nav" aria-label="Dept Manager navigation">
+        <a class="${activePage eq 'dashboard' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept"><i class="fa-solid fa-users-gear"></i> Tổng quan nhóm</a>
+        <a class="${activePage eq 'employees' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=employees"><i class="fa-solid fa-id-badge"></i> Nhân viên phòng ban</a>
+        <a class="${activePage eq 'tasks' ? 'active' : ''}" href="${pageContext.request.contextPath}/taskManager"><i class="fa-solid fa-list-check"></i> Quản lý công việc</a>
+        <a class="${activePage eq 'calendar' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=calendar"><i class="fa-solid fa-calendar-days"></i> Lịch nhóm</a>
+        <a class="${activePage eq 'leaves' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept/leaves"><i class="fa-solid fa-calendar-xmark"></i> Yêu cầu nghỉ phép</a>
+        <a class="${activePage eq 'performance' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=performance"><i class="fa-solid fa-chart-line"></i> Đánh giá hiệu suất</a>
+        <a class="${activePage eq 'reports' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=reports"><i class="fa-solid fa-square-poll-vertical"></i> Báo cáo phòng ban</a>
+    </nav>
+    <div class="dept-profile">
+        <div class="dept-avatar"><i class="fa-solid fa-user-tie"></i></div>
+        <div>
+            <strong>${not empty userName ? userName : sessionScope.systemUser.username}</strong>
+            <span>${not empty userPosition ? userPosition : 'Trưởng phòng'}</span>
+        </div>
+    </div>
+</aside>

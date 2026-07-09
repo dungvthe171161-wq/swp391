@@ -1,0 +1,57 @@
+<aside class="employee-sidebar">
+    <a class="brand" href="${pageContext.request.contextPath}/employee" aria-label="BetterHR">
+        <div class="brand-mark">B</div>
+        <div>
+            <strong>BetterHR</strong>
+            <span>C&#7893;ng th&#244;ng tin nh&#226;n vi&#234;n</span>
+        </div>
+    </a>
+
+    <nav class="side-nav" aria-label="Dieu huong nhan vien">
+        <a class="nav-item ${activePage eq 'dashboard' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee">
+            <i class="fa-solid fa-table-columns"></i>
+            <span>B&#7843;ng &#273;i&#7873;u khi&#7875;n</span>
+        </a>
+        <a class="nav-item ${activePage eq 'profile' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/profile">
+            <i class="fa-solid fa-user"></i>
+            <span>H&#7891; s&#417; c&#225; nh&#226;n</span>
+        </a>
+        <a class="nav-item ${activePage eq 'attendance' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/attendance">
+            <i class="fa-solid fa-fingerprint"></i>
+            <span>Ch&#7845;m c&#244;ng</span>
+        </a>
+        <a class="nav-item ${activePage eq 'leaves' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/leaves">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>&#272;&#417;n ngh&#7881; ph&#233;p</span>
+        </a>
+        <a class="nav-item ${activePage eq 'payroll' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/payroll">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <span>B&#7843;ng l&#432;&#417;ng</span>
+        </a>
+        <a class="nav-item ${activePage eq 'tasks' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/tasks">
+            <i class="fa-solid fa-list-check"></i>
+            <span>C&#244;ng vi&#7879;c c&#7911;a t&#244;i</span>
+        </a>
+
+        <div class="nav-section-label">T&#224;i nguy&#234;n</div>
+        <a class="nav-item ${activePage eq 'contract' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/contract">
+            <i class="fa-solid fa-file-signature"></i>
+            <span>H&#7907;p &#273;&#7891;ng</span>
+        </a>
+        <a class="nav-item" href="${pageContext.request.contextPath}/employee#events">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>L&#7883;ch l&#224;m vi&#7879;c</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a class="nav-item" href="${pageContext.request.contextPath}/employee#notices">
+            <i class="fa-solid fa-bell"></i>
+            <span>Th&#244;ng b&#225;o</span>
+        </a>
+        <a class="nav-item" href="${pageContext.request.contextPath}/logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>&#272;&#259;ng xu&#7845;t</span>
+        </a>
+    </div>
+</aside>

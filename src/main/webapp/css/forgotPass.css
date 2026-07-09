@@ -1,0 +1,110 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: #f0f2f5;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.finding-forms {
+  width: 92vw;           
+  max-width: 1000px;   
+  min-height: 300vh;   
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-find {
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 44px 56px; 
+  box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.page-title {
+  width: 100%;
+  text-align: left;
+  font-size: 34px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 4px;
+}
+.divider {
+  width: 100%;
+  height: 3px;
+  background-color: #000;
+  border: none;
+  margin: 0 0 6px 0;
+}
+.page-subtitle {
+  width: 95%;
+  max-width: 760px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000;
+  margin-bottom: 12px;
+  align-self: flex-start;
+  margin-left: 0%;
+}
+.input-email {
+  width: 95%;
+  max-width: 1000px;
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid rgba(0,0,0,0.6);
+  padding: 12px 14px;
+  font-size: 15px;
+  border-radius: 2px;
+  outline: none;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.04);
+  align-self: center;
+}
+.input-email::placeholder { color: #9b9b9b; }
+.input-email:focus {
+  border-color: rgba(0,0,0,0.9);
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.03);
+}
+
+.submit {
+  background: #28a745;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 60%;
+    display: block;
+    text-align: center;
+}
+
+.submit:hover { 
+    background: #218838; 
+}
+.finding-forms .btn-primary {
+    position: absolute;
+    top: 19px;
+    left: 15px;
+}
+@media (max-width: 640px) {
+  .finding-forms { width: 100%; min-height: auto; padding: 16px; }
+  .form-find { padding: 24px; gap: 12px; }
+  .page-title { font-size: 24px; text-align: center; }
+  .page-subtitle { text-align: center; font-size: 14px; }
+  .input-email { width: 100%; font-size: 15px; }
+  .divider { width: 100%; }
+  .submit { width: 60%; max-width: 300px; }
+}

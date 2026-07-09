@@ -1,0 +1,45 @@
+# Build output
+/target/
+/src/target/
+/build/
+/dist/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/nbactions.xml
+/nb-configuration.xml
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db 
+
+# Java compiled
+*.class
+
+# Archives
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Local DB configs
+src/main/resources/db.properties
+src/main/resources/META-INF/db.local.properties
+src/main/resources/META-INF/google.properties
+src/main/resources/META-INF/mail.properties
+src/main/resources/META-INF/mail.local.properties

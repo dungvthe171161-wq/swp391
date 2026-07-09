@@ -1,0 +1,495 @@
+/* BetterHR shared Admin theme for non-dashboard admin pages */
+:root {
+  --admin-surface: #fbf9f4;
+  --admin-ceramic: #edebe9;
+  --admin-low: #f5f3ee;
+  --admin-card: #ffffff;
+  --admin-primary: #00482f;
+  --admin-brand: #006241;
+  --admin-accent: #00754a;
+  --admin-mint: #d8f2e5;
+  --admin-gold: #cba258;
+  --admin-border: #d9d4ca;
+  --admin-text: #1b1c19;
+  --admin-muted: rgba(0, 0, 0, 0.58);
+  --admin-red: #c82014;
+  --admin-shadow: 0 0 0.5px rgba(0, 0, 0, 0.14), 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
+body.admin-page {
+  margin: 0 !important;
+  background: var(--admin-surface) !important;
+  color: var(--admin-text) !important;
+  font-family: "Hanken Grotesk", "Segoe UI", Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+body.admin-page *,
+body.admin-page *::before,
+body.admin-page *::after {
+  box-sizing: border-box;
+  letter-spacing: 0 !important;
+}
+
+body.admin-page button,
+body.admin-page input,
+body.admin-page select,
+body.admin-page textarea {
+  font-family: inherit !important;
+}
+
+body.admin-page .dashboard-container {
+  min-height: 100vh !important;
+  display: flex !important;
+  background: var(--admin-surface) !important;
+}
+
+body.admin-page .sidebar {
+  width: 256px !important;
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+  border-right: 1px solid var(--admin-border) !important;
+  box-shadow: 1px 0 18px rgba(0, 0, 0, 0.04) !important;
+  padding: 24px 16px !important;
+}
+
+body.admin-page .sidebar-header {
+  padding: 0 8px 56px !important;
+  border-bottom: 0 !important;
+}
+
+body.admin-page .logo,
+body.admin-page .brand-lockup {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: var(--admin-primary) !important;
+  text-decoration: none !important;
+}
+
+body.admin-page .logo img {
+  display: none !important;
+}
+
+body.admin-page .logo::before,
+body.admin-page .brand-lockup::before {
+  content: "admin_panel_settings";
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-mint);
+  color: var(--admin-primary);
+  font-family: "Material Symbols Outlined";
+  font-size: 24px;
+  font-variation-settings: "FILL" 1;
+}
+
+body.admin-page .logo::after,
+body.admin-page .brand-lockup::after {
+  content: none !important;
+}
+
+body.admin-page .logo span {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+}
+
+body.admin-page .logo span::before {
+  content: "BetterHR";
+  color: var(--admin-text);
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 800;
+}
+
+body.admin-page .logo span::after {
+  content: "Cổng quản trị";
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+body.admin-page .brand-lockup strong {
+  color: var(--admin-text);
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 800;
+}
+
+body.admin-page .brand-lockup small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+body.admin-page .sidebar-nav {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+body.admin-page .nav-item {
+  min-height: 44px !important;
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  color: var(--admin-muted) !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  transition: background 0.18s ease, color 0.18s ease !important;
+  transform: none !important;
+}
+
+body.admin-page .nav-item:hover,
+body.admin-page .nav-item.active {
+  background: rgba(151, 246, 192, 0.26) !important;
+  color: var(--admin-primary) !important;
+  transform: none !important;
+}
+
+body.admin-page .main-content {
+  flex: 1 !important;
+  margin-left: 256px !important;
+  min-height: 100vh !important;
+  background: var(--admin-surface) !important;
+}
+
+body.admin-page .top-bar {
+  min-height: 72px !important;
+  padding: 0 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.admin-page .search-box {
+  width: min(420px, 48vw) !important;
+  position: relative !important;
+  flex: 0 1 420px !important;
+}
+
+body.admin-page .search-icon {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: var(--admin-muted) !important;
+  font-size: 20px !important;
+  z-index: 1 !important;
+}
+
+body.admin-page .search-input {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 14px 0 44px !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 8px !important;
+  background: var(--admin-low) !important;
+  color: var(--admin-text) !important;
+  font-size: 15px !important;
+  outline: none !important;
+}
+
+body.admin-page .search-input:focus {
+  border-color: var(--admin-accent) !important;
+  box-shadow: 0 0 0 4px rgba(0, 117, 74, 0.12) !important;
+  background: var(--admin-card) !important;
+}
+
+body.admin-page .top-bar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-left: auto !important;
+}
+
+body.admin-page .user-menu {
+  position: relative !important;
+  border-radius: 999px !important;
+}
+
+body.admin-page .user-info {
+  gap: 10px !important;
+  padding: 6px 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+
+body.admin-page .user-info:hover {
+  background: var(--admin-low) !important;
+  border-color: var(--admin-border) !important;
+}
+
+body.admin-page .user-info img {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--admin-border) !important;
+  object-fit: cover !important;
+}
+
+body.admin-page .user-info span,
+body.admin-page .username {
+  color: var(--admin-text) !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+body.admin-page .dropdown-arrow {
+  color: var(--admin-muted) !important;
+}
+
+body.admin-page .dropdown-menu,
+body.admin-page .user-dropdown {
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 12px !important;
+  background: var(--admin-card) !important;
+  box-shadow: var(--admin-shadow) !important;
+  overflow: hidden !important;
+}
+
+body.admin-page .dropdown-item,
+body.admin-page .user-dropdown a {
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
+}
+
+body.admin-page .dropdown-item:hover,
+body.admin-page .user-dropdown a:hover {
+  background: var(--admin-mint) !important;
+  color: var(--admin-primary) !important;
+}
+
+body.admin-page .dashboard-content {
+  padding: 40px !important;
+}
+
+body.admin-page .page-header,
+body.admin-page .section-header,
+body.admin-page .matrix-header {
+  margin-bottom: 24px !important;
+}
+
+body.admin-page .page-title,
+body.admin-page h1,
+body.admin-page h2 {
+  color: var(--admin-primary) !important;
+  font-weight: 800 !important;
+}
+
+body.admin-page .page-title {
+  margin: 0 !important;
+  font-size: 28px !important;
+}
+
+body.admin-page .page-subtitle,
+body.admin-page .text-muted,
+body.admin-page p {
+  color: var(--admin-muted);
+}
+
+body.admin-page .stats-grid,
+body.admin-page .content-grid,
+body.admin-page .profile-container {
+  gap: 24px !important;
+}
+
+body.admin-page .stat-card,
+body.admin-page .chart-card,
+body.admin-page .activity-card,
+body.admin-page .referrals-card,
+body.admin-page .profile-card,
+body.admin-page .department-card,
+body.admin-page .user-card,
+body.admin-page .role-card,
+body.admin-page .table-container,
+body.admin-page .filter-section,
+body.admin-page .filter-controls,
+body.admin-page .log-container,
+body.admin-page .matrix-container,
+body.admin-page .modal-content,
+body.admin-page .card {
+  background: var(--admin-card) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--admin-shadow) !important;
+}
+
+body.admin-page .filter-section,
+body.admin-page .filter-controls {
+  padding: 18px !important;
+}
+
+body.admin-page table,
+body.admin-page .data-table,
+body.admin-page .users-table,
+body.admin-page .roles-table,
+body.admin-page .departments-table,
+body.admin-page .log-table,
+body.admin-page .permission-matrix {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: var(--admin-card) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+body.admin-page th {
+  background: var(--admin-low) !important;
+  color: var(--admin-primary) !important;
+  font-weight: 800 !important;
+}
+
+body.admin-page td,
+body.admin-page th {
+  border-bottom: 1px solid var(--admin-border) !important;
+}
+
+body.admin-page tr:hover td {
+  background: rgba(216, 242, 229, 0.22) !important;
+}
+
+body.admin-page input,
+body.admin-page select,
+body.admin-page textarea,
+body.admin-page .filter-select,
+body.admin-page .form-control {
+  min-height: 40px !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 8px !important;
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+  outline: none !important;
+}
+
+body.admin-page input:focus,
+body.admin-page select:focus,
+body.admin-page textarea:focus,
+body.admin-page .filter-select:focus,
+body.admin-page .form-control:focus {
+  border-color: var(--admin-accent) !important;
+  box-shadow: 0 0 0 4px rgba(0, 117, 74, 0.12) !important;
+}
+
+body.admin-page .btn-primary,
+body.admin-page .btn-success,
+body.admin-page .btn-add,
+body.admin-page .btn-save,
+body.admin-page .matrix-action-btn,
+body.admin-page button[type="submit"] {
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--admin-accent) !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 8px 18px rgba(0, 117, 74, 0.18) !important;
+}
+
+body.admin-page .btn-primary:hover,
+body.admin-page .btn-success:hover,
+body.admin-page .btn-add:hover,
+body.admin-page .btn-save:hover,
+body.admin-page .matrix-action-btn:hover,
+body.admin-page button[type="submit"]:hover {
+  background: var(--admin-brand) !important;
+  transform: none !important;
+}
+
+body.admin-page .btn-secondary,
+body.admin-page .btn-cancel,
+body.admin-page .btn-outline,
+body.admin-page .back-link {
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 999px !important;
+  background: var(--admin-low) !important;
+  color: var(--admin-primary) !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+body.admin-page .btn-danger,
+body.admin-page .matrix-action-btn.danger,
+body.admin-page .btn-delete {
+  background: var(--admin-red) !important;
+  color: #fff !important;
+}
+
+body.admin-page .status-active,
+body.admin-page .badge-success,
+body.admin-page .profile-status.active {
+  background: var(--admin-mint) !important;
+  color: var(--admin-accent) !important;
+}
+
+body.admin-page .status-inactive,
+body.admin-page .badge-danger,
+body.admin-page .profile-status.inactive {
+  background: rgba(200, 32, 20, 0.10) !important;
+  color: var(--admin-red) !important;
+}
+
+body.admin-page .profile-avatar {
+  background: var(--admin-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(0, 117, 74, 0.18) !important;
+}
+
+body.admin-page .role-permission-header {
+  background: var(--admin-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(0, 72, 47, 0.18) !important;
+}
+
+body.admin-page .matrix-wrapper {
+  background: var(--admin-surface) !important;
+}
+
+body.admin-page .permission-matrix thead th {
+  background: var(--admin-primary) !important;
+  color: #fff !important;
+}
+
+@media (max-width: 780px) {
+  body.admin-page .sidebar {
+    width: 78px !important;
+    padding: 18px 10px !important;
+  }
+
+  body.admin-page .logo::after,
+  body.admin-page .brand-lockup::after,
+  body.admin-page .nav-item {
+    font-size: 0 !important;
+  }
+
+  body.admin-page .nav-item::first-letter {
+    font-size: 0 !important;
+  }
+
+  body.admin-page .main-content {
+    margin-left: 78px !important;
+  }
+
+  body.admin-page .top-bar,
+  body.admin-page .dashboard-content {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+}

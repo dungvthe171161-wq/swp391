@@ -20,6 +20,10 @@
             <i class="fa-solid fa-fingerprint"></i>
             <span>Ch&#7845;m c&#244;ng</span>
         </a>
+        <a class="nav-item ${activePage eq 'schedule' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/schedule">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>L&#7883;ch l&#224;m vi&#7879;c</span>
+        </a>
         <a class="nav-item ${activePage eq 'leaves' ? 'active' : ''}" href="${pageContext.request.contextPath}/employee/leaves">
             <i class="fa-solid fa-calendar-check"></i>
             <span>&#272;&#417;n ngh&#7881; ph&#233;p</span>
@@ -38,7 +42,7 @@
             <i class="fa-solid fa-file-signature"></i>
             <span>H&#7907;p &#273;&#7891;ng</span>
         </a>
-        <a class="nav-item" href="${pageContext.request.contextPath}/employee#events">
+        <a class="nav-item" href="${pageContext.request.contextPath}/employee/schedule">
             <i class="fa-solid fa-calendar-days"></i>
             <span>L&#7883;ch l&#224;m vi&#7879;c</span>
         </a>

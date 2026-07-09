@@ -50,6 +50,12 @@ public class ModulePermissionFilter extends HttpFilter {
                     "Bạn thiếu quyền VIEW_USERS.",
                     ModulePermissionFilter::isAdminUsersApiRequest),
             ModuleRule.htmlOnly(
+                    "/admin/office-location",
+                    null,
+                    "VIEW_OFFICE_LOCATION",
+                    "Chi Admin hoac HR moi duoc cau hinh GPS.",
+                    "Ban thieu quyen VIEW_OFFICE_LOCATION."),
+            ModuleRule.htmlOnly(
                     "/admin",
                     null,
                     "MANAGE_SYSTEM",

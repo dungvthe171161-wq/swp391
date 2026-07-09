@@ -50,11 +50,11 @@ public class Payroll implements Serializable {
         this.payrollId = payrollId;
     }
 
-    public Integer getEmployeeId() {
+    public int getEmployeeId() {
         return employeeId;
     }
 
-    public void setEmployeeId(Integer employeeId) {
+    public void setEmployeeId(int employeeId) {
         this.employeeId = employeeId;
     }
 

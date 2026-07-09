@@ -9,9 +9,10 @@
         </session-timeout>
     </session-config>
     
-    <welcome-file-list>
+    <!-- Welcome file -->
+<!--    <welcome-file-list>
         <welcome-file>Views/Homepage.jsp</welcome-file>
-    </welcome-file-list>
+    </welcome-file-list>-->
     
     <!-- Error pages -->
 <!--    <error-page>

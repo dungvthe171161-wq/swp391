@@ -233,6 +233,7 @@ public class PayrollCalculateController extends HttpServlet {
               AND (EndDate IS NULL OR EndDate >= STR_TO_DATE(?, '%Y-%m-%d'))
               AND BaseSalary IS NOT NULL
               AND BaseSalary > 0
+              AND Status = 'Active'
             ORDER BY StartDate DESC
             LIMIT 1
         """;
@@ -333,6 +334,7 @@ public class PayrollCalculateController extends HttpServlet {
             WHERE EmployeeID = ?
               AND BaseSalary IS NOT NULL
               AND BaseSalary > 0
+              AND Status = 'Active'
             ORDER BY StartDate DESC
             LIMIT 1
         """;
@@ -755,4 +757,3 @@ public class PayrollCalculateController extends HttpServlet {
         return 0.0;
     }
 }
-

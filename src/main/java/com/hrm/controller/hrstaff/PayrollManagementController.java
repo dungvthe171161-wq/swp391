@@ -731,7 +731,7 @@ public class PayrollManagementController extends HttpServlet {
             }
             
             // Call stored procedure sp_GeneratePayroll
-            boolean success = callStoredProcedureGeneratePayroll(period, request);
+            boolean success = callStoredProcedureGeneratePayroll(period);
             
             if (success) {
                 request.getSession().setAttribute("success", 
@@ -810,20 +810,17 @@ public class PayrollManagementController extends HttpServlet {
      * Call stored procedure sp_GeneratePayrollImproved
      * Parameters: p_pay_period, p_mode ('CREATE'), p_calculated_by (optional)
      */
-    private boolean callStoredProcedureGeneratePayroll(String period, HttpServletRequest request) {
+    private boolean callStoredProcedureGeneratePayroll(String period) {
         String sql = "CALL sp_GeneratePayrollImproved(?, ?, ?)";
         
         try (var con = com.hrm.dao.DBConnection.getConnection();
              var cs = con.prepareCall(sql)) {
             
-            cs.setString(1, period);
-            cs.setString(2, "CREATE");
-            SystemUser user = currentUser(request);
-            if (user != null && user.getUserId() > 0) {
-                cs.setInt(3, user.getUserId());
-            } else {
-                cs.setNull(3, java.sql.Types.INTEGER);
-            }
+            cs.setString(1, period); // p_pay_period
+            cs.setString(2, "CREATE"); // p_mode
+            // Get current user ID if available from session
+            // For now, set to NULL (will be handled by stored procedure)
+            cs.setNull(3, java.sql.Types.INTEGER); // p_calculated_by
             
             cs.execute();
             return true;

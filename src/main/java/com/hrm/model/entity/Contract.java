@@ -8,6 +8,7 @@ package com.hrm.model.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -26,6 +27,8 @@ public class Contract implements Serializable {
     private String contractType;
     private String status;
     private String note;
+    private LocalDateTime signedAt;
+    private Integer signedBy;
 
     public Contract() {
     }
@@ -129,9 +132,25 @@ public class Contract implements Serializable {
         this.note = note;
     }
 
+    public LocalDateTime getSignedAt() {
+        return signedAt;
+    }
+
+    public void setSignedAt(LocalDateTime signedAt) {
+        this.signedAt = signedAt;
+    }
+
+    public Integer getSignedBy() {
+        return signedBy;
+    }
+
+    public void setSignedBy(Integer signedBy) {
+        this.signedBy = signedBy;
+    }
+
     @Override
     public String toString() {
-        return "Contract{" + "contractId=" + contractId + ", employeeId=" + employeeId + ", startDate=" + startDate + ", endDate=" + endDate + ", baseSalary=" + baseSalary + ", allowance=" + allowance + ", contractType=" + contractType + ", status=" + status + ", note=" + note + '}';
+        return "Contract{" + "contractId=" + contractId + ", employeeId=" + employeeId + ", startDate=" + startDate + ", endDate=" + endDate + ", baseSalary=" + baseSalary + ", allowance=" + allowance + ", contractType=" + contractType + ", status=" + status + ", note=" + note + ", signedAt=" + signedAt + ", signedBy=" + signedBy + '}';
     }
 
 }

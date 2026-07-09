@@ -3,12 +3,16 @@ package com.hrm.controller.employee;
 import com.hrm.controller.EmailSender;
 import com.hrm.dao.AttendanceDAO;
 import com.hrm.dao.ContractDAO;
+import com.hrm.dao.ContractDocumentDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.MailRequestDAO;
 import com.hrm.dao.PayrollDAO;
 import com.hrm.dao.TaskDAO;
+import com.hrm.model.entity.Contract;
+import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.MailRequest;
+import com.hrm.model.entity.Notification;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.model.entity.Task;
 import com.hrm.service.NotificationRecipientService;
@@ -34,6 +38,7 @@ public class EmployeePortalController extends HttpServlet {
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
     private final AttendanceDAO attendanceDAO = new AttendanceDAO();
     private final ContractDAO contractDAO = new ContractDAO();
+    private final ContractDocumentDAO contractDocumentDAO = new ContractDocumentDAO();
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final MailRequestDAO mailRequestDAO = new MailRequestDAO();
     private final TaskDAO taskDAO = new TaskDAO();
@@ -55,6 +60,7 @@ public class EmployeePortalController extends HttpServlet {
             case "/leaves" -> showLeaves(employee.getEmployeeId(), request, response);
             case "/payroll" -> showPayroll(employee.getEmployeeId(), request, response);
             case "/contract" -> showContract(employee.getEmployeeId(), request, response);
+            case "/contract/document" -> downloadContractDocument(employee.getEmployeeId(), request, response);
             case "/tasks" -> showTasks(employee.getEmployeeId(), request, response);
             default -> showDashboard(employee.getEmployeeId(), request, response);
         }
@@ -81,6 +87,10 @@ public class EmployeePortalController extends HttpServlet {
             handleTaskUpdate(employee.getEmployeeId(), request, response);
             return;
         }
+        if ("/contract".equals(section)) {
+            handleContractSign(employee, request, response);
+            return;
+        }
 
         response.sendRedirect(request.getContextPath() + "/employee");
     }
@@ -97,7 +107,7 @@ public class EmployeePortalController extends HttpServlet {
         request.setAttribute("todayAttendanceStatus", attendanceDAO.getTodayStatus(employeeId));
         request.setAttribute("attendanceSummary", attendanceDAO.getMonthlySummary(employeeId, today.getYear(), today.getMonthValue()));
         request.setAttribute("recentAttendances", attendanceDAO.getRecentByEmployee(employeeId, 5));
-        request.setAttribute("latestContract", contractDAO.getContractByEmployeeId(employeeId));
+        request.setAttribute("latestContract", getContractVisibleToEmployee(employeeId));
         request.setAttribute("payrolls", payrolls);
         request.setAttribute("latestPayroll", payrollDAO.getLatestByEmployee(employeeId));
         request.setAttribute("tasks", taskDAO.getTasksByEmployee(employeeId));
@@ -154,9 +164,45 @@ public class EmployeePortalController extends HttpServlet {
 
     private void showContract(int employeeId, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        Contract contract = getContractVisibleToEmployee(employeeId);
+        ContractDocument document = contract != null
+                ? contractDocumentDAO.getLatestByContractId(contract.getContractId())
+                : null;
         request.setAttribute("activePage", "contract");
-        request.setAttribute("contract", contractDAO.getContractByEmployeeId(employeeId));
+        request.setAttribute("contract", contract);
+        request.setAttribute("contractDocument", document);
         request.getRequestDispatcher("/Views/Employee/Contract.jsp").forward(request, response);
+    }
+
+    private Contract getContractVisibleToEmployee(int employeeId) {
+        Contract pendingSignature = contractDAO.getPendingSignatureContractByEmployeeId(employeeId);
+        if (pendingSignature != null) {
+            return pendingSignature;
+        }
+
+        Contract active = contractDAO.getActiveContractByEmployeeId(employeeId);
+        return active != null ? active : contractDAO.getContractByEmployeeId(employeeId);
+    }
+
+    private void downloadContractDocument(int employeeId, HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int contractId = parseInt(request.getParameter("contractId"), -1);
+        Contract contract = contractId > 0 ? contractDAO.getContractById(contractId) : null;
+        ContractDocument document = contract != null
+                ? contractDocumentDAO.getLatestByContractId(contractId)
+                : null;
+
+        if (contract == null || contract.getEmployeeId() != employeeId
+                || document == null || document.getFileData() == null || document.getFileData().length == 0) {
+            request.getSession().setAttribute("employeeError", "Khong tim thay tep hop dong.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+
+        response.setContentType(document.getContentType() != null ? document.getContentType() : "application/octet-stream");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + safeDownloadFileName(document.getFileName()) + "\"");
+        response.setContentLengthLong(document.getFileData().length);
+        response.getOutputStream().write(document.getFileData());
     }
 
     private void showTasks(int employeeId, HttpServletRequest request, HttpServletResponse response)
@@ -251,6 +297,34 @@ public class EmployeePortalController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/employee/tasks");
     }
 
+    private void handleContractSign(Employee employee, HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int contractId = parseInt(request.getParameter("contractId"), -1);
+        if (request.getParameter("agreeDocument") == null) {
+            request.getSession().setAttribute("employeeError",
+                    "Vui long xac nhan da doc va dong y van ban hop dong truoc khi ky.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+        if (contractId <= 0 || !contractDocumentDAO.hasReadableDocument(contractId)) {
+            request.getSession().setAttribute("employeeError",
+                    "Hop dong chua co van ban de doc truoc khi ky.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+        SystemUser currentUser = (SystemUser) request.getAttribute("currentUser");
+        int signerUserId = currentUser != null ? currentUser.getUserId() : 0;
+        boolean success = contractId > 0
+                && contractDAO.signContractByEmployee(contractId, employee.getEmployeeId(), signerUserId);
+
+        if (success) {
+            notifyHrStaffContractSigned(contractId, employee, currentUser);
+        }
+        request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
+                success ? "Da ky va chap nhan hop dong." : "Khong the ky hop dong nay.");
+        response.sendRedirect(request.getContextPath() + "/employee/contract");
+    }
+
     private void notifyDeptManagersAboutLeave(int requestId, Employee employee, SystemUser currentUser,
                                               LocalDate startDate, LocalDate endDate) {
         if (employee == null || employee.getDepartmentId() <= 0) {
@@ -265,6 +339,22 @@ public class EmployeePortalController extends HttpServlet {
                 String.valueOf(startDate),
                 String.valueOf(endDate)
         );
+    }
+
+    private void notifyHrStaffContractSigned(int contractId, Employee employee, SystemUser currentUser) {
+        Notification template = notificationService.buildNotification(
+                0,
+                currentUser != null ? currentUser.getUserId() : null,
+                "Contract",
+                contractId,
+                "Contract",
+                "Nhan vien da ky hop dong",
+                "Nhan vien " + (employee != null ? employee.getFullName() : "nhan vien")
+                        + " da ky va chap nhan hop dong.",
+                "/hrstaff/contracts",
+                "Normal"
+        );
+        notificationService.notifyUsers(notificationRecipientService.hrStaffUsers(), template);
     }
 
     private String buildLeaveReason(HttpServletRequest request) {
@@ -389,6 +479,11 @@ public class EmployeePortalController extends HttpServlet {
 
     private String clean(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String safeDownloadFileName(String fileName) {
+        String cleaned = fileName == null || fileName.isBlank() ? "contract-document" : fileName.trim();
+        return cleaned.replace("\\", "_").replace("/", "_").replace("\"", "").replace("\r", "").replace("\n", "");
     }
 
     private Employee prepareEmployeeContext(HttpServletRequest request, HttpServletResponse response)

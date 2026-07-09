@@ -5,11 +5,12 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="java.util.*, java.sql.Date, com.hrm.model.entity.Contract, com.hrm.model.entity.Employee" %>
+<%@page import="java.util.*, java.sql.Date, com.hrm.model.entity.Contract, com.hrm.model.entity.ContractDocument, com.hrm.model.entity.Employee" %>
 <%!
     private String contractStatusLabel(String status) {
         if ("Draft".equals(status)) return "Bản nháp";
         if ("Pending_Approval".equals(status)) return "Chờ phê duyệt";
+        if ("Pending_Signature".equals(status)) return "Chờ nhân viên ký";
         if ("Active".equals(status)) return "Đang hiệu lực";
         if ("Rejected".equals(status)) return "Bị từ chối";
         if ("Expired".equals(status)) return "Hết hạn";
@@ -25,6 +26,14 @@
         if ("Contract".equals(type)) return "Theo hợp đồng";
         if ("All".equals(type)) return "Tất cả";
         return type != null ? type : "Không có";
+    }
+    private String htmlValue(String value) {
+        if (value == null) return "";
+        return value
+                .replace("&", "&amp;")
+                .replace("\"", "&quot;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 %>
 <!DOCTYPE html>
@@ -311,6 +320,11 @@
                 color: #1e40af;
             }
 
+            .status-Pending_Signature {
+                background: #ede9fe;
+                color: #5b21b6;
+            }
+
             .status-Approved {
                 background: #d1fae5;
                 color: #065f46;
@@ -579,6 +593,7 @@
                                 <option value="All" <%= (request.getAttribute("statusFilter") == null || request.getAttribute("statusFilter").equals("All")) ? "selected" : "" %>>Tất cả</option>
                                 <option value="Draft" <%= "Draft".equals(request.getAttribute("statusFilter")) ? "selected" : "" %>>Bản nháp</option>
                                 <option value="Pending_Approval" <%= "Pending_Approval".equals(request.getAttribute("statusFilter")) ? "selected" : "" %>>Chờ phê duyệt</option>
+                                <option value="Pending_Signature" <%= "Pending_Signature".equals(request.getAttribute("statusFilter")) ? "selected" : "" %>>Chờ nhân viên ký</option>
                              
                                 <option value="Active" <%= "Active".equals(request.getAttribute("statusFilter")) ? "selected" : "" %>>Đang hiệu lực</option>
                                 <option value="Rejected" <%= "Rejected".equals(request.getAttribute("statusFilter")) ? "selected" : "" %>>Bị từ chối</option>
@@ -675,6 +690,7 @@
                                     
                                     // Check if editable
                                     boolean canEdit = "Draft".equals(status) || "Pending_Approval".equals(status) || "Active".equals(status);
+                                    boolean canSubmitDraft = "Draft".equals(status);
                                     
                                     // Check if deletable (only Draft, Rejected, or Expired)
                                     boolean canDelete = "Draft".equals(status) || "Rejected".equals(status) || "Expired".equals(status);
@@ -702,10 +718,19 @@
                                             class="btn btn-edit btn-small" 
                                             onclick="openEditModal(<%= contractId %>)"
                                         >
-                                            ✏️ Sửa
+                                            <%= "Active".equals(status) ? "Tạo đề xuất" : "✏️ Sửa" %>
                                         </button>
                                         <% } else { %>
                                         <span style="color: var(--muted); font-size: 12px;">Không thể sửa</span>
+                                        <% } %>
+                                        <% if (canSubmitDraft) { %>
+                                        <form method="POST" action="<%=request.getContextPath()%>/hrstaff/contracts" style="margin:0;">
+                                            <input type="hidden" name="action" value="submitDraft">
+                                            <input type="hidden" name="contractId" value="<%= contractId %>">
+                                            <button class="btn btn-small" type="submit" onclick="return confirm('Gửi hợp đồng này sang HR Manager duyệt?')">
+                                                Gửi duyệt
+                                            </button>
+                                        </form>
                                         <% } %>
                                         <% if (canDelete) { %>
                                         <button 
@@ -875,6 +900,7 @@
 
                 <%
                     Contract editingContract = (Contract) request.getAttribute("editingContract");
+                    ContractDocument editingDocument = (ContractDocument) request.getAttribute("editingContractDocument");
                     List<Employee> employees = (List<Employee>) request.getAttribute("employees");
                     if (editingContract != null) {
                         // Find current employee
@@ -888,10 +914,15 @@
                             }
                         }
                 %>
-                <form method="POST" action="<%=request.getContextPath()%>/hrstaff/contracts">
+                <form method="POST" action="<%=request.getContextPath()%>/hrstaff/contracts" enctype="multipart/form-data">
                     <input type="hidden" name="contractId" value="<%= editingContract.getContractId() %>">
                     <input type="hidden" name="employeeId" value="<%= editingContract.getEmployeeId() %>">
-                    
+                    <% if ("Active".equals(editingContract.getStatus())) { %>
+                    <div class="alert" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
+                        Hợp đồng này đang hiệu lực. Khi lưu, hệ thống sẽ tạo một bản đề xuất mới ở trạng thái Chờ phê duyệt; hợp đồng hiện tại vẫn giữ hiệu lực.
+                    </div>
+                    <% } %>
+
                     <div class="form-group">
                         <label for="employeeDisplay">
                             Nhân viên <span class="required">*</span>
@@ -976,6 +1007,57 @@
                                 step="1000"
                                 value="<%= editingContract.getAllowance() != null ? editingContract.getAllowance().intValue() : "0" %>"
                             />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentTitle">
+                            Tieu de van ban <span class="required">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="documentTitle"
+                            name="documentTitle"
+                            maxlength="255"
+                            value="<%= htmlValue(editingDocument != null ? editingDocument.getTitle() : "Van ban hop dong lao dong") %>"
+                            required
+                        />
+                        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                            Tieu de hien thi cho nhan vien truoc khi ky.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentContent">
+                            Noi dung van ban hop dong hoac tep dinh kem <span class="required">*</span>
+                        </label>
+                        <textarea
+                            id="documentContent"
+                            name="documentContent"
+                            rows="10"
+                            placeholder="Nhap dieu khoan, quyen loi, nghia vu va cac noi dung nhan vien can doc truoc khi ky..."
+                        ><%= htmlValue(editingDocument != null ? editingDocument.getContent() : "") %></textarea>
+                        <% if (editingDocument != null && editingDocument.getFileName() != null && !editingDocument.getFileName().trim().isEmpty()) { %>
+                        <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">
+                            Tep hien tai: <strong><%= htmlValue(editingDocument.getFileName()) %></strong>
+                        </div>
+                        <% } %>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;">
+                            <label for="documentFile" style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;margin:0;border-radius:8px;background:var(--success);color:#fff;cursor:pointer;font-weight:700;">
+                                + Them tep
+                            </label>
+                            <input
+                                type="file"
+                                id="documentFile"
+                                name="documentFile"
+                                accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                                style="display:none;"
+                                onchange="document.getElementById('editDocumentFileName').textContent = this.files.length ? this.files[0].name : 'Chua chon tep moi';"
+                            />
+                            <span id="editDocumentFileName" style="font-size:13px;color:var(--text);font-weight:600;">Chua chon tep moi</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                            Nhap noi dung hoac them tep PDF/DOC/DOCX/TXT toi da 10MB. Neu khong chon tep moi, tep hien tai se duoc giu lai.
                         </div>
                     </div>
 

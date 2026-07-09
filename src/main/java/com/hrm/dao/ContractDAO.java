@@ -8,9 +8,12 @@ import com.hrm.model.entity.Contract;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +58,10 @@ public class ContractDAO {
     }
 
     public boolean create(Contract contract) {
+        return createAndReturnId(contract) > 0;
+    }
+
+    public int createAndReturnId(Contract contract) {
         // Try with Status and Notes columns first (if they exist in database)
         String sqlWithStatus = """
             INSERT INTO Contract (EmployeeID, StartDate, EndDate, BaseSalary, Allowance, ContractType, Status, Notes)
@@ -75,7 +82,7 @@ public class ContractDAO {
         
         try (Connection con = DBConnection.getConnection()) {
             // Try with Status and Notes first
-            try (PreparedStatement ps = con.prepareStatement(sqlWithStatus)) {
+            try (PreparedStatement ps = con.prepareStatement(sqlWithStatus, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, contract.getEmployeeId());
                 ps.setDate(2, contract.getStartDate() != null ? Date.valueOf(contract.getStartDate()) : null);
                 ps.setDate(3, contract.getEndDate() != null ? Date.valueOf(contract.getEndDate()) : null);
@@ -86,12 +93,12 @@ public class ContractDAO {
                 ps.setString(8, contract.getNote());
                 
                 int result = ps.executeUpdate();
-                return result > 0;
+                return result > 0 ? readGeneratedId(ps) : 0;
             } catch (SQLException e) {
                 // If Notes column doesn't exist, try with Status only
                 if (e.getMessage().contains("Unknown column 'Notes'") || 
                     e.getMessage().contains("Notes") && e.getMessage().contains("doesn't exist")) {
-                    try (PreparedStatement ps = con.prepareStatement(sqlWithStatusOnly)) {
+                    try (PreparedStatement ps = con.prepareStatement(sqlWithStatusOnly, Statement.RETURN_GENERATED_KEYS)) {
                         ps.setInt(1, contract.getEmployeeId());
                         ps.setDate(2, contract.getStartDate() != null ? Date.valueOf(contract.getStartDate()) : null);
                         ps.setDate(3, contract.getEndDate() != null ? Date.valueOf(contract.getEndDate()) : null);
@@ -101,12 +108,12 @@ public class ContractDAO {
                         ps.setString(7, contract.getStatus() != null ? contract.getStatus() : "Draft");
                         
                         int result = ps.executeUpdate();
-                        return result > 0;
+                        return result > 0 ? readGeneratedId(ps) : 0;
                     } catch (SQLException e2) {
                         // If Status column doesn't exist either, try without both
                         if (e2.getMessage().contains("Unknown column 'Status'") || 
                             e2.getMessage().contains("Status") && e2.getMessage().contains("doesn't exist")) {
-                            try (PreparedStatement ps = con.prepareStatement(sqlWithoutStatus)) {
+                            try (PreparedStatement ps = con.prepareStatement(sqlWithoutStatus, Statement.RETURN_GENERATED_KEYS)) {
                                 ps.setInt(1, contract.getEmployeeId());
                                 ps.setDate(2, contract.getStartDate() != null ? Date.valueOf(contract.getStartDate()) : null);
                                 ps.setDate(3, contract.getEndDate() != null ? Date.valueOf(contract.getEndDate()) : null);
@@ -115,7 +122,7 @@ public class ContractDAO {
                                 ps.setString(6, contract.getContractType());
                                 
                                 int result = ps.executeUpdate();
-                                return result > 0;
+                                return result > 0 ? readGeneratedId(ps) : 0;
                             }
                         } else {
                             throw e2;
@@ -127,8 +134,17 @@ public class ContractDAO {
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            return 0;
         }
+    }
+
+    private int readGeneratedId(PreparedStatement ps) throws SQLException {
+        try (ResultSet keys = ps.getGeneratedKeys()) {
+            if (keys.next()) {
+                return keys.getInt(1);
+            }
+        }
+        return 0;
     }
 
     public int findLatestContractIdForEmployee(int employeeId) {
@@ -164,7 +180,7 @@ public class ContractDAO {
         StringBuilder sql = new StringBuilder("""
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
         """);
@@ -203,6 +219,8 @@ public class ContractDAO {
                     row.put("contractType", rs.getString("ContractType"));
                     row.put("status", rs.getString("Status"));
                     row.put("note", rs.getString("Notes"));
+                    row.put("signedAt", rs.getTimestamp("SignedAt"));
+                    row.put("signedBy", rs.getObject("SignedBy"));
                     results.add(row);
                 }
             }
@@ -227,7 +245,7 @@ public class ContractDAO {
         StringBuilder sql = new StringBuilder("""
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
             WHERE 1=1
@@ -291,6 +309,8 @@ public class ContractDAO {
                     row.put("contractType", rs.getString("ContractType"));
                     row.put("status", rs.getString("Status"));
                     row.put("note", rs.getString("Notes"));
+                    row.put("signedAt", rs.getTimestamp("SignedAt"));
+                    row.put("signedBy", rs.getObject("SignedBy"));
                     results.add(row);
                 }
             }
@@ -384,7 +404,7 @@ public class ContractDAO {
     public Contract getContractById(int contractId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
             FROM Contract
             WHERE ContractID = ?
         """;
@@ -406,6 +426,7 @@ public class ContractDAO {
                     contract.setContractType(rs.getString("ContractType"));
                     contract.setStatus(rs.getString("Status"));
                     contract.setNote(rs.getString("Notes"));
+                    applySignatureFields(contract, rs);
                     return contract;
                 }
             }
@@ -530,15 +551,15 @@ public class ContractDAO {
     }
 
     /**
-     * Get active contract for an employee (Active or Pending_Approval status, not expired)
+     * Get the effective active contract for an employee.
      */
     public Contract getActiveContractByEmployeeId(int employeeId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
             FROM Contract
             WHERE EmployeeID = ?
-              AND (Status = 'Active' OR Status = 'Pending_Approval')
+              AND Status = 'Active'
               AND (EndDate IS NULL OR EndDate >= CURDATE())
             ORDER BY StartDate DESC
             LIMIT 1
@@ -561,6 +582,56 @@ public class ContractDAO {
                     contract.setContractType(rs.getString("ContractType"));
                     contract.setStatus(rs.getString("Status"));
                     contract.setNote(rs.getString("Notes"));
+                    applySignatureFields(contract, rs);
+                    return contract;
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Get the newest contract waiting for the employee to review and sign.
+     */
+    public Contract getPendingSignatureContractByEmployeeId(int employeeId) {
+        String sql = """
+            SELECT ContractID, EmployeeID, StartDate, EndDate,
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+            FROM Contract
+            WHERE EmployeeID = ?
+              AND Status = 'Pending_Signature'
+              AND ContractID > COALESCE((
+                    SELECT MAX(active.ContractID)
+                    FROM Contract active
+                    WHERE active.EmployeeID = Contract.EmployeeID
+                      AND active.Status = 'Active'
+                  ), 0)
+            ORDER BY ContractID DESC
+            LIMIT 1
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Contract contract = new Contract();
+                    contract.setContractId(rs.getInt("ContractID"));
+                    contract.setEmployeeId(rs.getInt("EmployeeID"));
+                    contract.setStartDate(rs.getDate("StartDate") != null
+                            ? rs.getDate("StartDate").toLocalDate()
+                            : null);
+                    contract.setEndDate(rs.getDate("EndDate") != null
+                            ? rs.getDate("EndDate").toLocalDate()
+                            : null);
+                    contract.setBaseSalary(rs.getBigDecimal("BaseSalary"));
+                    contract.setAllowance(rs.getBigDecimal("Allowance"));
+                    contract.setContractType(rs.getString("ContractType"));
+                    contract.setStatus(rs.getString("Status"));
+                    contract.setNote(rs.getString("Notes"));
+                    applySignatureFields(contract, rs);
                     return contract;
                 }
             }
@@ -576,10 +647,10 @@ public class ContractDAO {
     public Contract getContractByEmployeeId(int employeeId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
             FROM Contract
             WHERE EmployeeID = ?
-            ORDER BY StartDate DESC
+            ORDER BY StartDate DESC, ContractID DESC
             LIMIT 1
         """;
 
@@ -600,6 +671,7 @@ public class ContractDAO {
                     contract.setContractType(rs.getString("ContractType"));
                     contract.setStatus(rs.getString("Status"));
                     contract.setNote(rs.getString("Notes"));
+                    applySignatureFields(contract, rs);
                     return contract;
                 }
             }
@@ -641,6 +713,113 @@ public class ContractDAO {
     }
 
     /**
+     * Move an HR-approved contract to the employee signature step.
+     */
+    public boolean markPendingSignature(int contractId) {
+        String sql = """
+            UPDATE Contract
+            SET Status = 'Pending_Signature', SignedAt = NULL, SignedBy = NULL
+            WHERE ContractID = ? AND Status = 'Pending_Approval'
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, contractId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean clearSignature(int contractId) {
+        String sql = """
+            UPDATE Contract
+            SET SignedAt = NULL, SignedBy = NULL
+            WHERE ContractID = ?
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, contractId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Employee accepts/signs their own contract. The previous active contract
+     * is expired only after the new contract is signed.
+     */
+    public boolean signContractByEmployee(int contractId, int employeeId, int signerUserId) {
+        String selectSql = """
+            SELECT ContractID
+            FROM Contract
+            WHERE ContractID = ? AND EmployeeID = ? AND Status = 'Pending_Signature'
+            FOR UPDATE
+        """;
+        String expireOldSql = """
+            UPDATE Contract
+            SET Status = 'Expired'
+            WHERE EmployeeID = ? AND ContractID != ? AND Status = 'Active'
+        """;
+        String signSql = """
+            UPDATE Contract
+            SET Status = 'Active', SignedAt = NOW(), SignedBy = ?
+            WHERE ContractID = ? AND EmployeeID = ? AND Status = 'Pending_Signature'
+        """;
+
+        try (Connection con = DBConnection.getConnection()) {
+            boolean originalAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try (PreparedStatement selectPs = con.prepareStatement(selectSql)) {
+                selectPs.setInt(1, contractId);
+                selectPs.setInt(2, employeeId);
+                try (ResultSet rs = selectPs.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback();
+                        con.setAutoCommit(originalAutoCommit);
+                        return false;
+                    }
+                }
+
+                try (PreparedStatement expirePs = con.prepareStatement(expireOldSql)) {
+                    expirePs.setInt(1, employeeId);
+                    expirePs.setInt(2, contractId);
+                    expirePs.executeUpdate();
+                }
+
+                try (PreparedStatement signPs = con.prepareStatement(signSql)) {
+                    if (signerUserId > 0) {
+                        signPs.setInt(1, signerUserId);
+                    } else {
+                        signPs.setNull(1, Types.INTEGER);
+                    }
+                    signPs.setInt(2, contractId);
+                    signPs.setInt(3, employeeId);
+                    boolean success = signPs.executeUpdate() > 0;
+                    if (success) {
+                        con.commit();
+                    } else {
+                        con.rollback();
+                    }
+                    con.setAutoCommit(originalAutoCommit);
+                    return success;
+                }
+            } catch (SQLException ex) {
+                con.rollback();
+                con.setAutoCommit(originalAutoCommit);
+                throw ex;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
      * Delete a contract by ID
      */
     public boolean deleteContract(int contractId) {
@@ -668,7 +847,7 @@ public class ContractDAO {
         String sql = """
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
             WHERE c.Status = ?
@@ -692,6 +871,8 @@ public class ContractDAO {
                     row.put("contractType", rs.getString("ContractType"));
                     row.put("status", rs.getString("Status"));
                     row.put("note", rs.getString("Notes"));
+                    row.put("signedAt", rs.getTimestamp("SignedAt"));
+                    row.put("signedBy", rs.getObject("SignedBy"));
                     results.add(row);
                 }
             }
@@ -707,7 +888,7 @@ public class ContractDAO {
     public Contract getPreviousActiveContract(int employeeId, int currentContractId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
             FROM Contract
             WHERE EmployeeID = ?
               AND ContractID != ?
@@ -734,6 +915,7 @@ public class ContractDAO {
                     contract.setContractType(rs.getString("ContractType"));
                     contract.setStatus(rs.getString("Status"));
                     contract.setNote(rs.getString("Notes"));
+                    applySignatureFields(contract, rs);
                     return contract;
                 }
             }
@@ -760,5 +942,12 @@ public class ContractDAO {
             ex.printStackTrace();
         }
         return 0;
+    }
+
+    private void applySignatureFields(Contract contract, ResultSet rs) throws SQLException {
+        Timestamp signedAt = rs.getTimestamp("SignedAt");
+        contract.setSignedAt(signedAt != null ? signedAt.toLocalDateTime() : null);
+        Object signedBy = rs.getObject("SignedBy");
+        contract.setSignedBy(signedBy instanceof Number ? ((Number) signedBy).intValue() : null);
     }
 }

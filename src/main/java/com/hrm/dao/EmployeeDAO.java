@@ -99,6 +99,7 @@ public class EmployeeDAO {
                 String contractSql = """
                 SELECT BaseSalary FROM Contract
                 WHERE EmployeeID = ?
+                AND Status = 'Active'
                 ORDER BY StartDate DESC
                 LIMIT 1
             """;
@@ -292,6 +293,7 @@ public class EmployeeDAO {
         LEFT JOIN Contract c ON e.EmployeeID = c.EmployeeID AND c.ContractID = (
             SELECT ContractID FROM Contract
             WHERE EmployeeID = e.EmployeeID
+            AND Status = 'Active'
             ORDER BY StartDate DESC
             LIMIT 1
         )
@@ -350,6 +352,7 @@ public class EmployeeDAO {
             LEFT JOIN Contract c ON e.EmployeeID = c.EmployeeID AND c.ContractID = (
                 SELECT ContractID FROM Contract
                 WHERE EmployeeID = e.EmployeeID
+                AND Status = 'Active'
                 ORDER BY StartDate DESC
                 LIMIT 1
             )
@@ -522,6 +525,7 @@ public class EmployeeDAO {
             LEFT JOIN Contract c ON e.EmployeeID = c.EmployeeID AND c.ContractID = (
                 SELECT ContractID FROM Contract
                 WHERE EmployeeID = e.EmployeeID
+                AND Status = 'Active'
                 ORDER BY StartDate DESC
                 LIMIT 1
             )
@@ -601,6 +605,7 @@ public class EmployeeDAO {
         LEFT JOIN Contract c ON e.EmployeeID = c.EmployeeID AND c.ContractID = (
             SELECT ContractID FROM Contract
             WHERE EmployeeID = e.EmployeeID
+            AND Status = 'Active'
             ORDER BY StartDate DESC
             LIMIT 1
         )
@@ -721,6 +726,7 @@ public class EmployeeDAO {
             LEFT JOIN Contract c ON e.EmployeeID = c.EmployeeID AND c.ContractID = (
                 SELECT ContractID FROM Contract
                 WHERE EmployeeID = e.EmployeeID
+                AND Status = 'Active'
                 ORDER BY StartDate DESC
                 LIMIT 1
             )

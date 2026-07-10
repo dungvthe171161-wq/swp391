@@ -63,8 +63,28 @@ CREATE TABLE IF NOT EXISTS Contract (
     ContractType VARCHAR(30) DEFAULT 'Full-time',
     Notes VARCHAR(255),
     CreatedAt DATE DEFAULT (CURRENT_DATE),
-    Status ENUM('Draft', 'Pending_Approval', 'Approved', 'Rejected', 'Active', 'Expired') NOT NULL DEFAULT 'Draft' COMMENT 'Contract status: Draft, Pending_Approval, Approved, Rejected, Active, Expired',
+    Status ENUM('Draft', 'Pending_Approval', 'Pending_Signature', 'Approved', 'Rejected', 'Active', 'Expired') NOT NULL DEFAULT 'Draft' COMMENT 'Contract status: Draft, Pending_Approval, Pending_Signature, Approved, Rejected, Active, Expired',
+    SignedAt DATETIME NULL,
+    SignedBy INT NULL,
     FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ContractDocument (
+    DocumentID INT AUTO_INCREMENT PRIMARY KEY,
+    ContractID INT NOT NULL,
+    Title VARCHAR(255) NOT NULL DEFAULT 'Van ban hop dong',
+    Content TEXT NOT NULL,
+    FileName VARCHAR(255) NULL,
+    ContentType VARCHAR(100) NULL,
+    FileData MEDIUMBLOB NULL,
+    FileSize BIGINT NULL,
+    VersionNo INT NOT NULL DEFAULT 1,
+    CreatedBy INT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contract_document_contract
+        FOREIGN KEY (ContractID) REFERENCES Contract(ContractID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -177,8 +197,7 @@ CREATE TABLE IF NOT EXISTS Payroll (
         ON DELETE CASCADE,
     CONSTRAINT fk_payroll_approver FOREIGN KEY (ApprovedBy)
         REFERENCES Employee(EmployeeID)
-        ON DELETE SET NULL,
-    UNIQUE KEY uk_payroll_employee_period (EmployeeID, PayPeriod)
+        ON DELETE SET NULL
 );
 
 -- 10. SYSTEM USER (Phiên bản hỗ trợ Google Login)
@@ -1065,7 +1084,7 @@ WHERE PermissionCode IN (
     'VIEW_CONTRACTS', 'CREATE_CONTRACT', 'EDIT_CONTRACT', 'APPROVE_CONTRACT',
     'VIEW_RECRUITMENT', 'CREATE_RECRUITMENT', 'EDIT_RECRUITMENT', 'MANAGE_APPLICANTS',
     'VIEW_LEAVES', 'APPROVE_LEAVE', 'REJECT_LEAVE',
-    'VIEW_DEPARTMENTS', 'VIEW_DASHBOARD', 'VIEW_HR_DASHBOARD', 'VIEW_PAYROLLS', 'VIEW_ALL_PAYROLLS', 'APPROVE_PAYROLL'
+    'VIEW_DEPARTMENTS', 'VIEW_DASHBOARD', 'VIEW_HR_DASHBOARD', 'VIEW_PAYROLLS', 'VIEW_ALL_PAYROLLS'
 );
 
 INSERT INTO RolePermission (RoleID, PermissionID)
@@ -1082,7 +1101,7 @@ WHERE PermissionCode IN (
     'VIEW_EMPLOYEES', 'VIEW_EMPLOYEE_DETAIL',
     'VIEW_CONTRACTS', 'CREATE_CONTRACT', 'EDIT_CONTRACT',
     'VIEW_RECRUITMENT', 'MANAGE_APPLICANTS',
-    'VIEW_DASHBOARD', 'VIEW_PAYROLLS', 'CREATE_PAYROLL', 'EDIT_PAYROLL'
+    'VIEW_DASHBOARD'
 );
 
 INSERT INTO RolePermission (RoleID, PermissionID)
@@ -1371,7 +1390,8 @@ BEGIN
         JOIN Contract c ON e.EmployeeID = c.EmployeeID
         WHERE e.Status IN ('Active', 'Probation')
         AND c.StartDate <= LAST_DAY(STR_TO_DATE(CONCAT(p_pay_period, '-01'), '%Y-%m-%d'))
-        AND (c.EndDate IS NULL OR c.EndDate >= STR_TO_DATE(CONCAT(p_pay_period, '-01'), '%Y-%m-%d'));
+        AND (c.EndDate IS NULL OR c.EndDate >= STR_TO_DATE(CONCAT(p_pay_period, '-01'), '%Y-%m-%d'))
+        AND c.Status = 'Active';
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 

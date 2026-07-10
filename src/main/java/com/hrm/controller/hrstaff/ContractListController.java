@@ -7,9 +7,11 @@ package com.hrm.controller.hrstaff;
 
 import com.hrm.controller.EmailSender;
 import com.hrm.dao.ContractDAO;
+import com.hrm.dao.ContractDocumentDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.SystemLogDAO;
 import com.hrm.model.entity.Contract;
+import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.util.PermissionUtil;
@@ -20,17 +22,20 @@ import java.util.Locale;
 import java.time.LocalDate;
 import java.util.List;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 /**
  *
  * @author admin
  */
 @WebServlet(name="ContractListController", urlPatterns={"/hrstaff/contracts"})
+@MultipartConfig(maxFileSize = 10 * 1024 * 1024, maxRequestSize = 12 * 1024 * 1024)
 public class ContractListController extends HttpServlet {
     
     private static final String CONTRACT_LIST_JSP = "/Views/HrStaff/ContractList.jsp";
@@ -40,6 +45,7 @@ public class ContractListController extends HttpServlet {
     private static final String STATUS_PENDING = "Pending_Approval";
     private static final String STATUS_ACTIVE = "Active";
     private static final int PAGE_SIZE = 10; // 5 contracts per page
+    private static final long MAX_DOCUMENT_FILE_SIZE = 10L * 1024L * 1024L;
    
     /** 
      * Handles the HTTP <code>GET</code> method.
@@ -169,6 +175,9 @@ public class ContractListController extends HttpServlet {
             }
             
             // Handle success/error messages from redirect
+            if (request.getParameter("success") != null) {
+                request.setAttribute(SUCCESS_ATTRIBUTE, "Thao tac hop dong thanh cong.");
+            }
             if (request.getParameter("deleteSuccess") != null) {
                 request.setAttribute(SUCCESS_ATTRIBUTE, "Xóa hợp đồng thành công!");
             }
@@ -190,6 +199,7 @@ public class ContractListController extends HttpServlet {
                     Contract contract = contractDAO.getContractById(contractId);
                     if (contract != null) {
                         request.setAttribute("editingContract", contract);
+                        request.setAttribute("editingContractDocument", new ContractDocumentDAO().getLatestByContractId(contractId));
                     }
                 } catch (NumberFormatException e) {
                     request.setAttribute(ERROR_ATTRIBUTE, "Mã hợp đồng không hợp lệ.");
@@ -223,6 +233,11 @@ public class ContractListController extends HttpServlet {
             return;
         }
         try {
+            String action = request.getParameter("action");
+            if ("submitDraft".equals(action)) {
+                submitDraftForApproval(request, response);
+                return;
+            }
             updateContract(request, response);
         } catch (Exception e) {
             e.printStackTrace();
@@ -273,6 +288,10 @@ public class ContractListController extends HttpServlet {
             String allowanceStr = request.getParameter("allowance");
             String contractType = request.getParameter("contractType");
             String note = request.getParameter("note");
+            String documentTitle = request.getParameter("documentTitle");
+            String documentContent = request.getParameter("documentContent");
+            Part documentFile = getDocumentFilePart(request);
+            ContractDocument existingDocument = new ContractDocumentDAO().getLatestByContractId(contractId);
             
             // Validate required fields
             if (employeeIdStr == null || employeeIdStr.trim().isEmpty() ||
@@ -301,6 +320,49 @@ public class ContractListController extends HttpServlet {
                 return;
             }
             
+            if ((documentContent == null || documentContent.trim().isEmpty())
+                    && documentFile == null
+                    && !hasReadableDocument(existingDocument)) {
+                request.setAttribute(ERROR_ATTRIBUTE, "Vui long nhap noi dung hoac them tep hop dong.");
+                doGet(request, response);
+                return;
+            }
+
+            if (STATUS_ACTIVE.equals(currentStatus)
+                    && !hasReadableDocument(existingDocument)
+                    && isSameContractData(existingContract, employeeId, startDate, endDate, baseSalary, allowance, contractType, note)) {
+                ContractDocument document = buildDocument(contractId, documentTitle, documentContent, documentFile, existingDocument, currentUserId(request));
+                boolean documentSaved = new ContractDocumentDAO().replaceLatest(document);
+                if (documentSaved) {
+                    response.sendRedirect(request.getContextPath() + "/hrstaff/contracts?success=1");
+                } else {
+                    request.setAttribute(ERROR_ATTRIBUTE, "Khong the luu van ban hop dong. Vui long thu lai.");
+                    doGet(request, response);
+                }
+                return;
+            }
+
+            if (STATUS_ACTIVE.equals(currentStatus)) {
+                createPendingProposalFromActive(
+                        request,
+                        response,
+                        contractDAO,
+                        existingContract,
+                        employeeId,
+                        startDate,
+                        endDate,
+                        baseSalary,
+                        allowance,
+                        contractType,
+                        note,
+                        documentTitle,
+                        documentContent,
+                        documentFile,
+                        existingDocument
+                );
+                return;
+            }
+
             // Check if important fields changed (BaseSalary)
             // If contract is already Pending_Approval, compare with the last Active contract (original salary)
             // Otherwise, compare with current contract value
@@ -362,6 +424,16 @@ public class ContractListController extends HttpServlet {
             boolean success = contractDAO.updateContract(contract);
             
             if (success) {
+                ContractDocument document = buildDocument(contractId, documentTitle, documentContent, documentFile, existingDocument, currentUserId(request));
+                boolean documentSaved = new ContractDocumentDAO().replaceLatest(document);
+                if (!documentSaved) {
+                    request.setAttribute(ERROR_ATTRIBUTE, "Khong the luu van ban hop dong. Vui long thu lai.");
+                    doGet(request, response);
+                    return;
+                }
+                if (importantFieldChanged) {
+                    contractDAO.clearSignature(contractId);
+                }
                 // Log salary change to SystemLog if salary was changed
                 if (importantFieldChanged && oldSalary != null) {
                     try {
@@ -447,6 +519,274 @@ public class ContractListController extends HttpServlet {
         }
     }
     
+    private void submitDraftForApproval(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int contractId;
+        try {
+            contractId = Integer.parseInt(request.getParameter("contractId"));
+        } catch (NumberFormatException ex) {
+            request.setAttribute(ERROR_ATTRIBUTE, "MĂ£ há»£p Ä‘á»“ng khĂ´ng há»£p lá»‡.");
+            doGet(request, response);
+            return;
+        }
+
+        ContractDAO contractDAO = new ContractDAO();
+        Contract contract = contractDAO.getContractById(contractId);
+        if (contract == null) {
+            request.setAttribute(ERROR_ATTRIBUTE, "KhĂ´ng tĂ¬m tháº¥y há»£p Ä‘á»“ng.");
+            doGet(request, response);
+            return;
+        }
+        if (!STATUS_DRAFT.equals(contract.getStatus())) {
+            request.setAttribute(ERROR_ATTRIBUTE, "Chá»‰ cĂ³ thá»ƒ gá»­i duyá»‡t há»£p Ä‘á»“ng báº£n nhĂ¡p.");
+            doGet(request, response);
+            return;
+        }
+
+        if (!new ContractDocumentDAO().hasReadableDocument(contractId)) {
+            request.setAttribute(ERROR_ATTRIBUTE, "Vui long them van ban hop dong truoc khi gui duyet.");
+            doGet(request, response);
+            return;
+        }
+
+        contract.setStatus(STATUS_PENDING);
+        boolean success = contractDAO.updateContract(contract);
+        if (success) {
+            notifyHrManagerAboutPendingContract(contractDAO, contractId, contract.getEmployeeId(), contract.getBaseSalary(), null);
+            response.sendRedirect(request.getContextPath() + "/hrstaff/contracts?success=1");
+        } else {
+            request.setAttribute(ERROR_ATTRIBUTE, "KhĂ´ng thá»ƒ gá»­i duyá»‡t há»£p Ä‘á»“ng. Vui lĂ²ng thá»­ láº¡i.");
+            doGet(request, response);
+        }
+    }
+
+    private void createPendingProposalFromActive(HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 ContractDAO contractDAO,
+                                                 Contract existingContract,
+                                                 int employeeId,
+                                                 LocalDate startDate,
+                                                 LocalDate endDate,
+                                                 BigDecimal baseSalary,
+                                                 BigDecimal allowance,
+                                                 String contractType,
+                                                 String note,
+                                                 String documentTitle,
+                                                 String documentContent,
+                                                 Part documentFile,
+                                                 ContractDocument sourceDocument)
+            throws IOException, ServletException {
+        Contract proposal = new Contract();
+        proposal.setEmployeeId(employeeId);
+        proposal.setStartDate(startDate);
+        proposal.setEndDate(endDate);
+        proposal.setBaseSalary(baseSalary);
+        proposal.setAllowance(allowance);
+        proposal.setContractType(contractType);
+        proposal.setNote(note != null ? note.trim() : null);
+        proposal.setStatus(STATUS_PENDING);
+
+        int proposalId = contractDAO.createAndReturnId(proposal);
+        if (proposalId > 0) {
+            Integer userId = currentUserId(request);
+            ContractDocument document = buildDocument(proposalId, documentTitle, documentContent, documentFile, sourceDocument, userId);
+            boolean documentSaved = new ContractDocumentDAO().create(document);
+            if (!documentSaved) {
+                contractDAO.deleteContract(proposalId);
+                request.setAttribute(ERROR_ATTRIBUTE, "Khong the luu van ban hop dong. Vui long thu lai.");
+                doGet(request, response);
+                return;
+            }
+            notifyHrManagerAboutPendingContract(
+                    contractDAO,
+                    proposalId,
+                    employeeId,
+                    baseSalary,
+                    existingContract.getBaseSalary()
+            );
+            response.sendRedirect(request.getContextPath() + "/hrstaff/contracts?success=1");
+        } else {
+            request.setAttribute(ERROR_ATTRIBUTE, "KhĂ´ng thá»ƒ táº¡o báº£n Ä‘á» xuáº¥t há»£p Ä‘á»“ng. Vui lĂ²ng thá»­ láº¡i.");
+            doGet(request, response);
+        }
+    }
+
+    private void notifyHrManagerAboutPendingContract(ContractDAO contractDAO,
+                                                     int contractId,
+                                                     int employeeId,
+                                                     BigDecimal baseSalary,
+                                                     BigDecimal oldSalary) {
+        try {
+            String hrManagerEmail = contractDAO.getHrManagerEmail();
+            if (hrManagerEmail == null || hrManagerEmail.trim().isEmpty()) {
+                return;
+            }
+            NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
+            String subject = "Há»£p Ä‘á»“ng cáº§n phĂª duyá»‡t - MĂ£ há»£p Ä‘á»“ng: " + contractId;
+            String salaryChangeInfo = "";
+            if (oldSalary != null) {
+                salaryChangeInfo = String.format(
+                        "\nThay Ä‘á»•i lÆ°Æ¡ng:\n- LÆ°Æ¡ng cÅ©: %s VNÄ\n- LÆ°Æ¡ng má»›i: %s VNÄ\n",
+                        nf.format(oldSalary),
+                        nf.format(baseSalary)
+                );
+            }
+            String content = String.format(
+                    "Há»£p Ä‘á»“ng mĂ£ %d Ä‘ang chá» phĂª duyá»‡t.\n\n"
+                            + "ThĂ´ng tin há»£p Ä‘á»“ng:\n"
+                            + "- ID: %d\n"
+                            + "- MĂ£ nhĂ¢n viĂªn: %d\n"
+                            + "- LÆ°Æ¡ng cÆ¡ báº£n: %s VNÄ\n"
+                            + "%s"
+                            + "- Tráº¡ng thĂ¡i: Chá» phĂª duyá»‡t\n\n"
+                            + "Vui lĂ²ng Ä‘Äƒng nháº­p há»‡ thá»‘ng Ä‘á»ƒ phĂª duyá»‡t há»£p Ä‘á»“ng.",
+                    contractId,
+                    contractId,
+                    employeeId,
+                    nf.format(baseSalary),
+                    salaryChangeInfo
+            );
+            EmailSender.sendEmail(hrManagerEmail, subject, content);
+        } catch (Exception e) {
+            System.err.println("Error sending notification email: " + e.getMessage());
+        }
+    }
+
+    private ContractDocument buildDocument(int contractId,
+                                           String title,
+                                           String content,
+                                           Part uploadedFile,
+                                           ContractDocument sourceDocument,
+                                           Integer userId) throws IOException {
+        ContractDocument document = new ContractDocument();
+        document.setContractId(contractId);
+        document.setTitle(title);
+        document.setContent(resolveDocumentContent(content, uploadedFile, sourceDocument));
+        document.setCreatedBy(userId);
+
+        if (uploadedFile != null) {
+            applyDocumentFile(document, uploadedFile);
+        } else {
+            copyDocumentFile(document, sourceDocument);
+        }
+        return document;
+    }
+
+    private String resolveDocumentContent(String content, Part uploadedFile, ContractDocument sourceDocument) {
+        if (content != null && !content.trim().isEmpty()) {
+            return content.trim();
+        }
+        if (sourceDocument != null && sourceDocument.getContent() != null && !sourceDocument.getContent().trim().isEmpty()) {
+            return sourceDocument.getContent().trim();
+        }
+        if (uploadedFile != null) {
+            return "Van ban hop dong duoc dinh kem trong tep: " + cleanFileName(uploadedFile.getSubmittedFileName());
+        }
+        if (sourceDocument != null && sourceDocument.getFileName() != null && !sourceDocument.getFileName().trim().isEmpty()) {
+            return "Van ban hop dong duoc dinh kem trong tep: " + sourceDocument.getFileName().trim();
+        }
+        return "";
+    }
+
+    private Part getDocumentFilePart(HttpServletRequest request) throws IOException, ServletException {
+        Part part = request.getPart("documentFile");
+        String fileName = part != null ? cleanFileName(part.getSubmittedFileName()) : "";
+        if (part == null || part.getSize() <= 0 || fileName.isEmpty()) {
+            return null;
+        }
+        if (!isAllowedDocumentFile(fileName)) {
+            throw new ServletException("Chi ho tro tep PDF, DOC, DOCX, TXT hoac RTF.");
+        }
+        if (part.getSize() > MAX_DOCUMENT_FILE_SIZE) {
+            throw new ServletException("Tep hop dong khong duoc vuot qua 10MB.");
+        }
+        return part;
+    }
+
+    private void applyDocumentFile(ContractDocument document, Part part) throws IOException {
+        if (part == null) {
+            return;
+        }
+        document.setFileName(cleanFileName(part.getSubmittedFileName()));
+        document.setContentType(part.getContentType());
+        document.setFileSize(part.getSize());
+        document.setFileData(part.getInputStream().readAllBytes());
+    }
+
+    private void copyDocumentFile(ContractDocument target, ContractDocument source) {
+        if (source == null || source.getFileData() == null || source.getFileData().length == 0) {
+            return;
+        }
+        target.setFileName(source.getFileName());
+        target.setContentType(source.getContentType());
+        target.setFileSize(source.getFileSize());
+        target.setFileData(source.getFileData());
+    }
+
+    private boolean hasReadableDocument(ContractDocument document) {
+        return document != null
+                && ((document.getContent() != null && !document.getContent().trim().isEmpty())
+                    || (document.getFileName() != null && !document.getFileName().trim().isEmpty()
+                        && document.getFileData() != null && document.getFileData().length > 0));
+    }
+
+    private boolean isSameContractData(Contract existingContract,
+                                       int employeeId,
+                                       LocalDate startDate,
+                                       LocalDate endDate,
+                                       BigDecimal baseSalary,
+                                       BigDecimal allowance,
+                                       String contractType,
+                                       String note) {
+        return existingContract != null
+                && existingContract.getEmployeeId() == employeeId
+                && sameDate(existingContract.getStartDate(), startDate)
+                && sameDate(existingContract.getEndDate(), endDate)
+                && sameMoney(existingContract.getBaseSalary(), baseSalary)
+                && sameMoney(existingContract.getAllowance(), allowance)
+                && sameText(existingContract.getContractType(), contractType)
+                && sameText(existingContract.getNote(), note);
+    }
+
+    private boolean sameDate(LocalDate left, LocalDate right) {
+        return left == null ? right == null : left.equals(right);
+    }
+
+    private boolean sameMoney(BigDecimal left, BigDecimal right) {
+        BigDecimal safeLeft = left != null ? left : BigDecimal.ZERO;
+        BigDecimal safeRight = right != null ? right : BigDecimal.ZERO;
+        return safeLeft.compareTo(safeRight) == 0;
+    }
+
+    private boolean sameText(String left, String right) {
+        String safeLeft = left == null ? "" : left.trim();
+        String safeRight = right == null ? "" : right.trim();
+        return safeLeft.equals(safeRight);
+    }
+
+    private String cleanFileName(String submittedFileName) {
+        if (submittedFileName == null) {
+            return "";
+        }
+        String normalized = submittedFileName.replace("\\", "/");
+        int slashIndex = normalized.lastIndexOf('/');
+        return slashIndex >= 0 ? normalized.substring(slashIndex + 1).trim() : normalized.trim();
+    }
+
+    private boolean isAllowedDocumentFile(String fileName) {
+        String lower = fileName.toLowerCase();
+        return lower.endsWith(".pdf")
+                || lower.endsWith(".doc")
+                || lower.endsWith(".docx")
+                || lower.endsWith(".txt")
+                || lower.endsWith(".rtf");
+    }
+
+    private Integer currentUserId(HttpServletRequest request) {
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        return currentUser != null ? currentUser.getUserId() : null;
+    }
+
     private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         return PermissionUtil.ensureRolePermission(

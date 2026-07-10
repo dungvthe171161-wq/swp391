@@ -6,10 +6,13 @@
 package com.hrm.controller.hr;
 
 import com.hrm.dao.ContractDAO;
+import com.hrm.dao.ContractDocumentDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.SystemLogDAO;
 import com.hrm.model.entity.Contract;
+import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.Employee;
+import com.hrm.model.entity.Notification;
 import com.hrm.model.entity.SystemLog;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationRecipientService;
@@ -51,6 +54,7 @@ public class ApproveRejectContractController extends HttpServlet {
     private static final String DENIED_MESSAGE = "You do not have permission to review or approve contracts.";
     
     private final transient ContractDAO contractDAO = new ContractDAO();
+    private final transient ContractDocumentDAO contractDocumentDAO = new ContractDocumentDAO();
     private final transient SystemLogDAO systemLogDAO = new SystemLogDAO();
     private final transient NotificationService notificationService = new NotificationService();
     private final transient NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
@@ -67,6 +71,10 @@ public class ApproveRejectContractController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
         if (!ensureAccess(request, response)) {
+            return;
+        }
+        if ("document".equals(request.getParameter("action"))) {
+            downloadContractDocument(request, response);
             return;
         }
         try {
@@ -161,7 +169,10 @@ public class ApproveRejectContractController extends HttpServlet {
                         }
                     }
                 }
-                
+                ContractDocument document = contractId != null
+                        ? contractDocumentDAO.getLatestByContractId(contractId)
+                        : null;
+                contractWithChanges.put("contractDocument", document);
                 contractWithChanges.put("changes", changes);
                 contractsWithChanges.add(contractWithChanges);
             }
@@ -227,23 +238,22 @@ public class ApproveRejectContractController extends HttpServlet {
             }
             
             if ("approve".equals(action)) {
-                // Approve contract - set status to Active
-                contract.setStatus(STATUS_ACTIVE);
-                boolean success = contractDAO.updateContract(contract);
+                if (!contractDocumentDAO.hasReadableDocument(contractId)) {
+                    redirectWithMessage(response, request.getContextPath() + "/hr/approve-reject-contracts",
+                            "error", "Contract document is missing. Please ask HR Staff to add it before approval.");
+                    return;
+                }
+                // HR approval moves the contract to employee signature before it becomes active.
+                boolean success = contractDAO.markPendingSignature(contractId);
                 
                 if (success) {
-                    // If there's an active contract for this employee, expire it
-                    Contract activeContract = contractDAO.getActiveContractByEmployeeId(contract.getEmployeeId());
-                    if (activeContract != null && activeContract.getContractId() != contractId) {
-                        contractDAO.expireContract(activeContract.getContractId());
-                    }
-                    
                     // Get employee name for success message
                     String employeeName = getEmployeeName(contract.getEmployeeId());
                     notifyHrStaffAboutContractDecision(request, contractId, employeeName, STATUS_ACTIVE);
+                    notifyEmployeeContractNeedsSignature(request, contract.getEmployeeId(), contractId, employeeName);
                     
                     String successMsg = "✅ Contract approved successfully!" + 
-                        (employeeName.isEmpty() ? "" : " Contract for " + employeeName + " has been approved and changed to Active status.");
+                        (employeeName.isEmpty() ? "" : " Contract for " + employeeName + " is waiting for employee signature.");
                     redirectWithMessage(response, request.getContextPath() + "/hr/approve-reject-contracts", "success", successMsg);
                 } else {
                     redirectWithMessage(response, request.getContextPath() + "/hr/approve-reject-contracts", "error", 
@@ -390,6 +400,57 @@ public class ApproveRejectContractController extends HttpServlet {
                 employeeName,
                 decision
         );
+    }
+
+    private void notifyEmployeeContractNeedsSignature(HttpServletRequest request,
+                                                      int employeeId,
+                                                      int contractId,
+                                                      String employeeName) {
+        Integer employeeUserId = notificationRecipientService.activeUserByEmployeeId(employeeId);
+        if (employeeUserId == null || employeeUserId <= 0) {
+            return;
+        }
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        Notification notification = notificationService.buildNotification(
+                employeeUserId,
+                currentUser != null ? currentUser.getUserId() : null,
+                "Contract",
+                contractId,
+                "Contract",
+                "Hop dong can ky",
+                "Hop dong cua " + (employeeName == null || employeeName.isBlank() ? "ban" : employeeName)
+                        + " da duoc HR duyet. Vui long kiem tra va ky xac nhan.",
+                "/employee/contract",
+                "High"
+        );
+        notificationService.notifyUser(notification);
+    }
+
+    private void downloadContractDocument(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int contractId;
+        try {
+            contractId = Integer.parseInt(request.getParameter("contractId"));
+        } catch (NumberFormatException ex) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        ContractDocument document = contractDocumentDAO.getLatestByContractId(contractId);
+        if (document == null || document.getFileData() == null || document.getFileData().length == 0) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        response.setContentType(document.getContentType() != null ? document.getContentType() : "application/octet-stream");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + safeDownloadFileName(document.getFileName()) + "\"");
+        response.setContentLengthLong(document.getFileData().length);
+        response.getOutputStream().write(document.getFileData());
+    }
+
+    private String safeDownloadFileName(String fileName) {
+        String cleaned = fileName == null || fileName.isBlank() ? "contract-document" : fileName.trim();
+        return cleaned.replace("\\", "_").replace("/", "_").replace("\"", "").replace("\r", "").replace("\n", "");
     }
 
     /** 

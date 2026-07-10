@@ -6,8 +6,10 @@
 package com.hrm.controller.hrstaff;
 
 import com.hrm.dao.ContractDAO;
+import com.hrm.dao.ContractDocumentDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.model.entity.Contract;
+import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationRecipientService;
@@ -17,10 +19,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import java.util.List;
 
 /**
@@ -28,6 +32,7 @@ import java.util.List;
  * @author admin
  */
 @WebServlet(name="CreateContractController", urlPatterns={"/hrstaff/contracts/create"})
+@MultipartConfig(maxFileSize = 10 * 1024 * 1024, maxRequestSize = 12 * 1024 * 1024)
 public class CreateContractController extends HttpServlet {
    
     private static final String CREATE_CONTRACT_JSP = "/Views/HrStaff/CreateContract.jsp";
@@ -35,6 +40,7 @@ public class CreateContractController extends HttpServlet {
     private static final String SUCCESS_ATTRIBUTE = "success";
     private static final String DEFAULT_STATUS = "Draft";
     private static final String STATUS_PENDING = "Pending_Approval";
+    private static final long MAX_DOCUMENT_FILE_SIZE = 10L * 1024L * 1024L;
     private final NotificationService notificationService = new NotificationService();
     private final NotificationRecipientService notificationRecipientService = new NotificationRecipientService();
 
@@ -106,6 +112,9 @@ public class CreateContractController extends HttpServlet {
             String contractType = request.getParameter("contractType");
             String status = request.getParameter("status");
             String note = request.getParameter("note");
+            String documentTitle = request.getParameter("documentTitle");
+            String documentContent = request.getParameter("documentContent");
+            Part documentFile = getDocumentFilePart(request);
             
             // Validate required fields
             if (employeeIdStr == null || employeeIdStr.trim().isEmpty() ||
@@ -144,6 +153,12 @@ public class CreateContractController extends HttpServlet {
                 return;
             }
             
+            if ((documentContent == null || documentContent.trim().isEmpty()) && documentFile == null) {
+                request.setAttribute(ERROR_ATTRIBUTE, "Vui long nhap noi dung hoac them tep hop dong de nhan vien doc truoc khi ky.");
+                doGet(request, response);
+                return;
+            }
+
             // Create contract object
             Contract contract = new Contract();
             contract.setEmployeeId(employeeId);
@@ -161,26 +176,40 @@ public class CreateContractController extends HttpServlet {
             Contract activeContract = contractDAO.getActiveContractByEmployeeId(employeeId);
             boolean hasActiveContract = activeContract != null;
             
-            // If employee has an active contract, expire it and set new contract status to Pending_Approval
+            // If employee has an active contract, keep it active until the new contract is signed.
             if (hasActiveContract) {
-                // Expire the old contract
-                contractDAO.expireContract(activeContract.getContractId());
-                // New contract must be Pending_Approval when replacing an active contract
+                // New replacement contracts must be approved and then signed by the employee.
                 contract.setStatus(STATUS_PENDING);
             } else {
                 // No active contract, use the status from form (or default)
                 contract.setStatus(status);
             }
             
-            boolean success = contractDAO.create(contract);
+            int contractId = contractDAO.createAndReturnId(contract);
+            boolean success = contractId > 0;
             
             if (success) {
+                ContractDocument document = new ContractDocument();
+                document.setContractId(contractId);
+                document.setTitle(documentTitle);
+                document.setContent(cleanDocumentContent(documentContent, documentFile));
+                applyDocumentFile(document, documentFile);
+                document.setVersionNo(1);
+                SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+                document.setCreatedBy(currentUser != null ? currentUser.getUserId() : null);
+                boolean documentSaved = new ContractDocumentDAO().create(document);
+                if (!documentSaved) {
+                    contractDAO.deleteContract(contractId);
+                    request.setAttribute(ERROR_ATTRIBUTE, "Khong the luu van ban hop dong. Vui long thu lai.");
+                    doGet(request, response);
+                    return;
+                }
+
                 if (STATUS_PENDING.equals(contract.getStatus())) {
-                    int contractId = contractDAO.findLatestContractIdForEmployee(employeeId);
                     notifyHrManagersAboutContract(request, contractId, employeeId);
                 }
                 String successMessage = hasActiveContract 
-                    ? "Tạo hợp đồng thành công! Hợp đồng trước đó đã được đánh dấu hết hạn và hợp đồng mới đang chờ phê duyệt." 
+                    ? "Tạo hợp đồng thành công! Hợp đồng mới đang chờ phê duyệt; hợp đồng hiện tại vẫn có hiệu lực cho tới khi nhân viên ký." 
                     : "Tạo hợp đồng thành công!";
                 request.setAttribute(SUCCESS_ATTRIBUTE, successMessage);
                 response.sendRedirect(request.getContextPath() + "/hrstaff/contracts");
@@ -231,6 +260,58 @@ public class CreateContractController extends HttpServlet {
                 contractId,
                 employee != null ? employee.getFullName() : "Nhan vien"
         );
+    }
+
+    private Part getDocumentFilePart(HttpServletRequest request) throws IOException, ServletException {
+        Part part = request.getPart("documentFile");
+        String fileName = part != null ? cleanFileName(part.getSubmittedFileName()) : "";
+        if (part == null || part.getSize() <= 0 || fileName.isEmpty()) {
+            return null;
+        }
+        if (!isAllowedDocumentFile(fileName)) {
+            throw new ServletException("Chi ho tro tep PDF, DOC, DOCX, TXT hoac RTF.");
+        }
+        if (part.getSize() > MAX_DOCUMENT_FILE_SIZE) {
+            throw new ServletException("Tep hop dong khong duoc vuot qua 10MB.");
+        }
+        return part;
+    }
+
+    private void applyDocumentFile(ContractDocument document, Part part) throws IOException {
+        if (part == null) {
+            return;
+        }
+        document.setFileName(cleanFileName(part.getSubmittedFileName()));
+        document.setContentType(part.getContentType());
+        document.setFileSize(part.getSize());
+        document.setFileData(part.getInputStream().readAllBytes());
+    }
+
+    private String cleanDocumentContent(String content, Part part) {
+        if (content != null && !content.trim().isEmpty()) {
+            return content.trim();
+        }
+        return part != null
+                ? "Van ban hop dong duoc dinh kem trong tep: " + cleanFileName(part.getSubmittedFileName())
+                : "";
+    }
+
+    private String cleanFileName(String submittedFileName) {
+        if (submittedFileName == null) {
+            return "";
+        }
+        String normalized = submittedFileName.replace("\\", "/");
+        int slashIndex = normalized.lastIndexOf('/');
+        return slashIndex >= 0 ? normalized.substring(slashIndex + 1).trim() : normalized.trim();
+    }
+
+    private boolean isAllowedDocumentFile(String fileName) {
+        String lower = fileName.toLowerCase();
+        return lower.endsWith(".pdf")
+                || lower.endsWith(".doc")
+                || lower.endsWith(".docx")
+                || lower.endsWith(".txt")
+                || lower.endsWith(".rtf");
     }
 
     @Override

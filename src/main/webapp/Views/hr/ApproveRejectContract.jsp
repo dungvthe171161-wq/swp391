@@ -344,6 +344,43 @@
                 font-weight: 600;
             }
 
+            .contract-document-section {
+                background: #fffdf8;
+                border: 1px solid #e5e7eb;
+                border-left: 4px solid var(--success-color);
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin-bottom: 1.5rem;
+            }
+
+            .contract-document-section h4 {
+                margin: 0 0 0.75rem 0;
+                color: #065f46;
+                font-size: 1.05rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .contract-document-section pre {
+                margin: 0;
+                white-space: pre-wrap;
+                word-break: break-word;
+                font-family: inherit;
+                color: var(--text-color);
+                line-height: 1.6;
+                max-height: 260px;
+                overflow: auto;
+            }
+
+            .contract-document-section.missing {
+                background: #fff7f7;
+                border-left-color: var(--danger-color);
+                color: #991b1b;
+                font-weight: 700;
+            }
+
             /* Highlight salary changes - make them more prominent */
             .changes-list li.salary-change-highlight {
                 background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%) !important;
@@ -618,6 +655,29 @@
                                         </ul>
                                     </div>
                                 </c:if>
+
+                                <c:choose>
+                                    <c:when test="${not empty contract.contractDocument}">
+                                        <div class="contract-document-section">
+                                            <h4><i class="fas fa-file-contract"></i> ContractDocument</h4>
+                                            <pre><c:out value="${contract.contractDocument.content}"/></pre>
+                                            <c:if test="${not empty contract.contractDocument.fileName}">
+                                                <a class="btn btn-approve"
+                                                   style="margin-top: 1rem;"
+                                                   href="${pageContext.request.contextPath}/hr/approve-reject-contracts?action=document&contractId=${contract.contractId}"
+                                                   target="_blank" rel="noopener">
+                                                    <i class="fas fa-paperclip"></i>
+                                                    Mo tep: <c:out value="${contract.contractDocument.fileName}"/>
+                                                </a>
+                                            </c:if>
+                                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="contract-document-section missing">
+                                            ContractDocument is missing. HR Staff must add text or upload a file before approval.
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
 
                                 <!-- Contract Details -->
                                 <div class="contract-details">

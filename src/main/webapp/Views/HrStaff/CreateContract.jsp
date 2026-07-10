@@ -193,6 +193,42 @@
                 margin-top: 4px;
             }
 
+            .file-upload-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-top: 10px;
+            }
+
+            .file-upload-row input[type="file"] {
+                display: none;
+            }
+
+            .upload-file-button {
+                display: inline-flex !important;
+                align-items: center;
+                min-height: 38px;
+                padding: 0 14px;
+                margin: 0 !important;
+                border-radius: 8px;
+                background: var(--success);
+                color: #fff !important;
+                cursor: pointer;
+                font-weight: 700;
+            }
+
+            .selected-file-name {
+                font-size: 13px;
+                color: var(--text);
+                font-weight: 600;
+            }
+
+            .file-hint {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
             .form-row {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -269,7 +305,7 @@
                 <% } %>
 
                 <!-- Form -->
-                <form method="POST" action="<%=request.getContextPath()%>/hrstaff/contracts/create">
+                <form method="POST" action="<%=request.getContextPath()%>/hrstaff/contracts/create" enctype="multipart/form-data">
                     <!-- Chọn nhân viên -->
                     <div class="form-group">
                         <label for="employeeId">
@@ -379,6 +415,46 @@
                     </div>
 
                     <!-- Ghi chú -->
+                    <div class="form-group">
+                        <label for="documentTitle">
+                            Tieu de van ban <span class="required">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="documentTitle"
+                            name="documentTitle"
+                            maxlength="255"
+                            value="Van ban hop dong lao dong"
+                            required
+                        />
+                        <div class="help-text">Tieu de hien thi cho nhan vien truoc khi ky.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentContent">
+                            Noi dung van ban hop dong hoac tep dinh kem <span class="required">*</span>
+                        </label>
+                        <textarea
+                            id="documentContent"
+                            name="documentContent"
+                            rows="10"
+                            placeholder="Nhap dieu khoan, quyen loi, nghia vu va cac noi dung nhan vien can doc truoc khi ky..."
+                        ></textarea>
+                        <div class="file-upload-row">
+                            <label class="upload-file-button" for="documentFile">+ Them tep</label>
+                            <input
+                                type="file"
+                                id="documentFile"
+                                name="documentFile"
+                                accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                                onchange="document.getElementById('documentFileName').textContent = this.files.length ? this.files[0].name : 'Chua chon tep';"
+                            />
+                            <span class="selected-file-name" id="documentFileName">Chua chon tep</span>
+                            <span class="file-hint">Co the them tep PDF/DOC/DOCX/TXT, toi da 10MB.</span>
+                        </div>
+                        <div class="help-text">Nhap noi dung hoac them tep. Nhan vien se phai doc va xac nhan da dong y truoc khi ky.</div>
+                    </div>
+
                     <div class="form-group">
                         <label for="note">
                             Ghi chú

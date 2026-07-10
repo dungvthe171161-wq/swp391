@@ -1,0 +1,55 @@
+<%@ page pageEncoding="UTF-8" %>
+<%
+    String __hrStaffSidebarActive = request.getAttribute("hrStaffSidebarActive") != null
+            ? String.valueOf(request.getAttribute("hrStaffSidebarActive"))
+            : "";
+%>
+<aside class="staff-sidebar">
+    <a class="brand" href="<%=request.getContextPath()%>/homepage">
+        <div class="brand-mark">B</div>
+        <div>
+            <strong>BetterHR</strong>
+            <span>Cổng nhân sự nội bộ</span>
+        </div>
+    </a>
+
+    <nav class="sidebar-section" aria-label="Điều hướng nhân viên nhân sự">
+        <div class="section-title">Bảng điều khiển</div>
+        <a class="nav-link<%= "overview".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/hrstaff">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span>Tổng quan</span>
+        </a>
+        <a class="nav-link<%= "expiring-contracts".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/hrstaff#contracts">
+            <i class="fa-solid fa-file-signature"></i>
+            <span>Hợp đồng sắp hết hạn</span>
+        </a>
+        <a class="nav-link<%= "payroll".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/hrstaff/payroll">
+            <i class="fa-solid fa-money-check-dollar"></i>
+            <span>Lương & phụ cấp</span>
+        </a>
+
+        <div class="section-title">Hồ sơ & tuyển dụng</div>
+        <a class="nav-link<%= "create-contract".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/hrstaff/contracts/create">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            <span>Tạo hợp đồng</span>
+        </a>
+        <a class="nav-link<%= "contracts".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/hrstaff/contracts">
+            <i class="fa-solid fa-folder-open"></i>
+            <span>Danh sách hợp đồng</span>
+        </a>
+        <a class="nav-link<%= "recruitment".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/postRecruitments">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>Tin tuyển dụng</span>
+        </a>
+        <a class="nav-link<%= "candidates".equals(__hrStaffSidebarActive) ? " active" : "" %>" href="<%=request.getContextPath()%>/candidates">
+            <i class="fa-solid fa-users-viewfinder"></i>
+            <span>Ứng viên</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <strong>Bộ phận nhân sự</strong>
+        <span>Theo dõi hồ sơ, hợp đồng và tuyển dụng hằng ngày.</span>
+        <button class="help-button" type="button">Liên hệ HR</button>
+    </div>
+</aside>

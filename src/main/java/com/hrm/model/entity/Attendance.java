@@ -22,6 +22,17 @@ public class Attendance implements Serializable {
     private LocalTime checkOut;       // Check-out time
     private BigDecimal workingHours;  // Total working hours
     private BigDecimal overtimeHours; // Overtime hours if any
+    private Integer scheduleId;
+    private BigDecimal checkInLatitude;
+    private BigDecimal checkInLongitude;
+    private BigDecimal checkInDistanceMeters;
+    private Integer checkInOfficeLocationId;
+    private String checkInMethod;
+    private BigDecimal checkOutLatitude;
+    private BigDecimal checkOutLongitude;
+    private BigDecimal checkOutDistanceMeters;
+    private Integer checkOutOfficeLocationId;
+    private String checkOutMethod;
 
     public Attendance() {
     }
@@ -94,6 +105,94 @@ public class Attendance implements Serializable {
         this.overtimeHours = overtimeHours;
     }
 
+    public Integer getScheduleId() {
+        return scheduleId;
+    }
+
+    public void setScheduleId(Integer scheduleId) {
+        this.scheduleId = scheduleId;
+    }
+
+    public BigDecimal getCheckInLatitude() {
+        return checkInLatitude;
+    }
+
+    public void setCheckInLatitude(BigDecimal checkInLatitude) {
+        this.checkInLatitude = checkInLatitude;
+    }
+
+    public BigDecimal getCheckInLongitude() {
+        return checkInLongitude;
+    }
+
+    public void setCheckInLongitude(BigDecimal checkInLongitude) {
+        this.checkInLongitude = checkInLongitude;
+    }
+
+    public BigDecimal getCheckInDistanceMeters() {
+        return checkInDistanceMeters;
+    }
+
+    public void setCheckInDistanceMeters(BigDecimal checkInDistanceMeters) {
+        this.checkInDistanceMeters = checkInDistanceMeters;
+    }
+
+    public Integer getCheckInOfficeLocationId() {
+        return checkInOfficeLocationId;
+    }
+
+    public void setCheckInOfficeLocationId(Integer checkInOfficeLocationId) {
+        this.checkInOfficeLocationId = checkInOfficeLocationId;
+    }
+
+    public String getCheckInMethod() {
+        return checkInMethod;
+    }
+
+    public void setCheckInMethod(String checkInMethod) {
+        this.checkInMethod = checkInMethod;
+    }
+
+    public BigDecimal getCheckOutLatitude() {
+        return checkOutLatitude;
+    }
+
+    public void setCheckOutLatitude(BigDecimal checkOutLatitude) {
+        this.checkOutLatitude = checkOutLatitude;
+    }
+
+    public BigDecimal getCheckOutLongitude() {
+        return checkOutLongitude;
+    }
+
+    public void setCheckOutLongitude(BigDecimal checkOutLongitude) {
+        this.checkOutLongitude = checkOutLongitude;
+    }
+
+    public BigDecimal getCheckOutDistanceMeters() {
+        return checkOutDistanceMeters;
+    }
+
+    public void setCheckOutDistanceMeters(BigDecimal checkOutDistanceMeters) {
+        this.checkOutDistanceMeters = checkOutDistanceMeters;
+    }
+
+    public Integer getCheckOutOfficeLocationId() {
+        return checkOutOfficeLocationId;
+    }
+
+    public void setCheckOutOfficeLocationId(Integer checkOutOfficeLocationId) {
+        this.checkOutOfficeLocationId = checkOutOfficeLocationId;
+    }
+
+    public String getCheckOutMethod() {
+        return checkOutMethod;
+    }
+
+    public void setCheckOutMethod(String checkOutMethod) {
+        this.checkOutMethod = checkOutMethod;
+    }
+
     @Override
     public String toString() {
         return "Attendance{" +
@@ -104,6 +203,9 @@ public class Attendance implements Serializable {
                 ", checkOut=" + checkOut +
                 ", workingHours=" + workingHours +
                 ", overtimeHours=" + overtimeHours +
+                ", scheduleId=" + scheduleId +
+                ", checkInDistanceMeters=" + checkInDistanceMeters +
+                ", checkOutDistanceMeters=" + checkOutDistanceMeters +
                 '}';
     }
 }

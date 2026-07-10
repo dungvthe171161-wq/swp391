@@ -51,6 +51,12 @@
                         <span class="material-symbols-outlined">admin_panel_settings</span>
                         <span>Phân quyền</span>
                     </a>
+                    <a href="${pageContext.request.contextPath}/admin/office-location"
+                       class="nav-item ${activePage == 'office-location' ? 'active' : ''}">
+                        <span class="material-symbols-outlined">location_on</span>
+                        <span>C&#7845;u h&#236;nh GPS</span>
+                    </a>
+
                     <a href="${pageContext.request.contextPath}/admin?action=audit-log"
                        class="nav-item ${activePage == 'audit-log' ? 'active' : ''}">
                         <span class="material-symbols-outlined">history</span>

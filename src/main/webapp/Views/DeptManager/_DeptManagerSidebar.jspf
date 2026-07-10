@@ -12,6 +12,7 @@
         <a class="${activePage eq 'leaves' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept/leaves"><i class="fa-solid fa-calendar-xmark"></i> Yêu cầu nghỉ phép</a>
         <a class="${activePage eq 'performance' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=performance"><i class="fa-solid fa-chart-line"></i> Đánh giá hiệu suất</a>
         <a class="${activePage eq 'reports' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept?action=reports"><i class="fa-solid fa-square-poll-vertical"></i> Báo cáo phòng ban</a>
+        <a class="${activePage eq 'schedules' ? 'active' : ''}" href="${pageContext.request.contextPath}/dept/schedules"><i class="fa-solid fa-business-time"></i> L&#7883;ch l&#224;m vi&#7879;c</a>
     </nav>
     <div class="dept-profile">
         <div class="dept-avatar"><i class="fa-solid fa-user-tie"></i></div>

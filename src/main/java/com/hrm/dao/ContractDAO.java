@@ -180,7 +180,8 @@ public class ContractDAO {
         StringBuilder sql = new StringBuilder("""
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy,
+                   c.EmployeeSignaturePath, c.SignatureHash, c.SignIp, c.SignUserAgent, c.ContractContentHash
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
         """);
@@ -245,7 +246,8 @@ public class ContractDAO {
         StringBuilder sql = new StringBuilder("""
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy,
+                   c.EmployeeSignaturePath, c.SignatureHash, c.SignIp, c.SignUserAgent, c.ContractContentHash
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
             WHERE 1=1
@@ -404,7 +406,8 @@ public class ContractDAO {
     public Contract getContractById(int contractId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy,
+                   EmployeeSignaturePath, SignatureHash, SignIp, SignUserAgent, ContractContentHash
             FROM Contract
             WHERE ContractID = ?
         """;
@@ -556,7 +559,8 @@ public class ContractDAO {
     public Contract getActiveContractByEmployeeId(int employeeId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy,
+                   EmployeeSignaturePath, SignatureHash, SignIp, SignUserAgent, ContractContentHash
             FROM Contract
             WHERE EmployeeID = ?
               AND Status = 'Active'
@@ -598,7 +602,8 @@ public class ContractDAO {
     public Contract getPendingSignatureContractByEmployeeId(int employeeId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate,
-                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy,
+                   EmployeeSignaturePath, SignatureHash, SignIp, SignUserAgent, ContractContentHash
             FROM Contract
             WHERE EmployeeID = ?
               AND Status = 'Pending_Signature'
@@ -642,15 +647,29 @@ public class ContractDAO {
     }
     
     /**
-     * Get the most recent contract for an employee (any status, as fallback)
+     * Get the contract the employee should see first.
+     * Pending/new contracts must win over old active or expired contracts even
+     * when their StartDate is earlier.
      */
     public Contract getContractByEmployeeId(int employeeId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy,
+                   EmployeeSignaturePath, SignatureHash, SignIp, SignUserAgent, ContractContentHash
             FROM Contract
             WHERE EmployeeID = ?
-            ORDER BY StartDate DESC, ContractID DESC
+            ORDER BY
+                CASE Status
+                    WHEN 'Pending_Signature' THEN 1
+                    WHEN 'Approved' THEN 1
+                    WHEN 'Pending_Approval' THEN 2
+                    WHEN 'Draft' THEN 3
+                    WHEN 'Active' THEN 4
+                    WHEN 'Expired' THEN 5
+                    WHEN 'Rejected' THEN 6
+                    ELSE 7
+                END,
+                ContractID DESC
             LIMIT 1
         """;
 
@@ -718,7 +737,9 @@ public class ContractDAO {
     public boolean markPendingSignature(int contractId) {
         String sql = """
             UPDATE Contract
-            SET Status = 'Pending_Signature', SignedAt = NULL, SignedBy = NULL
+            SET Status = 'Pending_Signature', SignedAt = NULL, SignedBy = NULL,
+                EmployeeSignaturePath = NULL, SignatureHash = NULL, SignIp = NULL,
+                SignUserAgent = NULL, ContractContentHash = NULL
             WHERE ContractID = ? AND Status = 'Pending_Approval'
         """;
 
@@ -735,7 +756,9 @@ public class ContractDAO {
     public boolean clearSignature(int contractId) {
         String sql = """
             UPDATE Contract
-            SET SignedAt = NULL, SignedBy = NULL
+            SET SignedAt = NULL, SignedBy = NULL, EmployeeSignaturePath = NULL,
+                SignatureHash = NULL, SignIp = NULL, SignUserAgent = NULL,
+                ContractContentHash = NULL
             WHERE ContractID = ?
         """;
 
@@ -754,10 +777,16 @@ public class ContractDAO {
      * is expired only after the new contract is signed.
      */
     public boolean signContractByEmployee(int contractId, int employeeId, int signerUserId) {
+        return signContractByEmployee(contractId, employeeId, signerUserId, null, null, null, null, null);
+    }
+
+    public boolean signContractByEmployee(int contractId, int employeeId, int signerUserId,
+            String signaturePath, String signatureHash, String signIp, String signUserAgent,
+            String contractContentHash) {
         String selectSql = """
             SELECT ContractID
             FROM Contract
-            WHERE ContractID = ? AND EmployeeID = ? AND Status = 'Pending_Signature'
+            WHERE ContractID = ? AND EmployeeID = ? AND Status IN ('Pending_Signature', 'Approved')
             FOR UPDATE
         """;
         String expireOldSql = """
@@ -767,8 +796,10 @@ public class ContractDAO {
         """;
         String signSql = """
             UPDATE Contract
-            SET Status = 'Active', SignedAt = NOW(), SignedBy = ?
-            WHERE ContractID = ? AND EmployeeID = ? AND Status = 'Pending_Signature'
+            SET Status = 'Active', SignedAt = NOW(), SignedBy = ?,
+                EmployeeSignaturePath = ?, SignatureHash = ?, SignIp = ?,
+                SignUserAgent = ?, ContractContentHash = ?
+            WHERE ContractID = ? AND EmployeeID = ? AND Status IN ('Pending_Signature', 'Approved')
         """;
 
         try (Connection con = DBConnection.getConnection()) {
@@ -797,8 +828,13 @@ public class ContractDAO {
                     } else {
                         signPs.setNull(1, Types.INTEGER);
                     }
-                    signPs.setInt(2, contractId);
-                    signPs.setInt(3, employeeId);
+                    signPs.setString(2, signaturePath);
+                    signPs.setString(3, signatureHash);
+                    signPs.setString(4, signIp);
+                    signPs.setString(5, truncate(signUserAgent, 255));
+                    signPs.setString(6, contractContentHash);
+                    signPs.setInt(7, contractId);
+                    signPs.setInt(8, employeeId);
                     boolean success = signPs.executeUpdate() > 0;
                     if (success) {
                         con.commit();
@@ -847,7 +883,8 @@ public class ContractDAO {
         String sql = """
             SELECT c.ContractID, c.EmployeeID, e.FullName, e.Email,
                    c.StartDate, c.EndDate, c.BaseSalary, c.Allowance, 
-                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy
+                   c.ContractType, c.Status, c.Notes, c.SignedAt, c.SignedBy,
+                   c.EmployeeSignaturePath, c.SignatureHash, c.SignIp, c.SignUserAgent, c.ContractContentHash
             FROM Contract c
             LEFT JOIN Employee e ON c.EmployeeID = e.EmployeeID
             WHERE c.Status = ?
@@ -888,7 +925,8 @@ public class ContractDAO {
     public Contract getPreviousActiveContract(int employeeId, int currentContractId) {
         String sql = """
             SELECT ContractID, EmployeeID, StartDate, EndDate, 
-                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy
+                   BaseSalary, Allowance, ContractType, Status, Notes, SignedAt, SignedBy,
+                   EmployeeSignaturePath, SignatureHash, SignIp, SignUserAgent, ContractContentHash
             FROM Contract
             WHERE EmployeeID = ?
               AND ContractID != ?
@@ -949,5 +987,17 @@ public class ContractDAO {
         contract.setSignedAt(signedAt != null ? signedAt.toLocalDateTime() : null);
         Object signedBy = rs.getObject("SignedBy");
         contract.setSignedBy(signedBy instanceof Number ? ((Number) signedBy).intValue() : null);
+        contract.setEmployeeSignaturePath(rs.getString("EmployeeSignaturePath"));
+        contract.setSignatureHash(rs.getString("SignatureHash"));
+        contract.setSignIp(rs.getString("SignIp"));
+        contract.setSignUserAgent(rs.getString("SignUserAgent"));
+        contract.setContractContentHash(rs.getString("ContractContentHash"));
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 }

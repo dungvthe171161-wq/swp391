@@ -29,6 +29,11 @@ public class Contract implements Serializable {
     private String note;
     private LocalDateTime signedAt;
     private Integer signedBy;
+    private String employeeSignaturePath;
+    private String signatureHash;
+    private String signIp;
+    private String signUserAgent;
+    private String contractContentHash;
 
     public Contract() {
     }
@@ -148,9 +153,49 @@ public class Contract implements Serializable {
         this.signedBy = signedBy;
     }
 
+    public String getEmployeeSignaturePath() {
+        return employeeSignaturePath;
+    }
+
+    public void setEmployeeSignaturePath(String employeeSignaturePath) {
+        this.employeeSignaturePath = employeeSignaturePath;
+    }
+
+    public String getSignatureHash() {
+        return signatureHash;
+    }
+
+    public void setSignatureHash(String signatureHash) {
+        this.signatureHash = signatureHash;
+    }
+
+    public String getSignIp() {
+        return signIp;
+    }
+
+    public void setSignIp(String signIp) {
+        this.signIp = signIp;
+    }
+
+    public String getSignUserAgent() {
+        return signUserAgent;
+    }
+
+    public void setSignUserAgent(String signUserAgent) {
+        this.signUserAgent = signUserAgent;
+    }
+
+    public String getContractContentHash() {
+        return contractContentHash;
+    }
+
+    public void setContractContentHash(String contractContentHash) {
+        this.contractContentHash = contractContentHash;
+    }
+
     @Override
     public String toString() {
-        return "Contract{" + "contractId=" + contractId + ", employeeId=" + employeeId + ", startDate=" + startDate + ", endDate=" + endDate + ", baseSalary=" + baseSalary + ", allowance=" + allowance + ", contractType=" + contractType + ", status=" + status + ", note=" + note + ", signedAt=" + signedAt + ", signedBy=" + signedBy + '}';
+        return "Contract{" + "contractId=" + contractId + ", employeeId=" + employeeId + ", startDate=" + startDate + ", endDate=" + endDate + ", baseSalary=" + baseSalary + ", allowance=" + allowance + ", contractType=" + contractType + ", status=" + status + ", note=" + note + ", signedAt=" + signedAt + ", signedBy=" + signedBy + ", employeeSignaturePath=" + employeeSignaturePath + ", signatureHash=" + signatureHash + ", signIp=" + signIp + ", signUserAgent=" + signUserAgent + ", contractContentHash=" + contractContentHash + '}';
     }
 
 }

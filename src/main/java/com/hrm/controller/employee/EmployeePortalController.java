@@ -3,12 +3,15 @@ package com.hrm.controller.employee;
 import com.hrm.controller.EmailSender;
 import com.hrm.dao.AttendanceDAO;
 import com.hrm.dao.ContractDAO;
+import com.hrm.dao.ContractDocumentDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.MailRequestDAO;
 import com.hrm.dao.OfficeLocationDAO;
 import com.hrm.dao.PayrollDAO;
 import com.hrm.dao.TaskDAO;
 import com.hrm.dao.WorkScheduleDAO;
+import com.hrm.model.entity.Contract;
+import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.EmployeeWorkSchedule;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.MailRequest;
@@ -23,8 +26,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +49,7 @@ public class EmployeePortalController extends HttpServlet {
     private final OfficeLocationDAO officeLocationDAO = new OfficeLocationDAO();
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
     private final ContractDAO contractDAO = new ContractDAO();
+    private final ContractDocumentDAO contractDocumentDAO = new ContractDocumentDAO();
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final MailRequestDAO mailRequestDAO = new MailRequestDAO();
     private final TaskDAO taskDAO = new TaskDAO();
@@ -62,6 +72,7 @@ public class EmployeePortalController extends HttpServlet {
             case "/leaves" -> showLeaves(employee.getEmployeeId(), request, response);
             case "/payroll" -> showPayroll(employee.getEmployeeId(), request, response);
             case "/contract" -> showContract(employee.getEmployeeId(), request, response);
+            case "/contract/document" -> downloadContractDocument(employee.getEmployeeId(), request, response);
             case "/tasks" -> showTasks(employee.getEmployeeId(), request, response);
             default -> showDashboard(employee.getEmployeeId(), request, response);
         }
@@ -86,6 +97,10 @@ public class EmployeePortalController extends HttpServlet {
         }
         if ("/tasks".equals(section)) {
             handleTaskUpdate(employee.getEmployeeId(), request, response);
+            return;
+        }
+        if ("/contract".equals(section)) {
+            handleContractSign(employee.getEmployeeId(), request, response);
             return;
         }
 
@@ -179,9 +194,34 @@ public class EmployeePortalController extends HttpServlet {
 
     private void showContract(int employeeId, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        Contract contract = contractDAO.getContractByEmployeeId(employeeId);
         request.setAttribute("activePage", "contract");
-        request.setAttribute("contract", contractDAO.getContractByEmployeeId(employeeId));
+        request.setAttribute("contract", contract);
+        if (contract != null) {
+            request.setAttribute("contractDocument", contractDocumentDAO.getLatestByContractId(contract.getContractId()));
+        }
         request.getRequestDispatcher("/Views/Employee/Contract.jsp").forward(request, response);
+    }
+
+    private void downloadContractDocument(int employeeId, HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int contractId = parseInt(request.getParameter("contractId"), -1);
+        Contract contract = contractId > 0 ? contractDAO.getContractById(contractId) : null;
+        if (contract == null || contract.getEmployeeId() != employeeId) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        ContractDocument document = contractDocumentDAO.getLatestByContractId(contractId);
+        if (document == null || document.getFileData() == null || document.getFileData().length == 0) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        response.setContentType(document.getContentType() != null ? document.getContentType() : "application/octet-stream");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + safeDownloadFileName(document.getFileName()) + "\"");
+        response.setContentLengthLong(document.getFileData().length);
+        response.getOutputStream().write(document.getFileData());
     }
 
     private void showTasks(int employeeId, HttpServletRequest request, HttpServletResponse response)
@@ -281,6 +321,148 @@ public class EmployeePortalController extends HttpServlet {
         request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
                 success ? "Da cap nhat trang thai cong viec." : "Khong the cap nhat cong viec nay.");
         response.sendRedirect(request.getContextPath() + "/employee/tasks");
+    }
+
+    private void handleContractSign(int employeeId, HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession();
+        int contractId = parseInt(request.getParameter("contractId"), -1);
+        SystemUser currentUser = (SystemUser) request.getAttribute("currentUser");
+        Contract contract = contractId > 0 ? contractDAO.getContractById(contractId) : null;
+
+        if (contract == null || contract.getEmployeeId() != employeeId || !isEmployeeSignable(contract.getStatus())) {
+            session.setAttribute("employeeError", "Hop dong khong hop le hoac khong con cho ky.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+        if (!"1".equals(request.getParameter("agreeDocument"))) {
+            session.setAttribute("employeeError", "Ban can xac nhan da doc va dong y voi hop dong.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+
+        ContractDocument document = contractDocumentDAO.getLatestByContractId(contractId);
+        if (document == null || !hasReadableDocument(document)) {
+            session.setAttribute("employeeError", "Hop dong chua co van ban de ky.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+
+        byte[] signatureBytes;
+        try {
+            signatureBytes = decodeSignaturePng(request.getParameter("signatureData"));
+        } catch (IllegalArgumentException ex) {
+            session.setAttribute("employeeError", ex.getMessage());
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+
+        String relativePath = "/Upload/signatures/contract_" + contractId
+                + "_user_" + (currentUser != null ? currentUser.getUserId() : 0) + "_" + System.currentTimeMillis() + ".png";
+        String absoluteSignaturePath = getServletContext().getRealPath(relativePath);
+        if (absoluteSignaturePath == null || absoluteSignaturePath.isBlank()) {
+            session.setAttribute("employeeError", "Khong xac dinh duoc thu muc luu chu ky tren server.");
+            response.sendRedirect(request.getContextPath() + "/employee/contract");
+            return;
+        }
+        Path signatureFile = Path.of(absoluteSignaturePath);
+        Files.createDirectories(signatureFile.getParent());
+        Files.write(signatureFile, signatureBytes);
+
+        String signatureHash = sha256(signatureBytes);
+        String contentHash = sha256(buildContractHashSource(contract, document).getBytes(StandardCharsets.UTF_8));
+        boolean success = contractDAO.signContractByEmployee(
+                contractId,
+                employeeId,
+                currentUser != null ? currentUser.getUserId() : 0,
+                relativePath,
+                signatureHash,
+                clientIp(request),
+                request.getHeader("User-Agent"),
+                contentHash
+        );
+
+        session.setAttribute(success ? "employeeSuccess" : "employeeError",
+                success ? "Da ky hop dong thanh cong. Hop dong da chuyen sang trang thai dang hieu luc."
+                        : "Khong the ky hop dong nay. Vui long tai lai trang va thu lai.");
+        response.sendRedirect(request.getContextPath() + "/employee/contract");
+    }
+
+    private boolean hasReadableDocument(ContractDocument document) {
+        return document != null
+                && ((document.getContent() != null && !document.getContent().trim().isEmpty())
+                || (document.getFileData() != null && document.getFileData().length > 0));
+    }
+
+    private boolean isEmployeeSignable(String status) {
+        return "Pending_Signature".equals(status) || "Approved".equals(status);
+    }
+
+    private byte[] decodeSignaturePng(String signatureData) {
+        String prefix = "data:image/png;base64,";
+        if (signatureData == null || !signatureData.startsWith(prefix)) {
+            throw new IllegalArgumentException("Vui long ky ten trong khung chu ky.");
+        }
+        try {
+            byte[] decoded = Base64.getDecoder().decode(signatureData.substring(prefix.length()));
+            if (decoded.length < 300) {
+                throw new IllegalArgumentException("Chu ky qua ngan. Vui long ky ro hon.");
+            }
+            if (decoded.length > 500_000) {
+                throw new IllegalArgumentException("Anh chu ky qua lon. Vui long xoa va ky lai.");
+            }
+            return decoded;
+        } catch (IllegalArgumentException ex) {
+            if (ex.getMessage() != null && ex.getMessage().startsWith("Chu ky")) {
+                throw ex;
+            }
+            if (ex.getMessage() != null && ex.getMessage().startsWith("Anh chu ky")) {
+                throw ex;
+            }
+            throw new IllegalArgumentException("Du lieu chu ky khong hop le.");
+        }
+    }
+
+    private String buildContractHashSource(Contract contract, ContractDocument document) {
+        return contract.getContractId() + "|"
+                + contract.getEmployeeId() + "|"
+                + contract.getStartDate() + "|"
+                + contract.getEndDate() + "|"
+                + contract.getBaseSalary() + "|"
+                + contract.getAllowance() + "|"
+                + contract.getContractType() + "|"
+                + contract.getNote() + "|"
+                + document.getTitle() + "|"
+                + document.getContent() + "|"
+                + document.getFileName() + "|"
+                + (document.getFileData() == null ? "" : sha256(document.getFileData()));
+    }
+
+    private String sha256(byte[] bytes) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(bytes);
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte value : hash) {
+                hex.append(String.format("%02x", value));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is not available.", ex);
+        }
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String safeDownloadFileName(String fileName) {
+        String cleaned = fileName == null || fileName.isBlank() ? "contract-document" : fileName.trim();
+        return cleaned.replace("\\", "_").replace("/", "_").replace("\"", "").replace("\r", "").replace("\n", "");
     }
 
     private void notifyDeptManagersAboutLeave(int requestId, Employee employee, SystemUser currentUser,

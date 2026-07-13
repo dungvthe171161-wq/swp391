@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS Contract (
     Status ENUM('Draft', 'Pending_Approval', 'Pending_Signature', 'Approved', 'Rejected', 'Active', 'Expired') NOT NULL DEFAULT 'Draft' COMMENT 'Contract status: Draft, Pending_Approval, Pending_Signature, Approved, Rejected, Active, Expired',
     SignedAt DATETIME NULL,
     SignedBy INT NULL,
+    EmployeeSignaturePath VARCHAR(500) NULL,
+    SignatureHash CHAR(64) NULL,
+    SignIp VARCHAR(45) NULL,
+    SignUserAgent VARCHAR(255) NULL,
+    ContractContentHash CHAR(64) NULL,
     FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID)
         ON DELETE CASCADE
         ON UPDATE CASCADE

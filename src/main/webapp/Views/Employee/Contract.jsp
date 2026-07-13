@@ -105,6 +105,56 @@
         .sign-confirm input {
             margin-top: 4px;
         }
+        .signature-pad-wrap {
+            margin: 14px 0;
+        }
+        .signature-pad-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--bh-primary-dark);
+            font-weight: 800;
+        }
+        .signature-pad {
+            width: 100%;
+            max-width: 640px;
+            height: 220px;
+            display: block;
+            border: 1px solid #b8cfc2;
+            border-radius: 12px;
+            background: #ffffff;
+            touch-action: none;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .signature-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .signature-clear-button {
+            min-height: 42px;
+            border: 1px solid var(--bh-border);
+            border-radius: 12px;
+            padding: 0 16px;
+            background: #fffdf8;
+            color: var(--bh-primary-dark);
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .signature-preview {
+            max-width: 320px;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--bh-border);
+            border-radius: 12px;
+            background: #fff;
+        }
+        .signature-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
@@ -146,6 +196,9 @@
                                             <c:when test="${contract.status eq 'Pending_Signature'}">
                                                 <span class="status-pill">Ch&#7901; nh&#226;n vi&#234;n k&#253;</span>
                                             </c:when>
+                                            <c:when test="${contract.status eq 'Approved'}">
+                                                <span class="status-pill">Ch&#7901; nh&#226;n vi&#234;n k&#253;</span>
+                                            </c:when>
                                             <c:when test="${contract.status eq 'Active'}">
                                                 <span class="status-pill active">&#272;ang hi&#7879;u l&#7921;c</span>
                                             </c:when>
@@ -173,27 +226,33 @@
                                     </c:if>
                                 </div>
                             </c:if>
-                            <c:if test="${empty contractDocument and (contract.status eq 'Pending_Signature' or contract.status eq 'Active')}">
+                            <c:if test="${empty contractDocument and (contract.status eq 'Pending_Signature' or contract.status eq 'Approved' or contract.status eq 'Active')}">
                                 <div class="contract-document missing">
                                     H&#7907;p &#273;&#7891;ng n&#224;y ch&#432;a c&#243; v&#259;n b&#7843;n &#273;&#237;nh k&#232;m. Vui l&#242;ng li&#234;n h&#7879; HR Staff &#273;&#7875; b&#7893; sung.
                                 </div>
                             </c:if>
 
                             <c:choose>
-                                <c:when test="${contract.status eq 'Pending_Signature'}">
+                                <c:when test="${contract.status eq 'Pending_Signature' or contract.status eq 'Approved'}">
                                     <div class="contract-sign-box">
                                         <p>H&#7907;p &#273;&#7891;ng n&#224;y &#273;&#227; &#273;&#432;&#7907;c HR duy&#7879;t. B&#7841;n c&#7847;n k&#253; x&#225;c nh&#7853;n &#273;&#7875; h&#7907;p &#273;&#7891;ng chuy&#7875;n sang tr&#7841;ng th&#225;i &#273;ang hi&#7879;u l&#7921;c.</p>
                                         <c:choose>
                                             <c:when test="${not empty contractDocument}">
-                                                <form method="post" action="${pageContext.request.contextPath}/employee/contract">
+                                                <form id="signForm" method="post" action="${pageContext.request.contextPath}/employee/contract" onsubmit="return submitSignature(event)">
                                                     <input type="hidden" name="contractId" value="${contract.contractId}">
+                                                    <input type="hidden" id="signatureData" name="signatureData">
                                                     <label class="sign-confirm" for="agreeDocument">
                                                         <input type="checkbox" id="agreeDocument" name="agreeDocument" value="1" required>
                                                         <span>T&#244;i &#273;&#227; &#273;&#7885;c v&#224; &#273;&#7891;ng &#253; v&#7899;i v&#259;n b&#7843;n h&#7907;p &#273;&#7891;ng n&#224;y.</span>
                                                     </label>
-                                                    <button class="primary-button" type="submit" onclick="return confirm('B&#7841;n x&#225;c nh&#7853;n k&#253; v&#224; ch&#7845;p nh&#7853;n h&#7907;p &#273;&#7891;ng n&#224;y?')">
-                                                        K&#253; v&#224; ch&#7845;p nh&#7853;n
-                                                    </button>
+                                                    <div class="signature-pad-wrap">
+                                                        <label class="signature-pad-label" for="signaturePad">Ch&#7919; k&#253; &#273;i&#7879;n t&#7917;</label>
+                                                        <canvas id="signaturePad" class="signature-pad" width="640" height="220"></canvas>
+                                                        <div class="signature-actions">
+                                                            <button class="signature-clear-button" type="button" onclick="clearSignature()">X&#243;a ch&#7919; k&#253;</button>
+                                                            <button class="primary-button" type="submit">K&#253; h&#7907;p &#273;&#7891;ng</button>
+                                                        </div>
+                                                    </div>
                                                 </form>
                                             </c:when>
                                             <c:otherwise>
@@ -211,6 +270,11 @@
                                 <c:when test="${contract.status eq 'Active'}">
                                     <div class="contract-sign-box">
                                         <p>H&#7907;p &#273;&#7891;ng &#273;&#227; &#273;&#432;&#7907;c k&#253; v&#224; &#273;ang c&#243; hi&#7879;u l&#7921;c.</p>
+                                        <c:if test="${not empty contract.employeeSignaturePath}">
+                                            <div class="signature-preview">
+                                                <img src="${pageContext.request.contextPath}${contract.employeeSignaturePath}" alt="Ch&#7919; k&#253; nh&#226;n vi&#234;n">
+                                            </div>
+                                        </c:if>
                                     </div>
                                 </c:when>
                             </c:choose>
@@ -225,6 +289,82 @@
     </main>
 </div>
     <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script>
+        const signatureCanvas = document.getElementById('signaturePad');
+        const signatureInput = document.getElementById('signatureData');
+        let signatureDrawing = false;
+        let signatureHasInk = false;
+
+        if (signatureCanvas) {
+            const signatureCtx = signatureCanvas.getContext('2d');
+            signatureCtx.lineWidth = 2.4;
+            signatureCtx.lineCap = 'round';
+            signatureCtx.lineJoin = 'round';
+            signatureCtx.strokeStyle = '#183c2e';
+
+            function signaturePoint(event) {
+                const rect = signatureCanvas.getBoundingClientRect();
+                return {
+                    x: (event.clientX - rect.left) * (signatureCanvas.width / rect.width),
+                    y: (event.clientY - rect.top) * (signatureCanvas.height / rect.height)
+                };
+            }
+
+            signatureCanvas.addEventListener('pointerdown', function(event) {
+                event.preventDefault();
+                signatureDrawing = true;
+                signatureCanvas.setPointerCapture(event.pointerId);
+                const point = signaturePoint(event);
+                signatureCtx.beginPath();
+                signatureCtx.moveTo(point.x, point.y);
+            });
+
+            signatureCanvas.addEventListener('pointermove', function(event) {
+                if (!signatureDrawing) return;
+                event.preventDefault();
+                const point = signaturePoint(event);
+                signatureCtx.lineTo(point.x, point.y);
+                signatureCtx.stroke();
+                signatureHasInk = true;
+            });
+
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(type) {
+                signatureCanvas.addEventListener(type, function() {
+                    signatureDrawing = false;
+                });
+            });
+        }
+
+        function clearSignature() {
+            if (!signatureCanvas) return;
+            const ctx = signatureCanvas.getContext('2d');
+            ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            signatureHasInk = false;
+            if (signatureInput) {
+                signatureInput.value = '';
+            }
+        }
+
+        function submitSignature(event) {
+            const agree = document.getElementById('agreeDocument');
+            if (agree && !agree.checked) {
+                alert('Ban can xac nhan da doc va dong y voi hop dong.');
+                event.preventDefault();
+                return false;
+            }
+            if (!signatureCanvas || !signatureHasInk) {
+                alert('Vui long ky ten trong khung chu ky.');
+                event.preventDefault();
+                return false;
+            }
+            if (!confirm('Ban xac nhan ky va chap nhan hop dong nay?')) {
+                event.preventDefault();
+                return false;
+            }
+            signatureInput.value = signatureCanvas.toDataURL('image/png');
+            return true;
+        }
+    </script>
     <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
 </body>
 </html>

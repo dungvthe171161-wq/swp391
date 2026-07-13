@@ -8,6 +8,7 @@
     <title>BetterHR - Quản lý nhân sự chuyên nghiệp</title>
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
     <style>
         :root {
             --text-primary: #1b1c19;
@@ -985,74 +986,6 @@
             border-top: 1px solid rgba(0,0,0,0.08);
         }
 
-        .chatbot-bubble {
-            position: fixed;
-            right: 28px;
-            bottom: 28px;
-            z-index: 70;
-            width: 74px;
-            height: 74px;
-            border: 0;
-            border-radius: 50%;
-            background: linear-gradient(145deg, #ffffff 0%, #eff8f1 100%);
-            box-shadow: 0 18px 42px rgba(0, 72, 47, 0.24), 0 0 0 1px rgba(0, 108, 68, 0.16);
-            display: grid;
-            place-items: center;
-            cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        .chatbot-bubble:hover {
-            transform: translateY(-4px) scale(1.04);
-            box-shadow: 0 24px 50px rgba(0, 72, 47, 0.28), 0 0 0 1px rgba(0, 108, 68, 0.20);
-        }
-
-        .chatbot-bubble::before {
-            content: "";
-            position: absolute;
-            inset: -8px;
-            border-radius: inherit;
-            border: 1px solid rgba(0, 108, 68, 0.15);
-            animation: chatbotPulse 2.4s ease-out infinite;
-        }
-
-        .chatbot-bubble img {
-            width: 46px;
-            height: 46px;
-            object-fit: contain;
-            border-radius: 50%;
-        }
-
-        .chatbot-badge {
-            position: absolute;
-            right: -2px;
-            bottom: 2px;
-            width: 25px;
-            height: 25px;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            background: var(--secondary);
-            color: #ffffff;
-            border: 2px solid #ffffff;
-        }
-
-        .chatbot-badge .material-symbols-outlined {
-            font-size: 15px;
-            font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 20;
-        }
-
-        @keyframes chatbotPulse {
-            0% {
-                opacity: 0.65;
-                transform: scale(0.92);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(1.28);
-            }
-        }
-
         .footer-inner {
             width: min(1240px, 100%);
             margin: 0 auto;
@@ -1235,18 +1168,6 @@
 
             .hero-visual {
                 display: none;
-            }
-
-            .chatbot-bubble {
-                right: 18px;
-                bottom: 18px;
-                width: 64px;
-                height: 64px;
-            }
-
-            .chatbot-bubble img {
-                width: 39px;
-                height: 39px;
             }
         }
     </style>
@@ -1667,14 +1588,7 @@
             <span>Facebook · LinkedIn · YouTube</span>
         </div>
     </footer>
-
-    <button class="chatbot-bubble" type="button" aria-label="Mở chatbot BetterHR">
-        <img src="${pageContext.request.contextPath}/image/logo/Logo.png" alt="">
-        <span class="chatbot-badge" aria-hidden="true">
-            <span class="material-symbols-outlined">smart_toy</span>
-        </span>
-    </button>
-
+    <%@ include file="AI/AI_Assistant_Widget.jspf" %>
     <script>
         function toggleDashboardDropdown() {
             const dropdown = document.getElementById('dashboardDropdown');
@@ -1720,5 +1634,6 @@
             }
         });
     </script>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
 </body>
 </html>

@@ -27,6 +27,8 @@ public class SessionSecurityFilter implements Filter {
             "/loginByGmail",
             "/logout",
             "/homepage",
+            "/api/chatbot/message",
+            "/api/chatbot/feedback",
             "/ForgotPassword",
             "/changepassRE",
             "/Views/Login.jsp",

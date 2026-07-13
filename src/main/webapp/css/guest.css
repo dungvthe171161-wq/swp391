@@ -51,20 +51,15 @@ textarea {
 
 .candidate-shell {
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: var(--guest-sidebar-collapsed) minmax(0, 1fr);
+    display: flex;
+    align-items: stretch;
     background: var(--guest-canvas);
-    transition: grid-template-columns 0.24s ease;
-}
-
-.candidate-shell:has(.candidate-sidebar:hover),
-.candidate-shell:has(.candidate-sidebar:focus-within) {
-    grid-template-columns: var(--guest-sidebar-open) minmax(0, 1fr);
 }
 
 .candidate-sidebar {
     position: sticky;
     top: 0;
+    flex: 0 0 var(--guest-sidebar-collapsed);
     width: var(--guest-sidebar-collapsed);
     height: 100vh;
     display: flex;
@@ -80,6 +75,7 @@ textarea {
 
 .candidate-sidebar:hover,
 .candidate-sidebar:focus-within {
+    flex-basis: var(--guest-sidebar-open);
     width: var(--guest-sidebar-open);
     padding: 18px 14px;
     box-shadow: 16px 0 44px rgba(0, 48, 31, 0.18);
@@ -257,6 +253,7 @@ textarea {
 }
 
 .candidate-main {
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -1260,16 +1257,15 @@ textarea {
 }
 
 @media (max-width: 1100px) {
-    .candidate-shell,
-    .candidate-shell:has(.candidate-sidebar:hover),
-    .candidate-shell:has(.candidate-sidebar:focus-within) {
-        grid-template-columns: 1fr;
+    .candidate-shell {
+        flex-direction: column;
     }
 
     .candidate-sidebar,
     .candidate-sidebar:hover,
     .candidate-sidebar:focus-within {
         position: static;
+        flex-basis: auto;
         width: 100%;
         height: auto;
         overflow: visible;

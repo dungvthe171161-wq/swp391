@@ -1,0 +1,64 @@
+<%@ page pageEncoding="UTF-8" %>
+<div class="ai-chatbot"
+     data-chatbot-root
+     data-chatbot-endpoint="${pageContext.request.contextPath}/api/chatbot/message"
+     data-chatbot-feedback-endpoint="${pageContext.request.contextPath}/api/chatbot/feedback">
+    <button class="ai-chatbot__bubble"
+            type="button"
+            aria-label="M&#7903; tr&#7907; l&#253; BetterHR"
+            aria-expanded="false"
+            data-chatbot-toggle>
+        <img src="${pageContext.request.contextPath}/image/logo/Logo.png" alt="">
+        <span class="ai-chatbot__badge" aria-hidden="true">
+            <span class="material-symbols-outlined">smart_toy</span>
+        </span>
+    </button>
+
+    <section class="ai-chatbot__panel" aria-label="Tr&#7907; l&#253; BetterHR" hidden data-chatbot-panel>
+        <header class="ai-chatbot__header">
+            <div class="ai-chatbot__identity">
+                <span class="ai-chatbot__avatar" aria-hidden="true">
+                    <span class="material-symbols-outlined">smart_toy</span>
+                </span>
+                <div>
+                    <h2>BetterHR Assistant</h2>
+                    <p>H&#7895; tr&#7907; nhanh v&#7873; HR v&#224; tuy&#7875;n d&#7909;ng</p>
+                </div>
+            </div>
+            <button class="ai-chatbot__icon-button"
+                    type="button"
+                    aria-label="&#272;&#243;ng tr&#7907; l&#253;"
+                    data-chatbot-close>
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+        </header>
+
+        <div class="ai-chatbot__messages" data-chatbot-messages>
+            <div class="ai-chatbot__message ai-chatbot__message--bot" data-chatbot-greeting>
+                Xin ch&#224;o! T&#244;i c&#243; th&#7875; h&#432;&#7899;ng d&#7851;n b&#7841;n v&#7873; &#7913;ng tuy&#7875;n, ngh&#7881; ph&#233;p, b&#7843;ng l&#432;&#417;ng, nhi&#7879;m v&#7909;, h&#7907;p &#273;&#7891;ng, ph&#7887;ng v&#7845;n, offer, &#273;&#7893;i m&#7853;t kh&#7849;u v&#224; li&#234;n h&#7879; HR.
+            </div>
+        </div>
+
+        <div class="ai-chatbot__suggestions" data-chatbot-suggestions>
+            <button type="button" data-chatbot-suggestion="C&#225;ch n&#7897;p h&#7891; s&#417;">C&#225;ch n&#7897;p h&#7891; s&#417;</button>
+            <button type="button" data-chatbot-suggestion="Xem tr&#7841;ng th&#225;i &#7913;ng tuy&#7875;n">Tr&#7841;ng th&#225;i &#7913;ng tuy&#7875;n</button>
+            <button type="button" data-chatbot-suggestion="Li&#234;n h&#7879; HR">Li&#234;n h&#7879; HR</button>
+        </div>
+
+        <form class="ai-chatbot__form" data-chatbot-form>
+            <input type="text"
+                   name="message"
+                   maxlength="500"
+                   autocomplete="off"
+                   placeholder="Nh&#7853;p c&#226;u h&#7887;i..."
+                   aria-label="Nh&#7853;p c&#226;u h&#7887;i cho tr&#7907; l&#253; BetterHR"
+                   data-chatbot-input>
+            <button class="ai-chatbot__send"
+                    type="submit"
+                    aria-label="G&#7917;i c&#226;u h&#7887;i"
+                    data-chatbot-send>
+                <span class="material-symbols-outlined" aria-hidden="true">send</span>
+            </button>
+        </form>
+    </section>
+</div>

@@ -541,7 +541,9 @@
         </style>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hr-theme.css?v=hr-staff-shell-20260630-1">
-    </head>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
+</head>
     <body class="hr-staff-page-shell">
         <%
             request.setAttribute("hrStaffSidebarActive", "candidates");
@@ -774,6 +776,8 @@
                 </section>
             </main>
         </div>
-    </body>
+        <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
+</body>
 </html>
 

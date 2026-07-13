@@ -2094,7 +2094,9 @@
                 }
             }
         </style>
-    </head>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
+</head>
     <body>
         <div class="hr-dashboard-container hr-home-shell">
             <!-- Header -->
@@ -3242,5 +3244,7 @@
                 window.history.pushState({}, '', url);
             }
         </script>
-    </body>
+        <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
+</body>
 </html>

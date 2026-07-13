@@ -31,8 +31,8 @@
     button, input, select, textarea { font-family: inherit; }
     .employee-shell {
         min-height: 100vh;
-        display: grid;
-        grid-template-columns: 276px minmax(0, 1fr);
+        display: flex;
+        align-items: stretch;
     }
     .employee-sidebar {
         position: sticky;
@@ -207,7 +207,7 @@
     .stat span { color: var(--bh-muted); }
     .stat strong { color: var(--bh-primary-dark); }
     @media (max-width: 900px) {
-        .employee-shell { grid-template-columns: 1fr; }
+        .employee-shell { flex-direction: column; }
         .employee-sidebar { position: relative; height: auto; }
         .grid-2 { grid-template-columns: 1fr; }
     }
@@ -219,16 +219,11 @@
     }
 
     .employee-shell {
-        grid-template-columns: var(--employee-sidebar-collapsed) minmax(0, 1fr);
-        transition: grid-template-columns 0.24s ease;
-    }
-
-    .employee-shell:has(.employee-sidebar:hover),
-    .employee-shell:has(.employee-sidebar:focus-within) {
-        grid-template-columns: var(--employee-sidebar-open) minmax(0, 1fr);
+        align-items: stretch;
     }
 
     .employee-sidebar {
+        flex: 0 0 var(--employee-sidebar-collapsed);
         width: var(--employee-sidebar-collapsed);
         overflow: hidden;
         padding: 22px 10px;
@@ -237,6 +232,7 @@
 
     .employee-sidebar:hover,
     .employee-sidebar:focus-within {
+        flex-basis: var(--employee-sidebar-open);
         width: var(--employee-sidebar-open);
         padding: 22px 18px;
         box-shadow: 16px 0 44px rgba(0, 48, 31, 0.18);
@@ -326,15 +322,14 @@
     }
 
     @media (max-width: 900px) {
-        .employee-shell,
-        .employee-shell:has(.employee-sidebar:hover),
-        .employee-shell:has(.employee-sidebar:focus-within) {
-            grid-template-columns: 1fr;
+        .employee-shell {
+            flex-direction: column;
         }
 
         .employee-sidebar,
         .employee-sidebar:hover,
         .employee-sidebar:focus-within {
+            flex-basis: auto;
             width: auto;
             height: auto;
             overflow: visible;
@@ -362,19 +357,17 @@
     /* Final employee sidebar hover-only fix. */
     @media (min-width: 901px) {
         .employee-shell {
-            grid-template-columns: var(--employee-sidebar-collapsed) minmax(0, 1fr) !important;
-        }
-
-        .employee-shell:has(.employee-sidebar:hover) {
-            grid-template-columns: var(--employee-sidebar-open) minmax(0, 1fr) !important;
+            flex-direction: row;
         }
 
         .employee-sidebar {
+            flex-basis: var(--employee-sidebar-collapsed) !important;
             width: var(--employee-sidebar-collapsed) !important;
             padding: 22px 10px !important;
         }
 
         .employee-sidebar:hover {
+            flex-basis: var(--employee-sidebar-open) !important;
             width: var(--employee-sidebar-open) !important;
             padding: 22px 18px !important;
         }

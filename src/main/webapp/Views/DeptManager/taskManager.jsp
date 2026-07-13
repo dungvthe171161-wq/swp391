@@ -8,6 +8,8 @@
     <title>BetterHR - Quản lý công việc</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <%@ include file="_DeptManagerStyles.jspf" %>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
 </head>
 <body>
 <div class="dept-shell">
@@ -112,5 +114,7 @@ function loadAssignees(taskId) {
         .catch(() => { target.innerHTML = '<div class="dept-alert error">Không tải được danh sách.</div>'; });
 }
 </script>
+    <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
 </body>
 </html>

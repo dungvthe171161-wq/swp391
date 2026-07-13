@@ -23,6 +23,7 @@ import java.util.List;
         "/employee", "/employee/*"
 })
 public class ModulePermissionFilter extends HttpFilter {
+    private static final String CHATBOT_FAQ_PATH = "/admin/chatbot-faqs";
     private static final String DEFAULT_ROLE_MESSAGE = "Bạn không có quyền phù hợp để truy cập khu vực này.";
     private static final String DEFAULT_PERMISSION_MESSAGE = "Bạn thiếu quyền thao tác cần thiết.";
     private static final String PERMISSION_VIEW_DEPARTMENTS = "VIEW_DEPARTMENTS";
@@ -97,6 +98,10 @@ public class ModulePermissionFilter extends HttpFilter {
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         String path = getRequestPath(request);
+        if (CHATBOT_FAQ_PATH.equals(path)) {
+            chain.doFilter(request, response);
+            return;
+        }
         ModuleRule rule = RULES.stream()
                 .filter(r -> r.matches(path))
                 .findFirst()

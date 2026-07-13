@@ -545,6 +545,11 @@
                         <span class="material-symbols-outlined">location_on</span>
                         <span>C&#7845;u h&#236;nh GPS</span>
                     </a>
+                    <a href="${pageContext.request.contextPath}/admin/chatbot-faqs"
+                       class="nav-item ${activePage == 'chatbot-faqs' ? 'active' : ''}">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        <span>FAQ chatbot</span>
+                    </a>
 
                     <a href="${pageContext.request.contextPath}/admin?action=audit-log"
                        class="nav-item ${activePage == 'audit-log' ? 'active' : ''}">

@@ -42,6 +42,8 @@
         .hint { color: #6b7280; font-size: 13px; margin: 6px 0 0; }
         @media (max-width: 820px) { .summary, .form-grid { grid-template-columns: 1fr; } .status-line { align-items: flex-start; flex-direction: column; } }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
 </head>
 <body>
 <main class="page">
@@ -144,5 +146,7 @@
         </div>
     </section>
 </main>
+    <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
 </body>
 </html>

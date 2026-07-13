@@ -8,11 +8,10 @@
             120
         </session-timeout>
     </session-config>
-    
-    <!-- Welcome file -->
-<!--    <welcome-file-list>
-        <welcome-file>Views/Homepage.jsp</welcome-file>
-    </welcome-file-list>-->
+    <!-- Route the context root through HomepageController so / does not 404. -->
+    <welcome-file-list>
+        <welcome-file>homepage</welcome-file>
+    </welcome-file-list>
     
     <!-- Error pages -->
 <!--    <error-page>

@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <%@ include file="_DeptManagerStyles.jspf" %>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
 </head>
 <body>
 <div class="dept-shell">
@@ -76,5 +78,7 @@
         </section>
     </main>
 </div>
+    <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
+    <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
 </body>
 </html>

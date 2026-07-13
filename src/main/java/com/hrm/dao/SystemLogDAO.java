@@ -5,6 +5,7 @@ import com.hrm.model.entity.SystemLog;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -157,7 +158,7 @@ public class SystemLogDAO {
 
     public List<SystemLog> getAllSystemLogsWithUserInfo() {
         List<SystemLog> logs = new ArrayList<>();
-        String query = "SELECT sl.*, e.FullName as UserName "
+        String query = "SELECT sl.*, su.Username, e.FullName "
                   + "FROM SystemLog sl "
                   + "LEFT JOIN SystemUser su ON sl.UserID = su.UserID "
                   + "LEFT JOIN Employee e ON su.EmployeeID = e.EmployeeID "
@@ -310,8 +311,8 @@ public class SystemLogDAO {
         log.setNewValue(rs.getString("NewValue"));
         log.setTimestamp(rs.getTimestamp("Timestamp").toLocalDateTime());
 
-        String fullName = rs.getString("FullName");
-        String username = rs.getString("Username");
+        String fullName = getStringIfPresent(rs, "FullName");
+        String username = getStringIfPresent(rs, "Username");
 
         if (fullName != null && !fullName.trim().isEmpty()) {
             log.setUserName(fullName);
@@ -323,7 +324,15 @@ public class SystemLogDAO {
 
         return log;
     }
-
+    private String getStringIfPresent(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
+            if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))) {
+                return rs.getString(columnName);
+            }
+        }
+        return null;
+    }
     public int getTotalSystemLogCount(String searchQuery, String filterAction, String filterObjectType) {
         String query = "SELECT COUNT(sl.LogID) "
                   + "FROM SystemLog sl "

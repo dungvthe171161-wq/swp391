@@ -1,27 +1,38 @@
-# Tinh nang Guest: Lich phong van
+# Tính năng Guest: Lịch phỏng vấn
 
-Trang thai: Da cap nhat theo code ngay 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Ngôn ngữ: tiếng Việt có dấu.
 
-## Pham vi
-- HR/HR Staff quan ly lich phong van cua tung Application.
-- Guest xem lich phong van sap toi trong dashboard va nhan notification/email khi lich thay doi.
+## Actor và phạm vi
+- HR/HR Staff quản lý lịch phỏng vấn của từng `Application`.
+- Guest xem lịch phỏng vấn sắp tới trong dashboard và nhận notification/email khi lịch thay đổi.
 
-## Da trien khai
-- Route HR: `/hrstaff/interviews/schedule`.
-- HR chon Application va tao lich phong van voi vong phong van, thoi gian, dia diem/link meeting, nguoi phong van, ghi chu.
-- HR sua/doi lich bang `interviewId`; lich cap nhat sang `Rescheduled`.
-- HR huy lich; `Interview.Status = Cancelled`.
-- HR cap nhat ket qua Pass/Fail:
+## Route, controller và JSP liên quan
+- HR route: `/hrstaff/interviews/schedule`.
+- Guest dashboard: `/guest/dashboard`.
+- Controller/DAO: `InterviewScheduleController`, `InterviewDAO`, `GuestPortalController`.
+
+## Hiện trạng code
+- HR chọn `Application` và tạo lịch phỏng vấn với vòng phỏng vấn, thời gian, địa điểm/link meeting, người phỏng vấn, ghi chú.
+- HR sửa/đổi lịch bằng `interviewId`; lịch cập nhật sang `Rescheduled`.
+- HR hủy lịch: `Interview.Status = Cancelled`.
+- HR cập nhật kết quả Pass/Fail:
   - Pass: `Interview.Status = Completed`, `Interview.Result = Passed`, Application sang `Offered`.
   - Fail: `Interview.Status = Completed`, `Interview.Result = Failed`, Application sang `Rejected`.
-- Moi thao tac dat lich/doi lich/huy/ket qua deu co co che gui email cho CandidateProfile.Email va tao notification cho Guest neu Guest co UserID.
-- Guest dashboard lay lich that tu `InterviewDAO.findUpcomingByUserId`, khong con phu thuoc card tinh.
+- Mỗi thao tác đặt lịch/đổi lịch/hủy/kết quả đều có cơ chế gửi email cho `CandidateProfile.Email` và tạo notification cho Guest nếu Guest có `UserID`.
+- Guest dashboard lấy lịch thật từ `InterviewDAO.findUpcomingByUserId`, không còn phụ thuộc card tĩnh.
 
-## Database
-- Khong can tao bang moi cho phase nay.
-- Tiep tuc dung bang `Interview`, `Application`, `CandidateProfile`, `Guest`, `Notification`.
+## Quy tắc nghiệp vụ chuẩn
+- Interview phải tham chiếu `ApplicationID`.
+- Guest chỉ xem lịch thuộc application của chính mình.
+- Đổi/hủy lịch phải thông báo cho Guest kịp thời.
 
-## Con lai / nen lam tiep
-- Nen gom tao/sua interview + update Application + notification vao workflow service co transaction.
-- Nen them audit/log cho nguoi thuc hien thay doi lich.
-- Nen test UI tren Tomcat voi data MySQL that sau deploy.
+## Code còn lệch spec hoặc cần bổ sung
+- Nên gom tạo/sửa interview + cập nhật `Application` + notification vào workflow service có transaction.
+- Nên thêm audit/log cho người thực hiện thay đổi lịch.
+- Nên test UI trên Tomcat với data MySQL thật sau deploy.
+
+## Kiểm thử tối thiểu
+- Guest A không xem được lịch phỏng vấn của Guest B.
+- Pass/Fail cập nhật đúng `Interview` và `Application.Status`.
+- Đổi/hủy lịch gửi email và notification cho Guest.

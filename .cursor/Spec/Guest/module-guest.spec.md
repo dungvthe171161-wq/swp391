@@ -1,6 +1,6 @@
 # Đặc tả module Guest: Cổng ứng viên
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -60,8 +60,9 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 
 ## Code còn lệch spec hoặc cần bổ sung
 - Code hiện chuyển offer accepted thành `Hired` ngay, chưa có trạng thái chờ tạo Employee riêng.
-- `CreateEmployeeController` hiện xóa `Guest`, trái với yêu cầu giữ lịch sử.
-- Cần thống nhất source of truth giữa `Guest`, `CandidateProfile` và `Application`.
+- Chưa có workflow service transaction trung tâm cho send/respond offer và các bước tuyển dụng.
+- `Offer` vẫn unique theo `ApplicationID`, chưa hỗ trợ nhiều offer/application.
+- Cần thống nhất source of truth giữa `Guest`, `CandidateProfile` và `Application`; bỏ dần luồng cập nhật `Guest.Status` legacy.
 
 ## Kiểm thử tối thiểu
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.

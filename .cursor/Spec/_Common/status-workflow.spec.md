@@ -1,6 +1,6 @@
 # Đặc tả dùng chung: Trạng thái nghiệp vụ
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -21,12 +21,14 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 ## Quy tắc nghiệp vụ chuẩn
 - Spec phải dùng đúng enum hiện có nếu chưa có migration.
 - Nếu muốn trạng thái chi tiết hơn, phải sửa database, DAO, controller, JSP và test cùng lúc.
+- Khi gửi offer: `Application.Status = Offered`, `Application.CurrentStep = Offer`.
 - Không cập nhật `Guest.Status` thay cho `Application.Status` trong workflow ứng tuyển mới.
 
 ## Code còn lệch spec hoặc cần bổ sung
 - Spec cũ có `InterviewScheduled`, `OfferAccepted`, `OfferDeclined`; code hiện chưa hỗ trợ các enum đó.
 - `OfferDAO.respondOffer` hiện chuyển application sang `Hired` ngay khi ứng viên accept offer.
-- `ViewCV` POST cập nhật `Guest.Status`, dễ lệch với `Application.Status`.
+- `ViewCV` fallback POST legacy vẫn cập nhật `Guest.Status`, dễ lệch với `Application.Status`.
+- Chưa có workflow service transaction trung tâm cho chuyển trạng thái tuyển dụng.
 
 ## Kiểm thử tối thiểu
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.

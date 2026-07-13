@@ -1,41 +1,34 @@
-# Spec trien khai Guest Phase 2
+# Spec triển khai Guest Phase 2
 
-Trang thai: Da cap nhat theo code ngay 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Ngôn ngữ: tiếng Việt có dấu.
 
-## Da xong
-- CandidateProfile cho Guest:
-  - Luu ho so ung tuyen mot lan.
-  - Xac nhan email bang ma trong session truoc khi luu profile.
-  - Upload CV PDF/DOC/DOCX toi da 10MB.
-- Application:
-  - Tao Application lien ket Recruitment, Guest, CandidateProfile.
-  - Chan ung tuyen trung mot Recruitment.
-- Interview:
-  - HR dat lich, doi lich, huy lich.
-  - HR cap nhat Pass/Fail.
-  - Gui email va notification cho Guest.
-  - Guest dashboard hien lich phong van that.
-- Offer:
-  - HR tao/lueu nhap/gui offer.
-  - Gui mail + notification cho Guest.
-  - Guest accept/reject offer tren `/guest/applications`.
-  - Accept cap nhat Application sang `Hired`.
-  - Guest accept/reject se gui mail + notification nguoc lai cho HR Staff/HR Manager.
-- Employee conversion:
-  - Man hinh `/hr/create-employee` chi hien ung vien da pass luong offer: `Application = Hired` va `Offer = Accepted`.
-  - Server-side cung chan tao Employee neu Guest chua co offer Accepted hop le.
-  - Sau khi tao Employee, giu lai Guest/Application history va doi `Guest.Status = Converted`.
+## Actor và phạm vi
+- Guest portal phase 2: profile, application, interview, offer và chuyển đổi sang employee.
 
-## Khong can them database o phase nay
-- Da co va dang dung: `CandidateProfile`, `Application`, `Interview`, `Offer`, `Notification`.
-- Khong can them Department/Benefit/Deadline vi thong tin nay da nam trong Recruitment hoac khong thuoc phase nay.
+## Route, controller và JSP liên quan
+- `/guest/profile`, `/guest/applications`, `/guest/dashboard`, `/guest/offer/respond`.
+- `/hrstaff/interviews/schedule`, `/hrstaff/offers/manage`, `/hr/create-employee`.
+- Controller: `GuestPortalController`, `InterviewScheduleController`, `OfferManagementController`, `CreateEmployeeController`.
 
-## Chua lam / phase tiep theo
-- Workflow service transaction trung tam cho tat ca buoc tuyen dung.
-- Tu dong tao Employee/onboarding/contract ngay khi Guest Accepted.
-- Chuyen cac man hinh CV cu tu `GuestID` sang uu tien `ApplicationID/CandidateProfileID`.
+## Hiện trạng code
+- `CandidateProfile`: lưu hồ sơ ứng tuyển, xác nhận email bằng mã trong session, upload CV PDF/DOC/DOCX tối đa 10MB.
+- `Application`: tạo liên kết `Recruitment`, `Guest`, `CandidateProfile`; chặn ứng tuyển trùng một `Recruitment`.
+- Interview: HR đặt/đổi/hủy lịch, cập nhật Pass/Fail; gửi email và notification cho Guest; dashboard Guest hiển thị lịch thật.
+- Offer: HR tạo/lưu nháp/gửi offer; gửi mail + notification; Guest accept/reject trên `/guest/applications`; accept cập nhật `Application` sang `Hired`.
+- Employee conversion: `/hr/create-employee` chỉ hiện ứng viên `Application = Hired` và `Offer = Accepted`; server-side chặn nếu chưa có offer Accepted hợp lệ; sau tạo Employee set `Guest.Status = Converted`, giữ lịch sử `Guest`/`Application`.
 
-## Verification
-- `mvn -q compile`: pass ngay 2026-07-02.
-- `mvn -q package`: pass ngay 2026-07-02.
-- Can test lai tren Tomcat/MySQL that sau deploy de xac nhan mail config va upload/static path.
+## Quy tắc nghiệp vụ chuẩn
+- Không cần thêm bảng mới cho phase này; dùng `CandidateProfile`, `Application`, `Interview`, `Offer`, `Notification`.
+- `ViewCV` và link HR nên ưu tiên `applicationId`.
+
+## Code còn lệch spec hoặc cần bổ sung
+- Workflow service transaction trung tâm cho toàn bộ bước tuyển dụng.
+- Tự động tạo Employee/onboarding/contract ngay khi Guest accepted.
+- Loại bỏ hoàn toàn luồng CV/action legacy theo `guestId` trên `ViewCV`.
+- Cần test lại trên Tomcat/MySQL thật sau deploy để xác nhận mail config và upload/static path.
+
+## Kiểm thử tối thiểu
+- `mvn -q compile` pass.
+- Guest accept offer → HR tạo employee → `Guest.Status = Converted`, lịch sử application còn nguyên.
+- Upload CV và xác thực email profile hoạt động đúng giới hạn 10MB.

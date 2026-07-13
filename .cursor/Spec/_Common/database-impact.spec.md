@@ -1,6 +1,6 @@
 # Đặc tả dùng chung: Ảnh hưởng cơ sở dữ liệu
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -16,6 +16,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - Recruitment dùng `Recruitment`, `Guest`, `CandidateProfile`, `Application`, `Interview`, `Offer`, `Notification`.
 - Employee dùng `Employee`, `Task`, `LeaveRequest`, `Payroll`, `Contract`, `Attendance`.
 - Notification schema đã có `ActorUserID`, `EntityType`, `EntityID`, `TargetUrl`, `Priority`, `ExpiresAt`.
+- `CreateEmployeeController` sau khi tạo employee set `Guest.Status = Converted`, không xóa bản ghi `Guest`.
 
 ## Quy tắc nghiệp vụ chuẩn
 - Mọi thay đổi enum phải đi kèm migration và sửa DAO/controller/JSP.
@@ -24,11 +25,10 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 
 ## Code còn lệch spec hoặc cần bổ sung
 - `Offer` đang có unique theo `ApplicationID`, nên chưa hỗ trợ nhiều offer cho một application.
-- `CreateEmployeeController` hiện xóa `Guest` sau khi tạo employee.
 - Một số thao tác phối hợp nhiều DAO chưa chạy trong transaction chung.
+- `CreateEmployeeController` chưa dùng transaction đầy đủ và chưa ghi audit.
 
 ## Kiểm thử tối thiểu
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.
 - Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
 - Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
-

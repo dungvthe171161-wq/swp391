@@ -1,6 +1,6 @@
 # Đặc tả dùng chung: Tải lên CV
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -14,7 +14,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 ## Hiện trạng code
 - Guest profile chấp nhận CV `pdf`, `doc`, `docx` tối đa 10MB.
 - File được lưu dưới thư mục upload và tên file được sinh UUID ở một số luồng.
-- `ViewCV` hiện nhận `guestId`, chưa nhận `applicationId`.
+- `ViewCV` GET/POST ưu tiên tham số `applicationId`; nếu không có thì fallback `guestId` (legacy).
 
 ## Quy tắc nghiệp vụ chuẩn
 - CV của lần ứng tuyển phải gắn với `Application`, không chỉ với `Guest`.
@@ -22,7 +22,8 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - File upload phải kiểm tra extension, kích thước và đường dẫn lưu an toàn.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Cần chuyển `/viewCV` sang tham số `applicationId` hoặc kiểm tra rõ application.
+- Fallback `guestId` trên `ViewCV` vẫn còn; cần loại bỏ khi toàn bộ JSP/link đã chuyển sang `applicationId`.
+- Fallback POST legacy vẫn cập nhật `Guest.Status` thay vì chỉ `Application`.
 - Cần thống nhất nơi lưu CV giữa `CandidateProfile` và `Application`.
 - Cần test nhiều application của cùng một Guest.
 
@@ -30,4 +31,3 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.
 - Kiểm tra đăng nhập đúng actor và truy cập đúng route chính.
 - Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.
-

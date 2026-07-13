@@ -1,39 +1,48 @@
-# Tinh nang Guest: Offer tuyen dung
+# Tính năng Guest: Offer tuyển dụng
 
-Trang thai: Da cap nhat theo code ngay 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Ngôn ngữ: tiếng Việt có dấu.
 
-## Pham vi
-- HR/HR Staff tao va gui offer cho ung vien sau phong van.
-- Guest nhan email + notification va phan hoi offer trong cong ung vien.
+## Actor và phạm vi
+- HR/HR Staff tạo và gửi offer cho ứng viên sau phỏng vấn.
+- Guest nhận email + notification và phản hồi offer trong cổng ứng viên.
 
-## Da trien khai
+## Route, controller và JSP liên quan
 - HR route: `/hrstaff/offers/manage`.
-- HR mo form offer tu danh sach ung vien hoac trang lich phong van.
-- HR tao/cap nhat ban nhap offer voi:
-  - Vi tri offer.
-  - Luong de xuat.
-  - Ngay bat dau du kien.
-  - Han phan hoi.
-  - Ghi chu.
-- HR gui offer:
+- Guest route: `/guest/applications`, POST `/guest/offer/respond`.
+- Controller/DAO: `OfferManagementController`, `OfferDAO`, `GuestPortalController`.
+- JSP: `Views/Guest/Applications.jsp`, `Views/HrStaff/ManageOffer.jsp`.
+
+## Hiện trạng code
+- HR mở form offer từ danh sách ứng viên hoặc trang lịch phỏng vấn.
+- HR tạo/cập nhật bản nháp offer với vị trí, lương đề xuất, ngày bắt đầu dự kiến, hạn phản hồi và ghi chú.
+- HR gửi offer:
   - `Offer.Status = Sent`.
   - `Application.Status = Offered`.
-  - `Application.CurrentStep = Offered`.
-  - Gui email toi `CandidateProfile.Email`, fallback `Guest.Email`.
-  - Tao notification cho Guest neu Guest co `UserID`.
-- Guest route: `/guest/applications`.
-- Guest thay block `pendingOffers` va co nut Chap nhan/Tu choi.
+  - `Application.CurrentStep = Offer` (không dùng `Offered` cho `CurrentStep`).
+  - Gửi email tới `CandidateProfile.Email`, fallback `Guest.Email`.
+  - Tạo notification cho Guest nếu Guest có `UserID`.
+- Guest thấy block `pendingOffers` và có nút Chấp nhận/Từ chối.
 - Guest POST `/guest/offer/respond`:
   - Accepted: `Offer.Status = Accepted`, `Application.Status = Hired`, `CurrentStep = Hired`.
   - Rejected: `Offer.Status = Rejected`, `Application.Status = Rejected`, `CurrentStep = Rejected`.
-- `OfferDAO.respondOffer` chi cho phep phan hoi offer thuoc dung Guest va con han.
-- Sau khi Guest accept/reject, he thong gui notification va email cho HR Staff + HR Manager.
-- Man hinh HR tao nhan vien chi hien ung vien co `Application = Hired` va `Offer = Accepted`.
+- `OfferDAO.respondOffer` chỉ cho phép phản hồi offer thuộc đúng Guest và còn hạn.
+- Sau khi Guest accept/reject, hệ thống gửi notification và email cho HR Staff + HR Manager.
+- Màn hình HR tạo nhân viên chỉ hiện ứng viên có `Application = Hired` và `Offer = Accepted`.
 
-## Database
-- Khong can tao bang moi.
-- Tiep tuc dung bang `Offer`, `Application`, `CandidateProfile`, `Guest`, `Notification`.
+## Quy tắc nghiệp vụ chuẩn
+- Offer phải gắn `ApplicationID`; Guest chỉ phản hồi offer của chính mình.
+- Phân biệt rõ `Application.Status` (`Offered`) và `Application.CurrentStep` (`Offer`).
+- Accept offer không xóa `Guest`; HR tạo Employee sau và set `Guest.Status = Converted`.
+- Nếu cần bước chờ onboarding, phải thêm enum/migration thay vì nhảy thẳng `Hired`.
 
-## Con lai / nen lam tiep
-- Chua tu dong tao Employee/onboarding/contract; HR dang tao Employee thu cong sau khi offer duoc chap nhan.
-- Nen them workflow service transaction cho send offer va respond offer neu mo rong tiep.
+## Code còn lệch spec hoặc cần bổ sung
+- Chưa tự động tạo Employee/onboarding/contract; HR tạo Employee thủ công sau khi offer được chấp nhận.
+- Accept offer nhảy thẳng `Application.Status = Hired`, chưa có trạng thái chờ tạo Employee riêng.
+- `Offer` unique theo `ApplicationID`, chưa hỗ trợ nhiều offer/application.
+- Nên thêm workflow service transaction cho send offer và respond offer.
+
+## Kiểm thử tối thiểu
+- Guest chỉ phản hồi offer thuộc user hiện tại và còn hạn.
+- Sau gửi offer, kiểm tra `Application.Status = Offered` và `CurrentStep = Offer`.
+- Accept/reject cập nhật đúng `Offer`, `Application` và gửi notification cho HR.

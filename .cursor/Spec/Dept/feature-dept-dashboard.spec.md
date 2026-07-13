@@ -1,14 +1,14 @@
 # Tính năng Dept: Bảng điều khiển phòng ban
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
 - Dept Manager xem tổng quan phòng ban.
 
 ## Route, controller và JSP liên quan
-- `/dept`, `/dept/*`, `/taskManager`, `/postTask`, `/viewTask`, `/dept/leaves`.
-- Controller: `DeptController`, `TaskManager`, `PostTask`, `ViewTask`, `DeptLeaveController`.
+- `/dept`, `/dept/*`, `/taskManager`, `/postTask`, `/dept/tasks/detail`, `/dept/leaves`.
+- Controller: `DeptController`, `TaskManager`, `PostTask`, `DeptViewTask`, `DeptLeaveController`.
 - JSP: `Views/DeptManager/*`.
 
 ## Hiện trạng code

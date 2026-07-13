@@ -1,6 +1,6 @@
 # Đặc tả module HR Staff: Vận hành nhân sự
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã rà soát theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -28,7 +28,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 | Dashboard HR Staff | `/hrstaff`, `HrStaffHomeController` | `VIEW_HRSTAFF_DASHBOARD` | Recruitment, Application, Payroll, Contract | Hiển thị số liệu vận hành. |
 | Quản lý tin tuyển dụng | `/postRecruitments`, `PostRecruitmentController` | `VIEW_RECRUITMENT`, `CREATE_RECRUITMENT`, `UPDATE_RECRUITMENT`, `DELETE_RECRUITMENT` | `Recruitment` | Action ghi không dùng chung `VIEW_RECRUITMENT`. |
 | Quản lý ứng viên | `/candidates`, `ViewCandidateController` | `MANAGE_APPLICANTS` hoặc `VIEW_APPLICATIONS` | `Application`, `Guest`, `CandidateProfile` | Dữ liệu phải theo `ApplicationID`. |
-| Xem CV | `/viewCV`, `ViewCV` | `VIEW_APPLICATION_CV` | `Application`, `CandidateProfile` | Không dùng `guestId` làm khóa chính của lần ứng tuyển. |
+| Xem CV | `/viewCV`, `ViewCV` | `VIEW_APPLICATION_CV` | `Application`, `CandidateProfile` | Ưu tiên `applicationId`; `guestId` chỉ fallback legacy. |
 | Lên lịch phỏng vấn | `/hrstaff/interviews/schedule`, `InterviewScheduleController` | `SCHEDULE_INTERVIEW` | `Interview`, `Application`, `Notification` | Cần transaction và chống tạo lịch trùng. |
 | Quản lý hợp đồng | `/hrstaff/contracts`, `/hrstaff/contracts/create` | `VIEW_CONTRACTS`, `CREATE_CONTRACT`, `UPDATE_CONTRACT` | `Contract`, `Employee` | HR Staff tạo/push duyệt, HR Manager phê duyệt. |
 | Quản lý payroll | `/hrstaff/payroll*`, `/api/payroll` | `VIEW_PAYROLLS`, `CREATE_PAYROLL`, `UPDATE_PAYROLL`, `SUBMIT_PAYROLL`, `DELETE_PAYROLL` | `Payroll`, allowance, deduction | Batch action phải kiểm tra quyền từng action. |
@@ -60,8 +60,9 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - API allowance/deduction trả JSON lỗi tiếng Việt khi dữ liệu không hợp lệ.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Cần permission riêng cho tạo recruitment, quản lý applicant và lên lịch interview.
-- `ViewCV` hiện theo `guestId`, chưa đúng nếu một Guest có nhiều application.
+- Recruitment/candidate/interview/offer còn dùng chung `VIEW_RECRUITMENT`; cần tách `MANAGE_APPLICANTS`, `SCHEDULE_INTERVIEW`, `CREATE_RECRUITMENT`.
+- Payroll HR Staff dùng `VIEW_PAYROLLS`; contract dùng `VIEW_CONTRACTS`; chưa tách quyền action ghi/duyệt.
+- `ViewCV` fallback `guestId` và POST legacy cập nhật `Guest.Status` vẫn còn.
 - Interview schedule chưa có transaction chung và guard chống lịch trùng theo application.
 
 ## Kiểm thử tối thiểu

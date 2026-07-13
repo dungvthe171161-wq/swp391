@@ -1,4 +1,3 @@
-﻿
 data base đã sửa thêm with gg
 -- =====================================================
 -- HRM DATABASE - SCRIPT GỘP HOÀN CHỈNH

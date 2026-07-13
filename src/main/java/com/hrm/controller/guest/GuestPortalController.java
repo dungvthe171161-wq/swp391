@@ -17,6 +17,7 @@ import com.hrm.model.entity.Offer;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationRecipientService;
 import com.hrm.service.NotificationService;
+import com.hrm.util.UploadPathUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -483,11 +484,7 @@ public class GuestPortalController extends HttpServlet {
         if (!extension.matches("\\.(pdf|doc|docx)")) {
             return null;
         }
-        String uploadRelativePath = "/Upload/cvs";
-        String uploadPath = getServletContext().getRealPath(uploadRelativePath);
-        Path uploadDir = uploadPath != null
-                ? Paths.get(uploadPath)
-                : Paths.get(System.getProperty("user.home"), "hrms", "Upload", "cvs");
+        Path uploadDir = UploadPathUtil.resolveCvDirectory(getServletContext());
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }

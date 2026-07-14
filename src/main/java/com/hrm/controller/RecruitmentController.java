@@ -13,6 +13,7 @@ import com.hrm.model.entity.Recruitment;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationRecipientService;
 import com.hrm.service.NotificationService;
+import com.hrm.util.UploadPathUtil;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -28,7 +29,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -439,11 +439,7 @@ public class RecruitmentController extends HttpServlet {
             return null;
         }
 
-        String uploadRelativePath = "/Upload/cvs";
-        String uploadPath = getServletContext().getRealPath(uploadRelativePath);
-        Path uploadDir = uploadPath != null
-                ? Paths.get(uploadPath)
-                : Paths.get(System.getProperty("user.home"), "hrms", "Upload", "cvs");
+        Path uploadDir = UploadPathUtil.resolveCvDirectory(getServletContext());
 
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);

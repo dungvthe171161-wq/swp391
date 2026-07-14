@@ -1,6 +1,6 @@
 # Tính năng Guest: Nộp hồ sơ ứng tuyển
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-02.
+Trạng thái: Đã cập nhật theo code ngày 2026-07-13.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -14,11 +14,13 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 ## Hiện trạng code
 - `RecruitmentController.confirmApplication` tạo `Application` status/currentStep `Applied`.
 - Có tạo notification cho ứng viên và HR Staff.
-- CV lấy từ `CandidateProfile` trong luồng mới.
+- CV lấy từ CandidateProfile.CVFilePath và được sao chép vào Application.CV tại thời điểm tạo application.
+- Upload và hiển thị CV tuân theo _Common/upload-cv.spec.md.
 
 ## Quy tắc nghiệp vụ chuẩn
 - Một Guest không được nộp trùng cùng một recruitment nếu đã có application active.
-- Application mới phải có `GuestID`, `RecruitmentID`, CV/source và ngày nộp.
+- Application mới phải có GuestID, RecruitmentID, CV/source và ngày nộp.
+- Thay CV hồ sơ sau khi đã nộp không tự động thay CV của application cũ.
 - Nộp thành công phải có trang/notification xác nhận.
 
 ## Code còn lệch spec hoặc cần bổ sung

@@ -43,3 +43,11 @@ src/main/resources/META-INF/db.local.properties
 src/main/resources/META-INF/google.properties
 src/main/resources/META-INF/mail.properties
 src/main/resources/META-INF/mail.local.properties
+
+# Generated code knowledge graph
+/graphify-out/
+
+# Runtime candidate uploads (may contain personal data)
+/src/main/webapp/Upload/cvs/*.pdf
+/src/main/webapp/Upload/cvs/*.doc
+/src/main/webapp/Upload/cvs/*.docx

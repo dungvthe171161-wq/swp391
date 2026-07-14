@@ -611,7 +611,7 @@
                                     <option value="Applied" <c:if test="${param.filterStatus eq 'Applied'}">selected</c:if>>Đã nộp</option>
                                     <option value="Screening" <c:if test="${param.filterStatus eq 'Screening'}">selected</c:if>>Sàng lọc</option>
                                     <option value="Interview" <c:if test="${param.filterStatus eq 'Interview'}">selected</c:if>>Phỏng vấn</option>
-                                    <option value="Offered" <c:if test="${param.filterStatus eq 'Offered'}">selected</c:if>>Đã gửi offer</option>
+                                    <option value="Offered" <c:if test="${param.filterStatus eq 'Offered'}">selected</c:if>>Đã qua phỏng vấn</option>
                                     <option value="Hired" <c:if test="${param.filterStatus eq 'Hired'}">selected</c:if>>Đã nhận offer</option>
                                     <option value="Rejected" <c:if test="${param.filterStatus eq 'Rejected'}">selected</c:if>>Từ chối</option>
                                 </select>
@@ -701,8 +701,9 @@
                                                         <c:choose>
                                                             <c:when test="${statusKey eq 'applied'}">Đã nộp</c:when>
                                                             <c:when test="${statusKey eq 'screening'}">Sàng lọc CV</c:when>
+                                                            <c:when test="${statusKey eq 'interview' and app.application.currentStep eq 'Offer'}">Đã qua phỏng vấn</c:when>
                                                             <c:when test="${statusKey eq 'interview'}">Phỏng vấn</c:when>
-                                                            <c:when test="${statusKey eq 'offered'}">Chờ phản hồi offer</c:when>
+                                                            <c:when test="${statusKey eq 'offered'}">Đã qua phỏng vấn</c:when>
                                                             <c:when test="${statusKey eq 'hired'}">Đã nhận offer</c:when>
                                                             <c:when test="${statusKey eq 'rejected'}">Từ chối</c:when>
                                                             <c:otherwise>${app.application.status}</c:otherwise>
@@ -712,12 +713,23 @@
                                                 <td class="candidate-job">${app.jobTitle}</td>
                                                 <td class="candidate-actions">
                                                     <div class="candidate-action-stack">
-                                                        <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${app.application.applicationId}">
-                                                            Đặt lịch
-                                                        </a>
-                                                        <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${app.application.applicationId}">
-                                                            Offer
-                                                        </a>
+                                                        <c:choose>
+                                                            <c:when test="${statusKey eq 'applied' or statusKey eq 'screening'}">
+                                                                <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${app.application.applicationId}">Đặt lịch</a>
+                                                            </c:when>
+                                                            <c:when test="${statusKey eq 'interview' and app.application.currentStep eq 'Offer'}">
+                                                                <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${app.application.applicationId}">Soạn offer</a>
+                                                            </c:when>
+                                                            <c:when test="${statusKey eq 'interview'}">
+                                                                <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${app.application.applicationId}">Xem lịch</a>
+                                                            </c:when>
+                                                            <c:when test="${statusKey eq 'offered'}">
+                                                                <a class="btn btn-primary" href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${app.application.applicationId}">Xem offer</a>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <a class="btn btn-primary" href="${pageContext.request.contextPath}/viewCV?applicationId=${app.application.applicationId}">Xem chi tiết</a>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                     </div>
                                                 </td>
                                             </tr>

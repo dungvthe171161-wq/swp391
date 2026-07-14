@@ -95,7 +95,6 @@
                     <table>
                         <thead>
                         <tr>
-                            <th>Vòng</th>
                             <th>Thời gian</th>
                             <th>Địa điểm/Link</th>
                             <th>Trạng thái</th>
@@ -106,7 +105,6 @@
                         <tbody>
                         <c:forEach var="item" items="${interviews}">
                             <tr>
-                                <td>${item.roundNo}</td>
                                 <td>${item.scheduledAt}</td>
                                 <td>
                                     <c:if test="${not empty item.location}">${item.location}<br></c:if>
@@ -117,7 +115,15 @@
                                 <td>${item.status}</td>
                                 <td>${item.result}</td>
                                 <td>
-                                    <a class="btn link" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${applicationView.application.applicationId}&interviewId=${item.interviewId}">Sửa</a>
+                                    <c:choose>
+                                        <c:when test="${item.status eq 'Scheduled' or item.status eq 'Rescheduled'}">
+                                            <a class="btn link" href="${pageContext.request.contextPath}/hrstaff/interviews/schedule?applicationId=${applicationView.application.applicationId}&interviewId=${item.interviewId}">Sửa</a>
+                                        </c:when>
+                                        <c:when test="${item.status eq 'Completed' and item.result eq 'Passed'}">
+                                            <a class="btn link" href="${pageContext.request.contextPath}/hrstaff/offers/manage?applicationId=${applicationView.application.applicationId}">Soạn offer</a>
+                                        </c:when>
+                                        <c:otherwise>Đã xử lý</c:otherwise>
+                                    </c:choose>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -141,11 +147,7 @@
                 <input type="hidden" name="applicationId" value="${applicationView.application.applicationId}">
                 <input type="hidden" name="interviewId" value="${selectedInterview.interviewId}">
                 <div class="form-grid">
-                    <div class="field">
-                        <label for="roundNo">Vòng phỏng vấn</label>
-                        <input type="number" id="roundNo" name="roundNo" min="1"
-                               value="${selectedInterview != null ? selectedInterview.roundNo : (empty param.roundNo ? 1 : param.roundNo)}" required>
-                    </div>
+
                     <div class="field">
                         <label for="scheduledAt">Thời gian</label>
                         <input type="datetime-local" id="scheduledAt" name="scheduledAt"
@@ -192,7 +194,7 @@
         </div>
     </section>
 
-    <c:if test="${selectedInterview != null}">
+    <c:if test="${selectedInterview != null and (selectedInterview.status eq 'Scheduled' or selectedInterview.status eq 'Rescheduled')}">
         <section class="card">
             <div class="body">
                 <h2 class="section-title">Kết quả hoặc hủy lịch</h2>

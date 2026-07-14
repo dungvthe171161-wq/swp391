@@ -9,6 +9,7 @@ import com.hrm.model.entity.Notification;
 import com.hrm.model.entity.Offer;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationService;
+import com.hrm.service.RecruitmentWorkflowRules;
 import com.hrm.util.PermissionUtil;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
@@ -66,6 +67,11 @@ public class OfferManagementController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/candidates?error=application");
             return;
         }
+        if (!RecruitmentWorkflowRules.canPrepareOffer(applicationView.getApplication())) {
+            response.sendError(HttpServletResponse.SC_CONFLICT,
+                    "Ứng viên chưa pass phỏng vấn để tạo hoặc gửi offer.");
+            return;
+        }
 
         String action = trimToNull(request.getParameter("action"));
         if (action == null) {
@@ -100,7 +106,7 @@ public class OfferManagementController extends HttpServlet {
             return;
         }
 
-        applicationDAO.updateStatus(applicationId, "Offered", "Offered");
+        applicationDAO.updateStatus(applicationId, "Offered", "Offer");
         Offer sentOffer = offerDAO.findById(offerId);
         boolean mailSent = sendOfferEmail(applicationView, sentOffer);
         notifyGuest(applicationView, sentOffer, PermissionUtil.getCurrentUser(request));

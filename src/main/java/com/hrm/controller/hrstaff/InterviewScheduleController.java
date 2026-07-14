@@ -4,12 +4,15 @@ import com.hrm.controller.EmailSender;
 import com.hrm.dao.ApplicationDAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.dao.InterviewDAO;
+import com.hrm.dao.OfferDAO;
 import com.hrm.model.entity.CandidateProfile;
 import com.hrm.model.entity.Guest;
 import com.hrm.model.entity.Interview;
 import com.hrm.model.entity.Notification;
+import com.hrm.model.entity.Offer;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.service.NotificationService;
+import com.hrm.service.RecruitmentWorkflowRules;
 import com.hrm.util.PermissionUtil;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
@@ -34,6 +37,7 @@ public class InterviewScheduleController extends HttpServlet {
 
     private final transient ApplicationDAO applicationDAO = new ApplicationDAO();
     private final transient InterviewDAO interviewDAO = new InterviewDAO();
+    private final transient OfferDAO offerDAO = new OfferDAO();
     private final transient EmployeeDAO employeeDAO = new EmployeeDAO();
     private final transient NotificationService notificationService = new NotificationService();
 
@@ -53,6 +57,29 @@ public class InterviewScheduleController extends HttpServlet {
         if (applicationView == null) {
             response.sendRedirect(request.getContextPath() + "/candidates?error=invalid_application");
             return;
+        }
+        for (Interview interview : interviewDAO.findByApplicationId(applicationId)) {
+            if (!isCompletedPassed(interview)) {
+                continue;
+            }
+            if (RecruitmentWorkflowRules.canPrepareOffer(applicationView.getApplication())
+                    || RecruitmentWorkflowRules.isOfferSent(applicationView.getApplication())) {
+                response.sendRedirect(request.getContextPath()
+                        + "/hrstaff/offers/manage?applicationId=" + applicationId);
+                return;
+            }
+            if ("Interview".equals(applicationView.getApplication().getStatus())
+                    && "Interview".equals(applicationView.getApplication().getCurrentStep())) {
+                if (ensureOfferDraft(applicationView, interview)
+                        && applicationDAO.updateStatus(applicationId, "Interview", "Offer")) {
+                    response.sendRedirect(request.getContextPath()
+                            + "/hrstaff/offers/manage?applicationId=" + applicationId + "&recovered=1");
+                    return;
+                }
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        "Không thể đồng bộ offer cho ứng viên đã pass.");
+                return;
+            }
         }
         Interview selectedInterview = null;
         int interviewId = parsePositiveInt(request.getParameter("interviewId"));
@@ -95,12 +122,25 @@ public class InterviewScheduleController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/candidates?error=invalid_application");
             return;
         }
+        if (!RecruitmentWorkflowRules.canScheduleInterview(applicationView.getApplication())) {
+            response.sendError(HttpServletResponse.SC_CONFLICT,
+                    "Hồ sơ không còn ở trạng thái cho phép đặt hoặc sửa lịch phỏng vấn.");
+            return;
+        }
 
         int interviewId = parsePositiveInt(request.getParameter("interviewId"));
         Interview existingInterview = interviewId > 0 ? interviewDAO.findById(interviewId) : null;
         if (interviewId > 0 && (existingInterview == null || existingInterview.getApplicationId() != applicationId)) {
             forwardForm(request, response, applicationView, null, "Không tìm thấy lịch phỏng vấn.");
             return;
+        }
+        if (existingInterview == null) {
+            List<Interview> savedInterviews = interviewDAO.findByApplicationId(applicationId);
+            if (!savedInterviews.isEmpty()) {
+                forwardForm(request, response, applicationView, savedInterviews.get(0),
+                        "Hồ sơ đã có lịch phỏng vấn. Vui lòng sửa lịch hiện tại.");
+                return;
+            }
         }
 
         Interview interview;
@@ -131,8 +171,7 @@ public class InterviewScheduleController extends HttpServlet {
         boolean emailSent = sendInterviewScheduleEmail(applicationView, interview, existingInterview != null);
         notifyGuest(applicationView, currentUser, "Interview", interviewId,
                 existingInterview == null ? "Bạn có lịch phỏng vấn mới" : "Lịch phỏng vấn đã được cập nhật",
-                "Lịch phỏng vấn vòng " + interview.getRoundNo()
-                        + " cho " + firstNonBlank(applicationView.getJobTitle(), "vị trí ứng tuyển")
+                "Lịch phỏng vấn cho " + firstNonBlank(applicationView.getJobTitle(), "vị trí ứng tuyển")
                         + " vào " + formatInterviewTime(interview.getScheduledAt()) + ".",
                 "High");
 
@@ -153,6 +192,25 @@ public class InterviewScheduleController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/candidates?error=invalid_application");
             return;
         }
+        if (isCompletedPassed(interview)) {
+            if (RecruitmentWorkflowRules.canPrepareOffer(applicationView.getApplication())
+                    || RecruitmentWorkflowRules.isOfferSent(applicationView.getApplication())) {
+                response.sendRedirect(request.getContextPath()
+                        + "/hrstaff/offers/manage?applicationId=" + interview.getApplicationId());
+                return;
+            }
+            if (!"Interview".equals(applicationView.getApplication().getStatus())
+                    || !"Interview".equals(applicationView.getApplication().getCurrentStep())
+                    || !ensureOfferDraft(applicationView, interview)
+                    || !applicationDAO.updateStatus(interview.getApplicationId(), "Interview", "Offer")) {
+                response.sendError(HttpServletResponse.SC_CONFLICT,
+                        "Kết quả đã được xử lý và không thể chuyển trạng thái hồ sơ hiện tại.");
+                return;
+            }
+            response.sendRedirect(request.getContextPath()
+                    + "/hrstaff/offers/manage?applicationId=" + interview.getApplicationId() + "&recovered=1");
+            return;
+        }
 
         String result = firstNonBlank(request.getParameter("result"), "Pending");
         if (!"Passed".equals(result) && !"Failed".equals(result)) {
@@ -160,28 +218,64 @@ public class InterviewScheduleController extends HttpServlet {
             return;
         }
         String note = trimToNull(request.getParameter("resultNote"));
-        if (!interviewDAO.updateResult(interviewId, "Completed", result, note)) {
-            forwardForm(request, response, applicationView, interview, "Không thể cập nhật kết quả phỏng vấn.");
+        if (!RecruitmentWorkflowRules.canRecordResult(interview, LocalDateTime.now())) {
+            response.sendError(HttpServletResponse.SC_CONFLICT,
+                    "Lịch phỏng vấn chưa đến hoặc đã được xử lý.");
             return;
         }
 
         boolean passed = "Passed".equals(result);
-        applicationDAO.updateStatus(
+        if (passed && !ensureOfferDraft(applicationView, interview)) {
+            forwardForm(request, response, applicationView, interview,
+                    "Không thể tạo bản nháp offer cho ứng viên đã pass.");
+            return;
+        }
+        if (!interviewDAO.updateResult(interviewId, "Completed", result, note)) {
+            forwardForm(request, response, applicationView, interview, "Không thể cập nhật kết quả phỏng vấn.");
+            return;
+        }
+        if (!applicationDAO.updateStatus(
                 interview.getApplicationId(),
-                passed ? "Offered" : "Rejected",
-                passed ? "Offered" : "Rejected"
-        );
+                passed ? "Interview" : "Rejected",
+                passed ? "Offer" : "Rejected")) {
+            forwardForm(request, response, applicationView, interview,
+                    "Không thể cập nhật trạng thái hồ sơ ứng viên.");
+            return;
+        }
+
         boolean emailSent = sendInterviewResultEmail(applicationView, passed, note);
         notifyGuest(applicationView, currentUser, "Interview", interviewId,
-                passed ? "Bạn đã vượt qua vòng phỏng vấn" : "Cập nhật kết quả phỏng vấn",
+                passed ? "Bạn đã vượt qua phỏng vấn" : "Cập nhật kết quả phỏng vấn",
                 passed
                         ? "Bạn đã vượt qua phỏng vấn cho " + firstNonBlank(applicationView.getJobTitle(), "vị trí ứng tuyển") + ". BetterHR sẽ gửi offer trong bước tiếp theo."
                         : "Cảm ơn bạn đã tham gia phỏng vấn. Hồ sơ hiện chưa phù hợp với vị trí này.",
                 "High");
 
+        if (passed) {
+            response.sendRedirect(request.getContextPath()
+                    + "/hrstaff/offers/manage?applicationId=" + interview.getApplicationId() + "&interviewPassed=1");
+            return;
+        }
         redirectAfterInterviewAction(request, response, interview.getApplicationId(), "interviewResult=1", emailSent);
     }
 
+    private boolean ensureOfferDraft(ApplicationDAO.CandidateApplicationView applicationView,
+                                     Interview interview) {
+        if (offerDAO.findByApplicationId(interview.getApplicationId()) != null) {
+            return true;
+        }
+        Offer draft = new Offer();
+        draft.setApplicationId(interview.getApplicationId());
+        draft.setPosition(firstNonBlank(applicationView.getJobTitle(), "Vị trí ứng tuyển"));
+        draft.setStatus("Draft");
+        return offerDAO.saveDraft(draft) > 0;
+    }
+
+    private boolean isCompletedPassed(Interview interview) {
+        return interview != null
+                && "Completed".equals(interview.getStatus())
+                && "Passed".equals(interview.getResult());
+    }
     private void handleCancel(HttpServletRequest request, HttpServletResponse response, SystemUser currentUser)
             throws IOException {
         int interviewId = parsePositiveInt(request.getParameter("interviewId"));
@@ -219,6 +313,9 @@ public class InterviewScheduleController extends HttpServlet {
         request.setAttribute("applicationView", applicationView);
         request.setAttribute("employees", employeeDAO.getAll());
         List<Interview> interviews = interviewDAO.findByApplicationId(applicationView.getApplication().getApplicationId());
+        if (selectedInterview == null && !interviews.isEmpty()) {
+            selectedInterview = interviews.get(0);
+        }
         request.setAttribute("interviews", interviews);
         request.setAttribute("selectedInterview", selectedInterview);
         if (error != null) {
@@ -228,10 +325,6 @@ public class InterviewScheduleController extends HttpServlet {
     }
 
     private Interview buildInterviewFromRequest(HttpServletRequest request, int applicationId) {
-        int roundNo = parsePositiveInt(request.getParameter("roundNo"));
-        if (roundNo <= 0) {
-            throw new IllegalArgumentException("Vui lòng nhập vòng phỏng vấn hợp lệ.");
-        }
 
         String scheduledAtRaw = trimToNull(request.getParameter("scheduledAt"));
         LocalDateTime scheduledAt;
@@ -255,7 +348,7 @@ public class InterviewScheduleController extends HttpServlet {
 
         Interview interview = new Interview();
         interview.setApplicationId(applicationId);
-        interview.setRoundNo(roundNo);
+        interview.setRoundNo(1);
         interview.setScheduledAt(scheduledAt);
         interview.setLocation(location);
         interview.setMeetingLink(meetingLink);
@@ -280,7 +373,6 @@ public class InterviewScheduleController extends HttpServlet {
 
                 BetterHR %s lịch phỏng vấn cho vị trí %s.
 
-                Vòng phỏng vấn: %d
                 Thời gian: %s
                 Địa điểm: %s
                 Link meeting: %s
@@ -294,7 +386,6 @@ public class InterviewScheduleController extends HttpServlet {
                 candidateName(applicationView),
                 rescheduled ? "cập nhật" : "gửi bạn",
                 jobTitle,
-                interview.getRoundNo(),
                 formatInterviewTime(interview.getScheduledAt()),
                 firstNonBlank(interview.getLocation(), "Sẽ cập nhật"),
                 firstNonBlank(interview.getMeetingLink(), "Không có"),

@@ -128,11 +128,15 @@ public class Application implements Serializable {
         if (status == null || status.isBlank()) {
             return "Chưa xác định";
         }
+        if (("Interview".equals(status) && "Offer".equals(currentStep))
+                || "Offered".equals(status)) {
+            return "Đã qua phỏng vấn";
+        }
         return switch (status) {
             case "Applied" -> "Đã nộp hồ sơ";
             case "Screening" -> "Đang sàng lọc";
             case "Interview" -> "Phỏng vấn";
-            case "Offered" -> "Đã gửi offer";
+            case "Offered" -> "Đã qua phỏng vấn";
             case "Rejected" -> "Từ chối";
             case "Withdrawn" -> "Đã rút hồ sơ";
             case "Hired" -> "Đã tuyển";

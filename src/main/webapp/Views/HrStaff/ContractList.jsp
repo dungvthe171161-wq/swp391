@@ -512,6 +512,56 @@
                 background: #4b5563;
             }
 
+            .signature-view-box {
+                border: 1px solid #bbf7d0;
+                background: #f0fdf4;
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 20px;
+            }
+
+            .signature-view-title {
+                color: #065f46;
+                font-weight: 800;
+                margin: 0 0 12px;
+                font-size: 15px;
+            }
+
+            .signature-image-card {
+                width: 100%;
+                max-width: 360px;
+                background: #fff;
+                border: 1px solid #d1d5db;
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+
+            .signature-image-card img {
+                display: block;
+                width: 100%;
+                height: auto;
+                max-height: 180px;
+                object-fit: contain;
+            }
+
+            .signature-meta {
+                display: grid;
+                grid-template-columns: 140px 1fr;
+                gap: 8px 12px;
+                font-size: 13px;
+                color: var(--text);
+            }
+
+            .signature-meta span {
+                color: var(--muted);
+                font-weight: 600;
+            }
+
+            .signature-meta strong {
+                word-break: break-word;
+            }
+
             @media (max-width: 768px) {
                 .filters {
                     grid-template-columns: 1fr;
@@ -521,6 +571,9 @@
                 }
                 .table-container {
                     overflow-x: scroll;
+                }
+                .signature-meta {
+                    grid-template-columns: 1fr;
                 }
             }
         </style>
@@ -1074,6 +1127,23 @@
                             Ghi chú bổ sung cho hợp đồng (không bắt buộc)
                         </div>
                     </div>
+
+                    <% if (editingContract.getEmployeeSignaturePath() != null && !editingContract.getEmployeeSignaturePath().trim().isEmpty()) { %>
+                    <div class="signature-view-box">
+                        <p class="signature-view-title">Chữ ký điện tử của nhân viên</p>
+                        <div class="signature-image-card">
+                            <img src="<%= request.getContextPath() + editingContract.getEmployeeSignaturePath() %>" alt="Chữ ký nhân viên">
+                        </div>
+                        <div class="signature-meta">
+                            <span>Thời gian ký</span>
+                            <strong><%= editingContract.getSignedAt() != null ? editingContract.getSignedAt().toString() : "Chưa có" %></strong>
+                        </div>
+                    </div>
+                    <% } else if ("Active".equals(editingContract.getStatus())) { %>
+                    <div class="signature-view-box" style="border-color:#fde68a;background:#fffbeb;">
+                        <p class="signature-view-title" style="color:#92400e;">Hợp đồng đang hiệu lực nhưng chưa có ảnh chữ ký để hiển thị.</p>
+                    </div>
+                    <% } %>
 
                     <div class="form-actions">
                         <button type="button" class="btn btn-cancel" onclick="closeEditModal()">

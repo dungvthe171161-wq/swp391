@@ -222,6 +222,11 @@ public class ContractDAO {
                     row.put("note", rs.getString("Notes"));
                     row.put("signedAt", rs.getTimestamp("SignedAt"));
                     row.put("signedBy", rs.getObject("SignedBy"));
+                    row.put("employeeSignaturePath", rs.getString("EmployeeSignaturePath"));
+                    row.put("signatureHash", rs.getString("SignatureHash"));
+                    row.put("signIp", rs.getString("SignIp"));
+                    row.put("signUserAgent", rs.getString("SignUserAgent"));
+                    row.put("contractContentHash", rs.getString("ContractContentHash"));
                     results.add(row);
                 }
             }
@@ -313,6 +318,11 @@ public class ContractDAO {
                     row.put("note", rs.getString("Notes"));
                     row.put("signedAt", rs.getTimestamp("SignedAt"));
                     row.put("signedBy", rs.getObject("SignedBy"));
+                    row.put("employeeSignaturePath", rs.getString("EmployeeSignaturePath"));
+                    row.put("signatureHash", rs.getString("SignatureHash"));
+                    row.put("signIp", rs.getString("SignIp"));
+                    row.put("signUserAgent", rs.getString("SignUserAgent"));
+                    row.put("contractContentHash", rs.getString("ContractContentHash"));
                     results.add(row);
                 }
             }

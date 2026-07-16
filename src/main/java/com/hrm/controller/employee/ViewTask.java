@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpSession;
  *
  * @author DELL
  */
-@WebServlet(name="ViewTask", urlPatterns={"/viewTask"})
+@WebServlet(name="EmployeeViewTask", urlPatterns={"/employee/view-task"})
 public class ViewTask extends HttpServlet {
    
     /** 

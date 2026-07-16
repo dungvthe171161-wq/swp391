@@ -15,7 +15,7 @@ public class DeptDashboardDAO {
         counts.put("activeEmployees", countEmployees(departmentId, "Active"));
         counts.put("pendingLeaves", countPendingLeaves(departmentId));
         counts.put("totalTasks", countTasks(managerEmployeeId, null));
-        counts.put("completedTasks", countTasks(managerEmployeeId, "Completed"));
+        counts.put("completedTasks", countTasks(managerEmployeeId, "Approved"));
         counts.put("waitingTasks", countTasks(managerEmployeeId, "Waiting"));
         counts.put("inProgressTasks", countTasks(managerEmployeeId, "In Progress"));
         counts.put("overdueTasks", countOverdueTasks(managerEmployeeId));
@@ -78,7 +78,7 @@ public class DeptDashboardDAO {
             FROM Task
             WHERE AssignedBy = ?
               AND DueDate < CURRENT_DATE()
-              AND Status NOT IN ('Completed', 'Rejected')
+              AND Status NOT IN ('Submitted', 'Approved', 'Rejected', 'Cancelled')
         """;
         return countOneInt(sql, managerEmployeeId);
     }

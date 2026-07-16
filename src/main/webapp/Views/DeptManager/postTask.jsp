@@ -20,7 +20,7 @@
             </c:if>
             <section class="dept-panel">
                 <div class="dept-panel-inner">
-                    <form action="${pageContext.request.contextPath}/postTask" method="post">
+                    <form action="${pageContext.request.contextPath}/postTask" method="post" enctype="multipart/form-data">
                         <div class="dept-field" style="margin-bottom:14px;">
                             <label>Tên công việc</label>
                             <input type="text" name="title" required maxlength="50">
@@ -32,11 +32,23 @@
                         <div class="dept-form-grid" style="margin-bottom:14px;">
                             <div class="dept-field">
                                 <label>Ngày bắt đầu</label>
-                                <input type="date" name="startDate" required>
+                                <input type="datetime-local" name="startDate" id="taskStartDate" required>
                             </div>
                             <div class="dept-field">
-                                <label>Ngày hết hạn</label>
-                                <input type="date" name="dueDate" required>
+                                <label>Deadline</label>
+                                <input type="datetime-local" name="dueDate" id="taskDueDate" required>
+                            </div>
+                            <div class="dept-field">
+                                <label>Mức độ ưu tiên</label>
+                                <select name="priority" required>
+                                    <option value="Low">Thấp</option>
+                                    <option value="Normal" selected>Thường</option>
+                                    <option value="High">Cao</option>
+                                </select>
+                            </div>
+                            <div class="dept-field">
+                                <label>File đính kèm</label>
+                                <input type="file" name="attachment">
                             </div>
                         </div>
                         <div class="dept-field" style="margin-bottom:14px;">
@@ -60,5 +72,22 @@
         </section>
     </main>
 </div>
+<script>
+const now = new Date();
+now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+const minDateTime = now.toISOString().slice(0, 16);
+const startInput = document.getElementById('taskStartDate');
+const dueInput = document.getElementById('taskDueDate');
+if (startInput && dueInput) {
+    startInput.min = minDateTime;
+    dueInput.min = minDateTime;
+    startInput.addEventListener('change', () => {
+        dueInput.min = startInput.value || minDateTime;
+        if (dueInput.value && startInput.value && dueInput.value < startInput.value) {
+            dueInput.value = startInput.value;
+        }
+    });
+}
+</script>
 </body>
 </html>

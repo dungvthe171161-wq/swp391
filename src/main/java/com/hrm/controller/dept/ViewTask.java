@@ -13,8 +13,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @WebServlet(name = "ViewTask", urlPatterns = {"/viewTask"})
 public class ViewTask extends HttpServlet {
@@ -89,24 +94,34 @@ public class ViewTask extends HttpServlet {
         String description = clean(request.getParameter("description"));
         String startDate = clean(request.getParameter("startDate"));
         String dueDate = clean(request.getParameter("dueDate"));
+        String priority = clean(request.getParameter("priority"));
 
+        LocalDateTime start = parseDateTime(startDate);
+        LocalDateTime due = parseDateTime(dueDate);
         if (title == null || title.isBlank() || title.length() > 50
-                || startDate == null || dueDate == null || startDate.compareTo(dueDate) > 0) {
+                || start == null || due == null || start.isAfter(due)
+                || !List.of("Low", "Normal", "High").contains(priority)) {
             response.sendRedirect(request.getContextPath() + "/viewTask?id=" + taskId + "&error=" + URLEncoder.encode("Dữ liệu công việc không hợp lệ", StandardCharsets.UTF_8));
             return;
         }
 
-        boolean success = DAO.getInstance().updateTask(taskId, title, description, startDate, dueDate);
+        boolean success = DAO.getInstance().updateTask(taskId, title, description, startDate, dueDate, priority, null, false);
         if (success) {
-            DAO.getInstance().deleteTaskAssignments(taskId);
             String[] assignToIds = request.getParameterValues("assignTo");
+            Set<Integer> selectedEmployeeIds = new HashSet<>();
             if (assignToIds != null) {
                 for (String empIdStr : assignToIds) {
                     int empId = parseInt(empIdStr, -1);
                     Employee assignee = DAO.getInstance().getEmp(empId);
                     if (assignee != null && assignee.getDepartmentId() == scope.getDepartmentId()) {
+                        selectedEmployeeIds.add(empId);
                         DAO.getInstance().assignTaskToEmployee(taskId, empId);
                     }
+                }
+            }
+            for (Integer currentEmpId : DAO.getInstance().getEmployeeIdsByTaskId(taskId)) {
+                if (!selectedEmployeeIds.contains(currentEmpId)) {
+                    DAO.getInstance().unassignWaitingTaskEmployee(taskId, currentEmpId);
                 }
             }
             response.sendRedirect(request.getContextPath() + "/viewTask?id=" + taskId + "&mess=" + URLEncoder.encode("Đã cập nhật công việc thành công", StandardCharsets.UTF_8));
@@ -128,6 +143,18 @@ public class ViewTask extends HttpServlet {
             return value == null || value.isBlank() ? fallback : Integer.parseInt(value);
         } catch (NumberFormatException ex) {
             return fallback;
+        }
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        try {
+            String normalized = value == null ? "" : value.trim();
+            if (normalized.length() == 10) {
+                return LocalDate.parse(normalized).atStartOfDay();
+            }
+            return LocalDateTime.parse(normalized.replace(' ', 'T'));
+        } catch (DateTimeParseException ex) {
+            return null;
         }
     }
 }

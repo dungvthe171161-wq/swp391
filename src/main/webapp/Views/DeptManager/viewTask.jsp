@@ -27,14 +27,22 @@
                 <div class="dept-panel-inner">
                     <form action="${pageContext.request.contextPath}/viewTask" method="post">
                         <input type="hidden" name="taskId" value="${task.taskId}">
-                        <div class="dept-form-grid" style="grid-template-columns:2fr 1fr;">
+                        <div class="dept-form-grid" style="grid-template-columns:2fr 1fr 1fr;">
                             <div class="dept-field">
                                 <label>Tên công việc</label>
                                 <input type="text" name="title" value="${task.title}" required maxlength="50">
                             </div>
                             <div class="dept-field">
-                                <label>Trạng thái</label>
+                                <label>Trạng thái chung</label>
                                 <input type="text" value="${task.status}" readonly>
+                            </div>
+                            <div class="dept-field">
+                                <label>Mức độ ưu tiên</label>
+                                <select name="priority" required>
+                                    <option value="Low" ${task.priority eq 'Low' ? 'selected' : ''}>Thấp</option>
+                                    <option value="Normal" ${empty task.priority || task.priority eq 'Normal' ? 'selected' : ''}>Thường</option>
+                                    <option value="High" ${task.priority eq 'High' ? 'selected' : ''}>Cao</option>
+                                </select>
                             </div>
                         </div>
                         <div class="dept-field" style="margin-top:14px;">
@@ -43,14 +51,20 @@
                         </div>
                         <div class="dept-form-grid" style="margin-top:14px;">
                             <div class="dept-field">
-                                <label>Ngày bắt đầu</label>
-                                <input type="date" name="startDate" value="${task.startDate}" required>
+                                <label>Thời gian bắt đầu</label>
+                                <input type="datetime-local" name="startDate" id="taskStartDate" value="${task.startDate}" required>
                             </div>
                             <div class="dept-field">
-                                <label>Ngày hết hạn</label>
-                                <input type="date" name="dueDate" value="${task.dueDate}" required>
+                                <label>Deadline</label>
+                                <input type="datetime-local" name="dueDate" id="taskDueDate" value="${task.dueDate}" required>
                             </div>
                         </div>
+                        <c:if test="${not empty task.attachmentPath}">
+                            <div class="dept-field" style="margin-top:14px;">
+                                <label>File đính kèm</label>
+                                <a href="${pageContext.request.contextPath}/${task.attachmentPath}" target="_blank">${task.attachmentPath}</a>
+                            </div>
+                        </c:if>
                         <div class="dept-field" style="margin-top:14px;">
                             <label>Giao cho</label>
                             <div class="dept-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
@@ -80,5 +94,19 @@
 </div>
     <%@ include file="../AI/AI_Assistant_Widget.jspf" %>
     <script charset="UTF-8" src="${pageContext.request.contextPath}/js/chatbot.js"></script>
+<script>
+const startInput = document.getElementById('taskStartDate');
+const dueInput = document.getElementById('taskDueDate');
+if (startInput && dueInput) {
+    const syncDueMin = () => {
+        dueInput.min = startInput.value || '';
+        if (dueInput.value && startInput.value && dueInput.value < startInput.value) {
+            dueInput.value = startInput.value;
+        }
+    };
+    syncDueMin();
+    startInput.addEventListener('change', syncDueMin);
+}
+</script>
 </body>
 </html>

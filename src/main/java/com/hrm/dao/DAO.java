@@ -695,13 +695,11 @@ public class DAO {
             t.setTitle(rs.getString("Title"));
             t.setDescription(rs.getString("Description"));
             t.setAssignedBy(rs.getInt("AssignedBy"));
-            if (rs.getDate("StartDate") != null) {
-                t.setStartDate(rs.getDate("StartDate").toLocalDate());
-            }
-            if (rs.getDate("DueDate") != null) {
-                t.setDueDate(rs.getDate("DueDate").toLocalDate());
-            }
+            t.setStartDate(getLocalDateTime(rs, "StartDate"));
+            t.setDueDate(getLocalDateTime(rs, "DueDate"));
             t.setStatus(rs.getString("Status"));
+            t.setPriority(rs.getString("Priority"));
+            t.setAttachmentPath(rs.getString("AttachmentPath"));
             list.add(t);
         }
     } catch (SQLException e) {
@@ -768,13 +766,11 @@ public class DAO {
             t.setTitle(rs.getString("Title"));
             t.setDescription(rs.getString("Description"));
             t.setAssignedBy(rs.getInt("AssignedBy"));
-            if (rs.getDate("StartDate") != null) {
-                t.setStartDate(rs.getDate("StartDate").toLocalDate());
-            }
-            if (rs.getDate("DueDate") != null) {
-                t.setDueDate(rs.getDate("DueDate").toLocalDate());
-            }
+            t.setStartDate(getLocalDateTime(rs, "StartDate"));
+            t.setDueDate(getLocalDateTime(rs, "DueDate"));
             t.setStatus(rs.getString("Status"));
+            t.setPriority(rs.getString("Priority"));
+            t.setAttachmentPath(rs.getString("AttachmentPath"));
             list.add(t);
         }
     } catch (SQLException e) {
@@ -859,13 +855,11 @@ public class DAO {
                 t.setTitle(rs.getString("Title"));
                 t.setDescription(rs.getString("Description"));
                 t.setAssignedBy(rs.getInt("AssignedBy"));
-                if (rs.getDate("StartDate") != null) {
-                    t.setStartDate(rs.getDate("StartDate").toLocalDate());
-                }
-                if (rs.getDate("DueDate") != null) {
-                    t.setDueDate(rs.getDate("DueDate").toLocalDate());
-                }
+                t.setStartDate(getLocalDateTime(rs, "StartDate"));
+                t.setDueDate(getLocalDateTime(rs, "DueDate"));
                 t.setStatus(rs.getString("Status"));
+                t.setPriority(rs.getString("Priority"));
+                t.setAttachmentPath(rs.getString("AttachmentPath"));
                 return t;
             }
         } catch (SQLException e) {
@@ -875,22 +869,33 @@ public class DAO {
     }
 
     public int createTask(String title, String description, int assignedBy, String startDate, String dueDate) {
-        String sql = "INSERT INTO Task (Title, Description, AssignedBy, StartDate, DueDate, Status) VALUES (?, ?, ?, ?, ?, ?)";
+        return createTask(title, description, assignedBy, startDate, dueDate, "Normal", null);
+    }
+
+    public int createTask(String title, String description, int assignedBy, String startDate,
+                          String dueDate, String priority, String attachmentPath) {
+        String sql = """
+            INSERT INTO Task
+                (Title, Description, AssignedBy, StartDate, DueDate, Status, Priority, AttachmentPath)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """;
         try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, title);
             ps.setString(2, description);
             ps.setInt(3, assignedBy);
             if (startDate != null && !startDate.trim().isEmpty()) {
-                ps.setDate(4, java.sql.Date.valueOf(startDate));
+                ps.setTimestamp(4, Timestamp.valueOf(parseTaskDateTime(startDate, false)));
             } else {
-                ps.setDate(4, new java.sql.Date(System.currentTimeMillis()));
+                ps.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
             }
             if (dueDate != null && !dueDate.trim().isEmpty()) {
-                ps.setDate(5, java.sql.Date.valueOf(dueDate));
+                ps.setTimestamp(5, Timestamp.valueOf(parseTaskDateTime(dueDate, true)));
             } else {
-                ps.setNull(5, java.sql.Types.DATE);
+                ps.setNull(5, java.sql.Types.TIMESTAMP);
             }
-            ps.setString(6, "In Progress");
+            ps.setString(6, "Waiting");
+            ps.setString(7, normalizeTaskPriority(priority));
+            ps.setString(8, attachmentPath);
             if (ps.executeUpdate() == 0) {
                 return 0;
             }
@@ -1280,22 +1285,38 @@ public List<Integer> getEmployeeIdsByTaskId(int taskId) {
     return empIds;
 }
     public boolean updateTask(int taskId, String title, String description, String startDate, String dueDate) {
-    String sql = "UPDATE Task SET Title = ?, Description = ?, StartDate = ?, DueDate = ? WHERE TaskID = ?";
+    return updateTask(taskId, title, description, startDate, dueDate, null, null, false);
+}
+
+    public boolean updateTask(int taskId, String title, String description, String startDate,
+                              String dueDate, String priority, String attachmentPath,
+                              boolean replaceAttachment) {
+    StringBuilder sql = new StringBuilder("UPDATE Task SET Title = ?, Description = ?, StartDate = ?, DueDate = ?, Priority = ?");
+    if (replaceAttachment) {
+        sql.append(", AttachmentPath = ?");
+    }
+    sql.append(" WHERE TaskID = ?");
     
-    try (PreparedStatement ps = con.prepareStatement(sql)) {
+    try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
         ps.setString(1, title);
         ps.setString(2, description);
         if (startDate != null && !startDate.isEmpty()) {
-            ps.setDate(3, java.sql.Date.valueOf(startDate));
+            ps.setTimestamp(3, Timestamp.valueOf(parseTaskDateTime(startDate, false)));
         } else {
-            ps.setNull(3, java.sql.Types.DATE);
+            ps.setNull(3, java.sql.Types.TIMESTAMP);
         }
         if (dueDate != null && !dueDate.isEmpty()) {
-            ps.setDate(4, java.sql.Date.valueOf(dueDate));
+            ps.setTimestamp(4, Timestamp.valueOf(parseTaskDateTime(dueDate, true)));
         } else {
-            ps.setNull(4, java.sql.Types.DATE);
+            ps.setNull(4, java.sql.Types.TIMESTAMP);
         }
-        ps.setInt(5, taskId);
+        ps.setString(5, normalizeTaskPriority(priority));
+        if (replaceAttachment) {
+            ps.setString(6, attachmentPath);
+            ps.setInt(7, taskId);
+        } else {
+            ps.setInt(6, taskId);
+        }
         
         int result = ps.executeUpdate();
         return result > 0;
@@ -1317,7 +1338,11 @@ public List<Integer> getEmployeeIdsByTaskId(int taskId) {
     }
 }
     public boolean assignTaskToEmployee(int taskId, int empId) {
-    String sql = "INSERT INTO assignlist (taskId, empId) VALUES (?, ?)";
+    String sql = """
+        INSERT INTO assignlist (taskId, empId, Status)
+        VALUES (?, ?, 'Waiting')
+        ON DUPLICATE KEY UPDATE id = id
+    """;
     try (PreparedStatement ps = con.prepareStatement(sql)) {
         ps.setInt(1, taskId);
         ps.setInt(2, empId);
@@ -1327,5 +1352,45 @@ public List<Integer> getEmployeeIdsByTaskId(int taskId) {
         e.printStackTrace();
         return false;
     }
+}
+
+public boolean unassignWaitingTaskEmployee(int taskId, int empId) {
+    String sql = "DELETE FROM assignlist WHERE taskId = ? AND empId = ? AND Status = 'Waiting'";
+    try (PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setInt(1, taskId);
+        ps.setInt(2, empId);
+        return ps.executeUpdate() >= 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
+private String normalizeTaskPriority(String priority) {
+    if (priority == null || priority.isBlank()) {
+        return "Normal";
+    }
+    String value = priority.trim();
+    if ("Low".equals(value) || "Normal".equals(value) || "High".equals(value)) {
+        return value;
+    }
+    return "Normal";
+}
+
+private LocalDateTime getLocalDateTime(ResultSet rs, String column) throws SQLException {
+    Timestamp value = rs.getTimestamp(column);
+    return value != null ? value.toLocalDateTime() : null;
+}
+
+private LocalDateTime parseTaskDateTime(String value, boolean endOfDayForDateOnly) {
+    String normalized = value == null ? "" : value.trim();
+    if (normalized.isEmpty()) {
+        return null;
+    }
+    if (normalized.length() == 10) {
+        return java.time.LocalDate.parse(normalized)
+                .atTime(endOfDayForDateOnly ? 23 : 0, endOfDayForDateOnly ? 59 : 0);
+    }
+    return LocalDateTime.parse(normalized.replace(' ', 'T'));
 }
 }

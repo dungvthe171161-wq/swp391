@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetterHR - C&#244;ng vi&#7879;c</title>
+    <title>BetterHR - Cong viec</title>
     <%@ include file="_EmployeeStyles.jspf" %>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
@@ -16,8 +16,8 @@
     <main class="employee-main">
         <%@ include file="_EmployeeTopbar.jspf" %>
         <div class="content">
-            <h1 class="page-title">C&#244;ng vi&#7879;c c&#7911;a t&#244;i</h1>
-            <p class="page-note">Danh s&#225;ch l&#7845;y t&#7915; Task v&#224; assignList theo EmployeeID c&#7911;a b&#7841;n.</p>
+            <h1 class="page-title">Cong viec cua toi</h1>
+            <p class="page-note">Theo dõi deadline và nộp kết quả công việc được giao.</p>
 
             <c:if test="${not empty employeeSuccess}">
                 <div class="alert success">${employeeSuccess}</div>
@@ -31,11 +31,11 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Ti&#234;u &#273;&#7873;</th>
-                                <th>Ng&#224;y b&#7855;t &#273;&#7847;u</th>
-                                <th>H&#7841;n</th>
-                                <th>Tr&#7841;ng th&#225;i</th>
-                                <th>C&#7853;p nh&#7853;t</th>
+                                <th>Cong viec</th>
+                                <th>Uu tien</th>
+                                <th>Deadline</th>
+                                <th>Trang thai</th>
+                                <th>Cap nhat</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -44,34 +44,37 @@
                                     <td>
                                         <strong>${task.title}</strong><br>
                                         <span style="color:var(--bh-muted);">${task.description}</span>
+                                        <c:if test="${not empty task.attachmentPath}">
+                                            <br><a href="${pageContext.request.contextPath}/${task.attachmentPath}" target="_blank">File dinh kem</a>
+                                        </c:if>
+                                        <c:if test="${not empty task.feedback}">
+                                            <br><span style="color:var(--bh-danger);">Phan hoi: ${task.feedback}</span>
+                                        </c:if>
                                     </td>
-                                    <td>${task.startDate}</td>
-                                    <td>${task.dueDate}</td>
+                                    <td>${task.priority}</td>
                                     <td>
-                                        <c:choose>
-                                            <c:when test="${task.status eq 'Waiting'}">Ch&#7901; x&#7917; l&#253;</c:when>
-                                            <c:when test="${task.status eq 'In Progress'}">&#272;ang th&#7921;c hi&#7879;n</c:when>
-                                            <c:when test="${task.status eq 'Completed'}">Ho&#224;n th&#224;nh</c:when>
-                                            <c:when test="${task.status eq 'Rejected'}">T&#7915; ch&#7889;i</c:when>
-                                            <c:otherwise>${task.status}</c:otherwise>
-                                        </c:choose>
+                                        ${task.dueDate}
+                                        <c:if test="${not empty task.dueReminder}">
+                                            <br><span style="color:var(--bh-danger);">Con ${task.dueReminder} de submit</span>
+                                        </c:if>
                                     </td>
+                                    <td>${task.status}</td>
                                     <td>
-                                        <form method="post" action="${pageContext.request.contextPath}/employee/tasks" class="button-row">
+                                        <form method="post" action="${pageContext.request.contextPath}/employee/tasks" class="button-row" style="align-items:flex-start;">
                                             <input type="hidden" name="taskId" value="${task.taskId}">
                                             <select name="status">
-                                                <option value="Waiting">Ch&#7901; x&#7917; l&#253;</option>
-                                                <option value="In Progress">&#272;ang th&#7921;c hi&#7879;n</option>
-                                                <option value="Completed">Ho&#224;n th&#224;nh</option>
-                                                <option value="Rejected">T&#7915; ch&#7889;i</option>
+                                                <option value="Waiting" ${task.assignmentStatus eq 'Waiting' ? 'selected' : ''}>Cho nhan</option>
+                                                <option value="In Progress" ${task.assignmentStatus eq 'In Progress' ? 'selected' : ''}>Dang thuc hien</option>
+                                                <option value="Submitted" ${task.assignmentStatus eq 'Submitted' ? 'selected' : ''}>Gui hoan thanh</option>
                                             </select>
-                                            <button class="secondary-button" type="submit">L&#432;u</button>
+                                            <textarea name="feedback" maxlength="1000" placeholder="Ghi chú công việc">${task.feedback}</textarea>
+                                            <button class="secondary-button" type="submit">Luu</button>
                                         </form>
                                     </td>
                                 </tr>
                             </c:forEach>
                             <c:if test="${empty tasks}">
-                                <tr><td colspan="5">Ch&#432;a c&#243; c&#244;ng vi&#7879;c &#273;&#432;&#7907;c giao.</td></tr>
+                                <tr><td colspan="5">Chua co cong viec duoc giao.</td></tr>
                             </c:if>
                         </tbody>
                     </table>

@@ -2,7 +2,7 @@ package com.hrm.controller.dept;
 
 import com.hrm.dao.DAO;
 import com.hrm.dao.EmployeeDAO;
-import com.hrm.model.entity.Employee;
+import com.hrm.dao.TaskDAO;
 import com.hrm.model.entity.Task;
 import com.hrm.util.DeptManagerScope;
 import jakarta.servlet.ServletException;
@@ -12,13 +12,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet(name = "TaskManager", urlPatterns = {"/taskManager"})
 public class TaskManager extends HttpServlet {
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
+    private final TaskDAO taskDAO = new TaskDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,10 +40,11 @@ public class TaskManager extends HttpServlet {
         String action = request.getParameter("action");
 
         if ("viewAssignees".equals(action)) {
-            renderAssignees(request, response, scope, managerEmployeeId);
+            renderAssignees(request, response, managerEmployeeId);
             return;
         }
-        if ("reject".equals(action) || "send".equals(action)) {
+        if ("approve".equals(action) || "reject".equals(action) || "cancel".equals(action)
+                || "delete".equals(action) || "send".equals(action)) {
             updateTaskStatus(request, response, managerEmployeeId, action);
             return;
         }
@@ -69,6 +73,7 @@ public class TaskManager extends HttpServlet {
 
         int totalPages = Math.max(1, (int) Math.ceil((double) total / pageSize));
         request.setAttribute("tasks", tasks);
+        request.setAttribute("workloadRows", taskDAO.getDepartmentWorkload(managerEmployeeId, scope.getDepartmentId()));
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("searchByTitle", searchByTitle);
@@ -76,8 +81,8 @@ public class TaskManager extends HttpServlet {
         request.setAttribute("startDate", startDate);
         request.setAttribute("endDate", endDate);
         request.setAttribute("activePage", "tasks");
-        request.setAttribute("pageTitle", "Quản lý công việc");
-        request.setAttribute("pageSubtitle", "Tạo, giao và theo dõi công việc của phòng ban.");
+        request.setAttribute("pageTitle", "Quan ly cong viec");
+        request.setAttribute("pageSubtitle", "Tao, giao va theo doi cong viec cua phong ban.");
         if (scope.getEmployee() != null) {
             request.setAttribute("userName", scope.getEmployee().getFullName());
             request.setAttribute("userPosition", scope.getEmployee().getPosition());
@@ -87,30 +92,23 @@ public class TaskManager extends HttpServlet {
     }
 
     private void renderAssignees(HttpServletRequest request, HttpServletResponse response,
-                                 DeptManagerScope scope, int managerEmployeeId) throws IOException {
+                                 int managerEmployeeId) throws IOException {
         int taskId = parseInt(request.getParameter("id"), -1);
-        Task task = DAO.getInstance().getTaskById(taskId);
-        if (!isOwnedByManager(task, managerEmployeeId)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-
-        List<Employee> employees = new ArrayList<>();
-        for (Integer empId : DAO.getInstance().getEmployeeIdsByTaskId(taskId)) {
-            Employee emp = DAO.getInstance().getEmp(empId);
-            if (emp != null && emp.getDepartmentId() == scope.getDepartmentId()) {
-                employees.add(emp);
-            }
-        }
-
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
-        if (employees.isEmpty()) {
+        if (taskId < 0) {
+            out.println("<div class='dept-alert error'>Khong tim thay cong viec.</div>");
+            return;
+        }
+        List<Map<String, Object>> assignees = taskDAO.getAssigneesByTask(taskId, managerEmployeeId);
+        if (assignees.isEmpty()) {
             out.println("<div class='dept-alert error'>Chưa có nhân viên được giao.</div>");
             return;
         }
-        for (Employee emp : employees) {
-            out.println("<div class='employee-name'>" + escapeHtml(emp.getFullName()) + "</div>");
+        for (Map<String, Object> assignee : assignees) {
+            out.println("<div class='employee-name'>"
+                    + escapeHtml(String.valueOf(assignee.get("fullName")))
+                    + " - " + escapeHtml(String.valueOf(assignee.get("displayStatus"))) + "</div>");
         }
     }
 
@@ -123,9 +121,25 @@ public class TaskManager extends HttpServlet {
             return;
         }
 
-        String status = "send".equals(action) ? "Waiting" : "Rejected";
-        DAO.getInstance().updateTaskStatus(taskId, status);
-        response.sendRedirect(request.getContextPath() + "/taskManager");
+        boolean success;
+        if ("cancel".equals(action)) {
+            success = taskDAO.cancelTask(taskId, managerEmployeeId);
+        } else if ("delete".equals(action)) {
+            success = taskDAO.deleteCancelledTask(taskId, managerEmployeeId);
+        } else if ("send".equals(action)) {
+            success = DAO.getInstance().updateTaskStatus(taskId, "Waiting") > 0;
+        } else {
+            int employeeId = parseInt(request.getParameter("employeeId"), -1);
+            String feedback = request.getParameter("feedback");
+            String status = "approve".equals(action) ? "Approved" : "Rejected";
+            success = taskDAO.reviewAssignment(taskId, employeeId, managerEmployeeId, status, feedback);
+        }
+
+        String message = success
+                ? ("delete".equals(action) ? "Đã xóa công việc đã hủy" : "Đã cập nhật trạng thái công việc")
+                : "Không thể cập nhật công việc";
+        response.sendRedirect(request.getContextPath() + "/taskManager?"
+                + (success ? "mess=" : "error=") + URLEncoder.encode(message, StandardCharsets.UTF_8));
     }
 
     private boolean isOwnedByManager(Task task, int managerEmployeeId) {

@@ -350,7 +350,9 @@ public class EmployeePortalController extends HttpServlet {
         int taskId = parseInt(request.getParameter("taskId"), -1);
         String status = request.getParameter("status");
         Task task = taskId > 0 ? taskDAO.getAssignedTaskById(taskId, employeeId) : null;
-        boolean success = taskId > 0 && taskDAO.updateAssignedTaskStatus(taskId, employeeId, status);
+        String feedback = clean(request.getParameter("feedback"));
+        boolean success = task != null
+                && taskDAO.updateAssignedTaskProgress(taskId, employeeId, status, feedback);
         if (success) {
             Employee currentEmployee = (Employee) request.getAttribute("currentEmployee");
             SystemUser currentUser = (SystemUser) request.getAttribute("currentUser");

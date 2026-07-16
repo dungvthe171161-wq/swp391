@@ -25,8 +25,8 @@ public class AttendanceDAO {
     private static final String ATTENDANCE_COLUMNS = """
         AttendanceID, EmployeeID, Date, CheckIn, CheckOut, WorkingHours, OvertimeHours,
         ScheduleID, CheckInLatitude, CheckInLongitude, CheckInDistanceMeters,
-        CheckInOfficeLocationID, CheckInMethod, CheckOutLatitude, CheckOutLongitude,
-        CheckOutDistanceMeters, CheckOutOfficeLocationID, CheckOutMethod
+        CheckInAccuracy, CheckInOfficeLocationID, CheckInMethod, CheckOutLatitude, CheckOutLongitude,
+        CheckOutDistanceMeters, CheckOutAccuracy, CheckOutOfficeLocationID, CheckOutMethod
     """;
 
     public Attendance getTodayAttendance(int employeeId) {
@@ -100,7 +100,14 @@ public class AttendanceDAO {
     }
 
     public boolean checkInWithGps(int employeeId, double latitude, double longitude) {
+        return checkInWithGps(employeeId, latitude, longitude, null);
+    }
+
+    public boolean checkInWithGps(int employeeId, double latitude, double longitude, Double accuracy) {
         if (!GeoUtil.isValidLatitude(latitude) || !GeoUtil.isValidLongitude(longitude)) {
+            return false;
+        }
+        if (accuracy != null && (!Double.isFinite(accuracy) || accuracy < 0)) {
             return false;
         }
         Attendance today = getTodayAttendance(employeeId);
@@ -121,14 +128,16 @@ public class AttendanceDAO {
         String sql = """
             INSERT INTO Attendance (
                 EmployeeID, Date, CheckIn, WorkingHours, OvertimeHours, ScheduleID,
-                CheckInLatitude, CheckInLongitude, CheckInDistanceMeters, CheckInOfficeLocationID, CheckInMethod
+                CheckInLatitude, CheckInLongitude, CheckInDistanceMeters, CheckInAccuracy,
+                CheckInOfficeLocationID, CheckInMethod
             )
-            VALUES (?, CURDATE(), CURTIME(), 0, 0, ?, ?, ?, ?, ?, 'GPS')
+            VALUES (?, CURDATE(), CURTIME(), 0, 0, ?, ?, ?, ?, ?, ?, 'GPS')
             ON DUPLICATE KEY UPDATE
                 ScheduleID = IF(CheckIn IS NULL, VALUES(ScheduleID), ScheduleID),
                 CheckInLatitude = IF(CheckIn IS NULL, VALUES(CheckInLatitude), CheckInLatitude),
                 CheckInLongitude = IF(CheckIn IS NULL, VALUES(CheckInLongitude), CheckInLongitude),
                 CheckInDistanceMeters = IF(CheckIn IS NULL, VALUES(CheckInDistanceMeters), CheckInDistanceMeters),
+                CheckInAccuracy = IF(CheckIn IS NULL, VALUES(CheckInAccuracy), CheckInAccuracy),
                 CheckInOfficeLocationID = IF(CheckIn IS NULL, VALUES(CheckInOfficeLocationID), CheckInOfficeLocationID),
                 CheckInMethod = IF(CheckIn IS NULL, VALUES(CheckInMethod), CheckInMethod),
                 CheckIn = COALESCE(CheckIn, VALUES(CheckIn))
@@ -140,7 +149,8 @@ public class AttendanceDAO {
             ps.setBigDecimal(3, BigDecimal.valueOf(latitude));
             ps.setBigDecimal(4, BigDecimal.valueOf(longitude));
             ps.setBigDecimal(5, toDistanceDecimal(distance));
-            ps.setInt(6, office.getOfficeLocationId());
+            setNullableDecimal(ps, 6, accuracy == null ? null : toDistanceDecimal(accuracy));
+            ps.setInt(7, office.getOfficeLocationId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -149,7 +159,14 @@ public class AttendanceDAO {
     }
 
     public boolean checkOutWithGps(int employeeId, double latitude, double longitude) {
+        return checkOutWithGps(employeeId, latitude, longitude, null);
+    }
+
+    public boolean checkOutWithGps(int employeeId, double latitude, double longitude, Double accuracy) {
         if (!GeoUtil.isValidLatitude(latitude) || !GeoUtil.isValidLongitude(longitude)) {
+            return false;
+        }
+        if (accuracy != null && (!Double.isFinite(accuracy) || accuracy < 0)) {
             return false;
         }
         Attendance today = getTodayAttendance(employeeId);
@@ -175,7 +192,7 @@ public class AttendanceDAO {
             UPDATE Attendance
             SET CheckOut = ?, WorkingHours = ?, OvertimeHours = ?,
                 CheckOutLatitude = ?, CheckOutLongitude = ?, CheckOutDistanceMeters = ?,
-                CheckOutOfficeLocationID = ?, CheckOutMethod = 'GPS'
+                CheckOutAccuracy = ?, CheckOutOfficeLocationID = ?, CheckOutMethod = 'GPS'
             WHERE EmployeeID = ? AND Date = CURDATE() AND CheckIn IS NOT NULL AND CheckOut IS NULL
         """;
         try (Connection con = DBConnection.getConnection();
@@ -186,8 +203,9 @@ public class AttendanceDAO {
             ps.setBigDecimal(4, BigDecimal.valueOf(latitude));
             ps.setBigDecimal(5, BigDecimal.valueOf(longitude));
             ps.setBigDecimal(6, toDistanceDecimal(distance));
-            ps.setInt(7, office.getOfficeLocationId());
-            ps.setInt(8, employeeId);
+            setNullableDecimal(ps, 7, accuracy == null ? null : toDistanceDecimal(accuracy));
+            ps.setInt(8, office.getOfficeLocationId());
+            ps.setInt(9, employeeId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -277,6 +295,14 @@ public class AttendanceDAO {
         }
     }
 
+    private void setNullableDecimal(PreparedStatement ps, int index, BigDecimal value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.DECIMAL);
+        } else {
+            ps.setBigDecimal(index, value);
+        }
+    }
+
     private Attendance mapAttendance(ResultSet rs) throws SQLException {
         Attendance attendance = new Attendance();
         attendance.setAttendanceId(rs.getInt("AttendanceID"));
@@ -294,12 +320,14 @@ public class AttendanceDAO {
         attendance.setCheckInLatitude(rs.getBigDecimal("CheckInLatitude"));
         attendance.setCheckInLongitude(rs.getBigDecimal("CheckInLongitude"));
         attendance.setCheckInDistanceMeters(rs.getBigDecimal("CheckInDistanceMeters"));
+        attendance.setCheckInAccuracy(rs.getBigDecimal("CheckInAccuracy"));
         int checkInOfficeLocationId = rs.getInt("CheckInOfficeLocationID");
         attendance.setCheckInOfficeLocationId(rs.wasNull() ? null : checkInOfficeLocationId);
         attendance.setCheckInMethod(rs.getString("CheckInMethod"));
         attendance.setCheckOutLatitude(rs.getBigDecimal("CheckOutLatitude"));
         attendance.setCheckOutLongitude(rs.getBigDecimal("CheckOutLongitude"));
         attendance.setCheckOutDistanceMeters(rs.getBigDecimal("CheckOutDistanceMeters"));
+        attendance.setCheckOutAccuracy(rs.getBigDecimal("CheckOutAccuracy"));
         int checkOutOfficeLocationId = rs.getInt("CheckOutOfficeLocationID");
         attendance.setCheckOutOfficeLocationId(rs.wasNull() ? null : checkOutOfficeLocationId);
         attendance.setCheckOutMethod(rs.getString("CheckOutMethod"));

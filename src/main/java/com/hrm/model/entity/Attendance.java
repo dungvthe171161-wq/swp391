@@ -26,11 +26,13 @@ public class Attendance implements Serializable {
     private BigDecimal checkInLatitude;
     private BigDecimal checkInLongitude;
     private BigDecimal checkInDistanceMeters;
+    private BigDecimal checkInAccuracy;
     private Integer checkInOfficeLocationId;
     private String checkInMethod;
     private BigDecimal checkOutLatitude;
     private BigDecimal checkOutLongitude;
     private BigDecimal checkOutDistanceMeters;
+    private BigDecimal checkOutAccuracy;
     private Integer checkOutOfficeLocationId;
     private String checkOutMethod;
 
@@ -137,6 +139,9 @@ public class Attendance implements Serializable {
         this.checkInDistanceMeters = checkInDistanceMeters;
     }
 
+    public BigDecimal getCheckInAccuracy() { return checkInAccuracy; }
+    public void setCheckInAccuracy(BigDecimal checkInAccuracy) { this.checkInAccuracy = checkInAccuracy; }
+
     public Integer getCheckInOfficeLocationId() {
         return checkInOfficeLocationId;
     }
@@ -176,6 +181,9 @@ public class Attendance implements Serializable {
     public void setCheckOutDistanceMeters(BigDecimal checkOutDistanceMeters) {
         this.checkOutDistanceMeters = checkOutDistanceMeters;
     }
+
+    public BigDecimal getCheckOutAccuracy() { return checkOutAccuracy; }
+    public void setCheckOutAccuracy(BigDecimal checkOutAccuracy) { this.checkOutAccuracy = checkOutAccuracy; }
 
     public Integer getCheckOutOfficeLocationId() {
         return checkOutOfficeLocationId;

@@ -259,14 +259,13 @@
                                 <div class="metric-row"><span>Ra ca</span><strong>${todayAttendance.checkOut}</strong></div>
                                 <div class="metric-row"><span>T&#7893;ng gi&#7901; th&#225;ng</span><strong>${attendanceSummary.totalWorkingHours}h</strong></div>
                                 <div class="check-buttons">
-                                    <form method="post" action="${pageContext.request.contextPath}/employee/attendance">
-                                        <input type="hidden" name="action" value="checkIn">
+                                    <div>
                                         <c:choose>
                                             <c:when test="${todayAttendanceStatus eq 'ChuaVaoCa'}">
-                                                <button class="check-button primary" type="submit">
+                                                <a class="check-button primary" href="${pageContext.request.contextPath}/employee/attendance">
                                                     <i class="fa-solid fa-right-to-bracket"></i>
                                                     <span>V&#224;o ca</span>
-                                                </button>
+                                                </a>
                                             </c:when>
                                             <c:otherwise>
                                                 <button class="check-button primary" type="button" disabled>
@@ -275,15 +274,14 @@
                                                 </button>
                                             </c:otherwise>
                                         </c:choose>
-                                    </form>
-                                    <form method="post" action="${pageContext.request.contextPath}/employee/attendance">
-                                        <input type="hidden" name="action" value="checkOut">
+                                    </div>
+                                    <div>
                                         <c:choose>
                                             <c:when test="${todayAttendanceStatus eq 'DaVaoCa'}">
-                                                <button class="check-button" type="submit">
+                                                <a class="check-button" href="${pageContext.request.contextPath}/employee/attendance">
                                                     <i class="fa-solid fa-right-from-bracket"></i>
                                                     <span>Ra ca</span>
-                                                </button>
+                                                </a>
                                             </c:when>
                                             <c:otherwise>
                                                 <button class="check-button" type="button" disabled>
@@ -292,7 +290,7 @@
                                                 </button>
                                             </c:otherwise>
                                         </c:choose>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
                         </section>

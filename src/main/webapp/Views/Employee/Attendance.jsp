@@ -51,9 +51,9 @@
                         <c:choose>
                             <c:when test="${not empty officeLocation}">
                                 <div id="office-location-data"
-                                     data-latitude="${officeLocation.latitude}"
-                                     data-longitude="${officeLocation.longitude}"
-                                     data-radius="${officeLocation.radiusMeters}"></div>
+                                     data-latitude="${officeLatitude}"
+                                     data-longitude="${officeLongitude}"
+                                     data-radius="${allowedRadiusMeters}"></div>
                                 <div class="gps-office-layout">
                                     <div class="gps-office-map">
                                         <iframe class="gps-map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
@@ -105,11 +105,13 @@
                 <div class="panel-inner">
                     <h2 class="page-title" style="font-size:22px;">V&#7883; tr&#237; hi&#7879;n t&#7841;i c&#7911;a t&#244;i</h2>
                     <div class="stat-row">
-                        <div class="stat"><span>Latitude</span><strong id="current-latitude">Ch&#432;a l&#7845;y v&#7883; tr&#237;</strong></div>
-                        <div class="stat"><span>Longitude</span><strong id="current-longitude">Ch&#432;a l&#7845;y v&#7883; tr&#237;</strong></div>
-                        <div class="stat"><span>Kho&#7843;ng c&#225;ch</span><strong id="current-distance">N/A</strong></div>
+                        <div class="stat"><span>Latitude</span><strong id="latitudeText">Ch&#432;a l&#7845;y v&#7883; tr&#237;</strong></div>
+                        <div class="stat"><span>Longitude</span><strong id="longitudeText">Ch&#432;a l&#7845;y v&#7883; tr&#237;</strong></div>
+                        <div class="stat"><span>Accuracy</span><strong id="accuracyText">N/A</strong></div>
+                        <div class="stat"><span>Kho&#7843;ng c&#225;ch</span><strong id="distanceText">N/A</strong></div>
                     </div>
                     <div class="gps-link-row page-note">
+                        <button id="retry-location-button" class="gps-map-button secondary" type="button">L&#7845;y l&#7841;i v&#7883; tr&#237;</button>
                         <a id="my-location-link" class="gps-map-button secondary" href="#" target="_blank" rel="noopener" style="display:none;">M&#7903; v&#7883; tr&#237; c&#7911;a t&#244;i tr&#234;n Google Maps</a>
                         <a id="directions-link" class="gps-map-button" href="#" target="_blank" rel="noopener" style="display:none;">Ch&#7881; &#273;&#432;&#7901;ng &#273;&#7871;n v&#259;n ph&#242;ng</a>
                     </div>
@@ -137,12 +139,12 @@
                             <div class="stat"><span>T&#259;ng ca</span><strong>${todayAttendance.overtimeHours}</strong></div>
                         </div>
                         <div class="button-row" style="margin-top:18px;">
-                            <form method="post" action="${pageContext.request.contextPath}/employee/attendance" data-gps-form>
-                                <input type="hidden" name="action" value="checkIn"><input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                            <form method="post" action="${pageContext.request.contextPath}/employee/attendance" class="attendance-location-form">
+                                <input type="hidden" name="action" value="checkIn"><input type="hidden" name="latitude" class="latitude-input"><input type="hidden" name="longitude" class="longitude-input"><input type="hidden" name="accuracy" class="accuracy-input">
                                 <button class="primary-button" type="${todayAttendanceStatus eq 'ChuaVaoCa' ? 'submit' : 'button'}" ${todayAttendanceStatus eq 'ChuaVaoCa' ? '' : 'disabled'}><i class="fa-solid fa-right-to-bracket"></i> V&#224;o ca</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/employee/attendance" data-gps-form>
-                                <input type="hidden" name="action" value="checkOut"><input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                            <form method="post" action="${pageContext.request.contextPath}/employee/attendance" class="attendance-location-form">
+                                <input type="hidden" name="action" value="checkOut"><input type="hidden" name="latitude" class="latitude-input"><input type="hidden" name="longitude" class="longitude-input"><input type="hidden" name="accuracy" class="accuracy-input">
                                 <button class="secondary-button" type="${todayAttendanceStatus eq 'DaVaoCa' ? 'submit' : 'button'}" ${todayAttendanceStatus eq 'DaVaoCa' ? '' : 'disabled'}><i class="fa-solid fa-right-from-bracket"></i> Ra ca</button>
                             </form>
                         </div>
@@ -187,15 +189,23 @@
 </div>
 <script>
     const officeData = document.getElementById('office-location-data');
-    const gpsForms = document.querySelectorAll('form[data-gps-form]');
+    const gpsForms = document.querySelectorAll('form.attendance-location-form');
     const gpsError = document.getElementById('gps-client-message');
     const gpsSuccess = document.getElementById('gps-client-success');
-    const currentLatitude = document.getElementById('current-latitude');
-    const currentLongitude = document.getElementById('current-longitude');
-    const currentDistance = document.getElementById('current-distance');
+    const currentLatitude = document.getElementById('latitudeText');
+    const currentLongitude = document.getElementById('longitudeText');
+    const currentAccuracy = document.getElementById('accuracyText');
+    const currentDistance = document.getElementById('distanceText');
     const myLocationLink = document.getElementById('my-location-link');
     const directionsLink = document.getElementById('directions-link');
     const myLocationMap = document.getElementById('my-location-map');
+    const retryLocationButton = document.getElementById('retry-location-button');
+    const LOCATION_MAX_AGE_MS = 120000;
+    let currentLocation = { latitude: null, longitude: null, accuracy: null, capturedAt: null };
+    let isLocating = false;
+    let pendingForm = null;
+    let locationRequestId = 0;
+    let permissionStatus = null;
     function showGpsError(message) { gpsSuccess.style.display = 'none'; gpsError.textContent = message; gpsError.style.display = 'block'; }
     function showGpsSuccess(message) { gpsError.style.display = 'none'; gpsSuccess.textContent = message; gpsSuccess.style.display = 'block'; }
     function toRadians(value) { return value * Math.PI / 180; }
@@ -208,37 +218,226 @@
             * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
+    function formatDistance(distance) {
+        return distance < 1000 ? Math.round(distance) + ' m' : (distance / 1000).toFixed(2) + ' km';
+    }
+    function setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 86400000).toUTCString();
+        document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+    }
+    function getCookie(name) {
+        const prefix = name + '=';
+        const item = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(prefix));
+        return item ? decodeURIComponent(item.substring(prefix.length)) : null;
+    }
+    function loadCachedLocationFromCookie() {
+        const latitude = getCookie('lastLatitude');
+        const longitude = getCookie('lastLongitude');
+        const distance = getCookie('lastDistance');
+        if (latitude && longitude) {
+            currentLatitude.textContent = latitude + ' (v\u1ecb tr\u00ed g\u1ea7n nh\u1ea5t)';
+            currentLongitude.textContent = longitude + ' (v\u1ecb tr\u00ed g\u1ea7n nh\u1ea5t)';
+            currentDistance.textContent = distance || 'N/A';
+        }
+    }
+    function updateForms(location) {
+        gpsForms.forEach((form) => {
+            form.querySelector('input[name="latitude"]').value = location.latitude;
+            form.querySelector('input[name="longitude"]').value = location.longitude;
+            form.querySelector('input[name="accuracy"]').value = location.accuracy;
+        });
+    }
+    function setLocationLoading(loading) {
+        isLocating = loading;
+        retryLocationButton.disabled = loading;
+        gpsForms.forEach((form) => {
+            const button = form.querySelector('button[type="submit"]');
+            if (button) button.disabled = loading;
+        });
+    }
+    function isLocationFresh() {
+        return currentLocation.capturedAt !== null
+                && Date.now() - currentLocation.capturedAt <= LOCATION_MAX_AGE_MS;
+    }
+    function handleLocationSuccess(position, requestId) {
+            if (requestId !== locationRequestId) return;
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const officeLat = Number(officeData.dataset.latitude);
+            const officeLng = Number(officeData.dataset.longitude);
+            const radiusMeters = Number(officeData.dataset.radius);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+                    || !Number.isFinite(accuracy) || accuracy < 0) {
+                showGpsError('Tr\u00ecnh duy\u1ec7t tr\u1ea3 v\u1ec1 d\u1eef li\u1ec7u v\u1ecb tr\u00ed kh\u00f4ng h\u1ee3p l\u1ec7.');
+                return;
+            }
+            if (!Number.isFinite(officeLat) || !Number.isFinite(officeLng)
+                    || !Number.isFinite(radiusMeters) || radiusMeters <= 0) {
+                console.error('Invalid office location:', officeLat, officeLng, radiusMeters);
+                showGpsError('Ch\u01b0a c\u00f3 \u0111\u1ecba \u0111i\u1ec3m v\u0103n ph\u00f2ng h\u1ee3p l\u1ec7 \u0111\u1ec3 ch\u1ea5m c\u00f4ng GPS.');
+                return;
+            }
+            currentLocation = { latitude, longitude, accuracy, capturedAt: Date.now() };
+            console.info('[GPS] Position received', { latitude, longitude, accuracy });
+            const distance = distanceMeters(latitude, longitude, officeLat, officeLng);
+            const latitudeDisplay = latitude.toFixed(7);
+            const longitudeDisplay = longitude.toFixed(7);
+            const distanceDisplay = formatDistance(distance);
+            updateForms(currentLocation);
+            currentLatitude.textContent = latitudeDisplay;
+            currentLongitude.textContent = longitudeDisplay;
+            currentAccuracy.textContent = formatDistance(accuracy);
+            currentDistance.textContent = distanceDisplay;
+            setCookie('lastLatitude', latitudeDisplay, 7);
+            setCookie('lastLongitude', longitudeDisplay, 7);
+            setCookie('lastDistance', distanceDisplay, 7);
+            if (myLocationLink) {
+                myLocationLink.href = 'https://www.google.com/maps?q=' + latitude + ',' + longitude;
+                myLocationLink.style.display = 'inline-flex';
+            }
+            if (directionsLink) {
+                directionsLink.href = 'https://www.google.com/maps/dir/?api=1&origin=' + latitude + ',' + longitude + '&destination=' + officeLat + ',' + officeLng;
+                directionsLink.style.display = 'inline-flex';
+            }
+            if (myLocationMap) {
+                myLocationMap.src = 'https://www.google.com/maps?q=' + latitude + ',' + longitude + '&z=16&output=embed';
+                myLocationMap.style.display = 'block';
+            }
+            const isWithinRadius = distance <= radiusMeters;
+            if (isWithinRadius) showGpsSuccess('B\u1ea1n \u0111ang trong ph\u1ea1m vi ch\u1ea5m c\u00f4ng.');
+            else showGpsError('B\u1ea1n \u0111ang c\u00e1ch v\u0103n ph\u00f2ng ' + formatDistance(distance)
+                    + '. B\u00e1n k\u00ednh cho ph\u00e9p l\u00e0 ' + formatDistance(radiusMeters) + '.');
+            if (pendingForm && isWithinRadius) {
+                const formToSubmit = pendingForm;
+                pendingForm = null;
+                formToSubmit.requestSubmit();
+            } else if (!isWithinRadius) {
+                pendingForm = null;
+            }
+    }
+    function locationErrorMessage(error) {
+        switch (error && error.code) {
+            case 1:
+                return 'Quy\u1ec1n v\u1ecb tr\u00ed \u0111ang b\u1ecb ch\u1eb7n. H\u00e3y m\u1edf bi\u1ec3u t\u01b0\u1ee3ng \u1ed5 kh\u00f3a b\u00ean c\u1ea1nh thanh \u0111\u1ecba ch\u1ec9, ch\u1ecdn Location > Allow v\u00e0 t\u1ea3i l\u1ea1i trang.';
+            case 2:
+                return 'Kh\u00f4ng l\u1ea5y \u0111\u01b0\u1ee3c v\u1ecb tr\u00ed t\u1eeb thi\u1ebft b\u1ecb. H\u00e3y ki\u1ec3m tra Windows Settings > Privacy & security > Location v\u00e0 b\u1eadt Location services.';
+            case 3:
+                return 'Qu\u00e1 th\u1eddi gian l\u1ea5y v\u1ecb tr\u00ed. H\u00e3y ki\u1ec3m tra Windows Location services r\u1ed3i b\u1ea5m L\u1ea5y l\u1ea1i v\u1ecb tr\u00ed.';
+            default:
+                return 'Kh\u00f4ng th\u1ec3 x\u00e1c \u0111\u1ecbnh v\u1ecb tr\u00ed hi\u1ec7n t\u1ea1i.';
+        }
+    }
+    function getPosition(options, requestId) {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                    (position) => requestId === locationRequestId && resolve(position),
+                    (error) => requestId === locationRequestId && reject(error),
+                    options);
+        });
+    }
+    async function requestCurrentLocation() {
+        const requestId = ++locationRequestId;
+        console.info('[GPS] Request started');
+        console.info('[GPS] Secure context:', window.isSecureContext);
+        if (!window.isSecureContext) {
+            pendingForm = null;
+            showGpsError('Tr\u00ecnh duy\u1ec7t ch\u1ec9 cho ph\u00e9p l\u1ea5y v\u1ecb tr\u00ed tr\u00ean localhost ho\u1eb7c HTTPS.');
+            return;
+        }
+        if (!("geolocation" in navigator)) {
+            pendingForm = null;
+            showGpsError('Tr\u00ecnh duy\u1ec7t kh\u00f4ng h\u1ed7 tr\u1ee3 GPS.');
+            return;
+        }
+        if (!officeData) {
+            pendingForm = null;
+            showGpsError('Ch\u01b0a c\u00f3 \u0111\u1ecba \u0111i\u1ec3m v\u0103n ph\u00f2ng h\u1ee3p l\u1ec7 \u0111\u1ec3 ch\u1ea5m c\u00f4ng GPS.');
+            return;
+        }
+        if (permissionStatus && permissionStatus.state === 'denied') {
+            pendingForm = null;
+            showGpsError(locationErrorMessage({ code: 1 }));
+            return;
+        }
+        setLocationLoading(true);
+        showGpsError('\u0110ang l\u1ea5y v\u1ecb tr\u00ed...');
+        try {
+            let position;
+            try {
+                position = await getPosition(
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }, requestId);
+            } catch (error) {
+                if (requestId !== locationRequestId) return;
+                if (!error || (error.code !== 2 && error.code !== 3)) throw error;
+                showGpsError('\u0110ang th\u1eed l\u1ea1i v\u1edbi ch\u1ebf \u0111\u1ed9 v\u1ecb tr\u00ed ph\u00f9 h\u1ee3p cho laptop/PC...');
+                position = await getPosition(
+                        { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }, requestId);
+            }
+            handleLocationSuccess(position, requestId);
+        } catch (error) {
+            if (requestId !== locationRequestId) return;
+            pendingForm = null;
+            console.error('[GPS] Error', { code: error && error.code, message: error && error.message });
+            showGpsError(locationErrorMessage(error));
+        } finally {
+            if (requestId === locationRequestId) setLocationLoading(false);
+        }
+    }
     gpsForms.forEach((form) => {
         form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const button = form.querySelector('button[type="submit"]');
-            if (!navigator.geolocation || !officeData) { showGpsError('B&#7841;n c&#7847;n b&#7853;t &#273;&#7883;nh v&#7883; &#273;&#7875; ch&#7845;m c&#244;ng GPS.'); return; }
-            const originalText = button.innerHTML;
-            button.disabled = true; button.innerHTML = '&#272;ang l&#7845;y v&#7883; tr&#237;...';
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude, lng = position.coords.longitude;
-                const officeLat = Number(officeData.dataset.latitude), officeLng = Number(officeData.dataset.longitude);
-                const radiusMeters = Number(officeData.dataset.radius);
-                const distance = distanceMeters(lat, lng, officeLat, officeLng);
-                form.querySelector('input[name="latitude"]').value = lat;
-                form.querySelector('input[name="longitude"]').value = lng;
-                currentLatitude.textContent = lat.toFixed(7);
-                currentLongitude.textContent = lng.toFixed(7);
-                currentDistance.textContent = distance.toFixed(2) + 'm';
-                myLocationLink.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
-                myLocationLink.style.display = 'inline-flex';
-                directionsLink.href = 'https://www.google.com/maps/dir/?api=1&origin=' + lat + ',' + lng + '&destination=' + officeLat + ',' + officeLng;
-                directionsLink.style.display = 'inline-flex';
-                myLocationMap.src = 'https://www.google.com/maps?q=' + lat + ',' + lng + '&z=16&output=embed';
-                myLocationMap.style.display = 'block';
-                if (distance <= radiusMeters) showGpsSuccess('B&#7841;n &#273;ang trong ph&#7841;m vi ch&#7845;m c&#244;ng.'); else showGpsError('B&#7841;n &#273;ang ngo&#224;i ph&#7841;m vi ch&#7845;m c&#244;ng.');
-                form.submit();
-            }, () => {
-                button.disabled = false; button.innerHTML = originalText;
-                showGpsError('B&#7841;n c&#7847;n b&#7853;t &#273;&#7883;nh v&#7883; &#273;&#7875; ch&#7845;m c&#244;ng GPS.');
-            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+            const latitudeInput = form.querySelector('input[name="latitude"]');
+            const longitudeInput = form.querySelector('input[name="longitude"]');
+            const accuracyInput = form.querySelector('input[name="accuracy"]');
+            if (isLocating) {
+                event.preventDefault();
+                showGpsError('\u0110ang l\u1ea5y v\u1ecb tr\u00ed, vui l\u00f2ng ch\u1edd.');
+                return;
+            }
+            if (!isLocationFresh() || !latitudeInput.value || !longitudeInput.value || !accuracyInput.value) {
+                event.preventDefault();
+                pendingForm = form;
+                showGpsError('B\u1ea1n c\u1ea7n l\u1ea5y v\u1ecb tr\u00ed m\u1edbi tr\u01b0\u1edbc khi ch\u1ea5m c\u00f4ng.');
+                requestCurrentLocation();
+            }
         });
     });
+    retryLocationButton.addEventListener('click', () => {
+        pendingForm = null;
+        requestCurrentLocation();
+    });
+    async function initializeAttendanceLocation() {
+        console.log('protocol', window.location.protocol);
+        console.log('hostname', window.location.hostname);
+        console.log('secureContext', window.isSecureContext);
+        console.log('geolocationSupported', 'geolocation' in navigator);
+        loadCachedLocationFromCookie();
+        if (navigator.permissions && navigator.permissions.query) {
+            try {
+                permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+                console.info('[GPS] Permission:', permissionStatus.state);
+                permissionStatus.onchange = function () {
+                    console.info('[GPS] Permission:', permissionStatus.state);
+                    if (permissionStatus.state === 'denied') {
+                        ++locationRequestId;
+                        setLocationLoading(false);
+                        pendingForm = null;
+                        showGpsError(locationErrorMessage({ code: 1 }));
+                    } else if (permissionStatus.state === 'granted' && !isLocating) {
+                        requestCurrentLocation();
+                    }
+                };
+            } catch (error) {
+                console.info('[GPS] Permissions API is unavailable');
+            }
+        }
+        requestCurrentLocation();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeAttendanceLocation, { once: true });
+    } else {
+        initializeAttendanceLocation();
+    }
 </script>
 </body>
 </html>

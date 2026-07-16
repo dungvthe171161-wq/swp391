@@ -15,8 +15,10 @@ import com.hrm.model.entity.ContractDocument;
 import com.hrm.model.entity.EmployeeWorkSchedule;
 import com.hrm.model.entity.Employee;
 import com.hrm.model.entity.MailRequest;
+import com.hrm.model.entity.OfficeLocation;
 import com.hrm.model.entity.SystemUser;
 import com.hrm.model.entity.Task;
+import com.hrm.util.GeoUtil;
 import com.hrm.service.NotificationRecipientService;
 import com.hrm.service.NotificationService;
 import jakarta.servlet.ServletException;
@@ -137,16 +139,23 @@ public class EmployeePortalController extends HttpServlet {
 
     private void showAttendance(int employeeId, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        OfficeLocation officeLocation = officeLocationDAO.getActiveOfficeLocations().stream()
+                .findFirst().orElse(null);
         request.setAttribute("activePage", "attendance");
         request.setAttribute("todayAttendance", attendanceDAO.getTodayAttendance(employeeId));
         request.setAttribute("todayAttendanceStatus", attendanceDAO.getTodayStatus(employeeId));
         request.setAttribute("attendanceSummary", attendanceDAO.getMonthlySummary(
                 employeeId, LocalDate.now().getYear(), LocalDate.now().getMonthValue()));
         request.setAttribute("recentAttendances", attendanceDAO.getRecentByEmployee(employeeId, 31));
-        request.setAttribute("officeLocation", officeLocationDAO.getActiveOfficeLocations().stream().findFirst().orElse(null));
+        request.setAttribute("officeLocation", officeLocation);
+        if (officeLocation != null) {
+            request.setAttribute("officeLatitude", officeLocation.getLatitude());
+            request.setAttribute("officeLongitude", officeLocation.getLongitude());
+            request.setAttribute("allowedRadiusMeters", officeLocation.getRadiusMeters());
+        }
         request.setAttribute("todaySchedule", workScheduleDAO.getByEmployeeAndDate(employeeId, LocalDate.now()));
         request.setAttribute("gpsRequired", true);
-        if (officeLocationDAO.getActiveOfficeLocations().isEmpty()) {
+        if (officeLocation == null) {
             request.setAttribute("gpsWarning", "Chua cau hinh dia diem van phong hop le de cham cong GPS.");
         }
         request.getRequestDispatcher("/Views/Employee/Attendance.jsp").forward(request, response);
@@ -234,23 +243,62 @@ public class EmployeePortalController extends HttpServlet {
     private void handleAttendance(int employeeId, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String action = request.getParameter("action");
-        Double latitude = parseDoubleObject(request.getParameter("latitude"));
-        Double longitude = parseDoubleObject(request.getParameter("longitude"));
-        if (latitude == null || longitude == null) {
-            request.getSession().setAttribute("employeeError", "Ban can bat dinh vi de cham cong GPS.");
-            response.sendRedirect(request.getContextPath() + "/employee/attendance");
+        if (!"checkIn".equals(action) && !"checkOut".equals(action)) {
+            redirectAttendanceError(request, response, "Thao tác chấm công không hợp lệ.");
+            return;
+        }
+        String latitudeValue = request.getParameter("latitude");
+        String longitudeValue = request.getParameter("longitude");
+        String accuracyValue = request.getParameter("accuracy");
+        if (latitudeValue == null || latitudeValue.isBlank()
+                || longitudeValue == null || longitudeValue.isBlank()
+                || accuracyValue == null || accuracyValue.isBlank()) {
+            redirectAttendanceError(request, response, "Vui lòng cấp quyền vị trí để chấm công.");
+            return;
+        }
+
+        Double latitude = parseDoubleObject(latitudeValue);
+        Double longitude = parseDoubleObject(longitudeValue);
+        Double accuracy = parseDoubleObject(accuracyValue);
+        if (!GeoUtil.isValidLatitude(latitude) || !GeoUtil.isValidLongitude(longitude)) {
+            redirectAttendanceError(request, response, "Tọa độ chấm công không hợp lệ.");
+            return;
+        }
+        if (accuracy == null || !Double.isFinite(accuracy) || accuracy < 0) {
+            redirectAttendanceError(request, response, "Độ chính xác GPS không hợp lệ.");
+            return;
+        }
+
+        OfficeLocation office = officeLocationDAO.getNearestActiveLocation(latitude, longitude);
+        if (office == null || office.getLatitude() == null || office.getLongitude() == null) {
+            redirectAttendanceError(request, response, "Chưa có địa điểm văn phòng hợp lệ để chấm công GPS.");
+            return;
+        }
+
+        double distanceMeters = GeoUtil.distanceMeters(latitude, longitude,
+                office.getLatitude().doubleValue(), office.getLongitude().doubleValue());
+        if (!GeoUtil.isWithinRadius(distanceMeters, office.getRadiusMeters())) {
+            redirectAttendanceError(request, response, String.format(
+                    "Bạn đang cách địa điểm làm việc %.0f m. Khoảng cách cho phép là %d m.",
+                    distanceMeters, office.getRadiusMeters()));
             return;
         }
         boolean success = false;
         if ("checkIn".equals(action)) {
-            success = attendanceDAO.checkInWithGps(employeeId, latitude, longitude);
+            success = attendanceDAO.checkInWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
                     success ? "Da ghi nhan vao ca." : "Khong the vao ca GPS. Vui long kiem tra vi tri.");
         } else if ("checkOut".equals(action)) {
-            success = attendanceDAO.checkOutWithGps(employeeId, latitude, longitude);
+            success = attendanceDAO.checkOutWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
                     success ? "Da ghi nhan ra ca." : "Khong the ra ca GPS. Vui long kiem tra vi tri.");
         }
+        response.sendRedirect(request.getContextPath() + "/employee/attendance");
+    }
+
+    private void redirectAttendanceError(HttpServletRequest request, HttpServletResponse response, String message)
+            throws IOException {
+        request.getSession().setAttribute("employeeError", message);
         response.sendRedirect(request.getContextPath() + "/employee/attendance");
     }
 

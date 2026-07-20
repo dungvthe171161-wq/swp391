@@ -60,8 +60,8 @@ README.md
 
 ## Contributors
 - Member 1: 
-- Member 2: 
-- Member 3: Namhdhe187299
+- Member 2: DuyNQHE190881
+- Member 3: 
 - Member 4: 
 - Member 5: 
 

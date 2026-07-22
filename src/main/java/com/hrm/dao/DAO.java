@@ -1199,7 +1199,7 @@ public int getOrCreateRoleIdByName(String roleName) {
 }
 
 public void recordSuccessfulLogin(int userId) {
-    String sql = "UPDATE SystemUser SET LastLogin=NOW(), FailedLoginAttempt=0, LockedUntil=NULL, UpdatedDate=NOW() WHERE UserID=?";
+    String sql = "UPDATE SystemUser SET LastLogin=NOW(), FailedLoginAttempt=0, LockedUntil=NULL, failed_attempts=0, is_locked=FALSE, locked_at=NULL, UpdatedDate=NOW() WHERE UserID=?";
     try (Connection connection = DBConnection.getConnection();
          PreparedStatement ps = connection.prepareStatement(sql)) {
         ps.setInt(1, userId);
@@ -1212,7 +1212,10 @@ public void recordSuccessfulLogin(int userId) {
 public void recordFailedLogin(String username) {
     String sql = """
         UPDATE SystemUser
-        SET FailedLoginAttempt = FailedLoginAttempt + 1,
+        SET failed_attempts = failed_attempts + 1,
+            is_locked = CASE WHEN failed_attempts >= 7 THEN TRUE ELSE is_locked END,
+            locked_at = CASE WHEN failed_attempts >= 7 THEN NOW() ELSE locked_at END,
+            FailedLoginAttempt = FailedLoginAttempt + 1,
             LockedUntil = CASE WHEN FailedLoginAttempt + 1 >= 5 THEN DATE_ADD(NOW(), INTERVAL 15 MINUTE) ELSE LockedUntil END,
             UpdatedDate = NOW()
         WHERE Username = ?
@@ -1223,6 +1226,18 @@ public void recordFailedLogin(String username) {
         ps.executeUpdate();
     } catch (SQLException e) {
         System.err.println("Error recording failed login: " + e.getMessage());
+    }
+}
+
+public boolean unlockUser(int userId) {
+    String sql = "UPDATE SystemUser SET failed_attempts=0, is_locked=FALSE, locked_at=NULL, FailedLoginAttempt=0, LockedUntil=NULL, UpdatedDate=NOW() WHERE UserID=?";
+    try (Connection connection = DBConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, userId);
+        return ps.executeUpdate() > 0;
+    } catch (SQLException e) {
+        System.err.println("Error unlocking user: " + e.getMessage());
+        return false;
     }
 }
 
@@ -1265,6 +1280,10 @@ private SystemUser mapSystemUser(ResultSet rs) throws SQLException {
     user.setCreatedDate(createdDate != null ? createdDate.toLocalDateTime() : null);
     Timestamp updatedDate = rs.getTimestamp("UpdatedDate");
     user.setUpdatedDate(updatedDate != null ? updatedDate.toLocalDateTime() : null);
+    user.setFailedAttempts(rs.getInt("failed_attempts"));
+    user.setLocked(rs.getBoolean("is_locked"));
+    Timestamp lockedAt = rs.getTimestamp("locked_at");
+    user.setLockedAt(lockedAt != null ? lockedAt.toLocalDateTime() : null);
     return user;
 }
 public List<Integer> getEmployeeIdsByTaskId(int taskId) {

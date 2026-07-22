@@ -1,59 +1,35 @@
-# Đặc Tả Tính Năng: Nhân Viên Xem & Cập Nhật Tiến Độ Công Việc
+# Tính năng Employee: Xem và cập nhật task được giao
 
-- **Mã Tính Năng**: `feature-employee-view-task`
-- **Cấp Độ Đặc Tả**: Standard Spec (Theo Mục 16.3)
-- **Trạng Thái**: Approved
-- **Tác Giả**: Đội Ngũ Lập Trình SE | **Người Kiểm Duyệt**: Trưởng Nhóm Chất Lượng Code
-- **Mã Nguồn Áp Dụng**: `com.hrm.controller.employee.ViewTask`, `com.hrm.dao.TaskDAO`
-- **Quy Tắc Hệ Thống**: AGENTS.md, Ràng buộc quyền sở hữu (Ownership Guard)
+Trạng thái: Đã rà soát theo code ngày 2026-07-18.
+Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
----
+## Actor và phạm vi
+- Employee xem task được giao và cập nhật trạng thái cho task của mình.
 
-## 1. Bối Cảnh Nghiệp Vụ (Business Context)
-Nhân viên cần một cổng thông tin tập trung để xem danh sách công việc được phân công, cập nhật tiến độ từ khi bắt đầu cho đến khi hoàn thành hoặc báo cáo vướng mắc.
+## Route, controller và JSP liên quan
+- `/employee`, `/employee/tasks`, `/employee/view-task`.
+- Controller: `EmployeePortalController`, `EmployeeViewTask`.
+- JSP: `Views/Employee/Tasks.jsp`, `Views/Employee/ViewTask.jsp`.
 
----
+## Hiện trạng code
+- Danh sách task dùng `/employee/tasks` trong `EmployeePortalController`.
+- Danh sách và cập nhật trạng thái nhanh dùng `/employee/tasks` trong `EmployeePortalController`.
+- Chi tiết task dùng `/employee/view-task` qua servlet `EmployeeViewTask`.
+- `EmployeeViewTask` kiểm tra ownership theo `systemUser.EmployeeID`.
+- Servlet `EmployeeViewTask` mapping `/employee/view-task` và kiểm tra ownership theo `systemUser.EmployeeID`.
+- Khi employee cập nhật trạng thái task thành công qua `/employee/tasks`, `EmployeePortalController` gửi notification cho Dept Manager bằng `notifyTaskStatusUpdatedForManagers`.
 
-## 2. Kịch Bản Sử Dụng (User Stories)
-* **Kịch Bản 1 (Happy Path - Cập Nhật Trạng Thái)**:
-  * *Với tư cách là* Nhân viên (Employee), *tôi muốn* xem chi tiết công việc được giao và chuyển trạng thái từ `Waiting` sang `In Progress` khi bắt đầu thực hiện.
-* **Kịch Bản 2 (Happy Path - Nộp Báo Cáo Hoàn Thành)**:
-  * *Với tư cách là* Nhân viên, *tôi muốn* nộp báo cáo hoàn thành công việc kèm ghi chú và đường dẫn bằng chứng (evidence) để Trưởng phòng đánh giá.
-* **Kịch Bản 3 (Bảo Mật - Ngăn Chặn Xem Trộm)**:
-  * *Với tư cách là* Nhân viên, *tôi muốn* hệ thống ngăn chặn nhân viên khác xem hoặc thay đổi thông tin công việc của tôi thông qua việc thay đổi ID trên URL.
+## Quy tắc nghiệp vụ chuẩn
+- Employee chỉ thao tác task được giao cho mình.
+- Status phải nằm trong enum task hiện có.
+- Cập nhật task phải tạo notification cho Dept Manager đúng phòng ban nếu nghiệp vụ giữ luồng hiện tại.
 
----
+## Code còn lệch spec hoặc cần bổ sung
+- Cần test sửa URL `taskId` của employee khác trên `/employee/tasks` và `/employee/view-task`.
+- Cần chuẩn hóa route detail sang `/employee/tasks/detail` nếu đổi route code.
+- Cần test notification khi employee hoàn thành/từ chối/cập nhật task, bao gồm trường hợp manager không còn active user.
 
-## 3. Tiêu Chí Nghiệm Thu (Acceptance Criteria - Cú Pháp EARS)
-- `KHI` Nhân viên truy cập đường dẫn `/employee/tasks/detail?id={taskId}`, `HỆ THỐNG PHẢI` xác minh điều kiện bảo mật: Mã `employee_id` của nhân viên đăng nhập phải khớp với bản ghi trong `assign_list`.
-- `KHI` phát hiện mã nhân viên đăng nhập không khớp với `employee_id` được giao trong `assign_list`, `HỆ THỐNG PHẢI` từ chối truy cập và trả về mã lỗi HTTP 403 Forbidden.
-- `KHI` Nhân viên chuyển trạng thái từ `Waiting` sang `In Progress`, `HỆ THỐNG PHẢI` cập nhật cột `status` trong `assign_list` và ghi nhật ký thay đổi vào bảng `SystemLog`.
-- `KHI` Nhân viên gửi báo cáo hoàn thành công việc (`status = 'Completed'`), `HỆ THỐNG PHẢI` kiểm tra và yêu cầu ghi chú hoàn thành (`completion_notes`) không được để trống, đồng thời gửi thông báo hệ thống đến Trưởng phòng quản lý phòng ban.
-
----
-
-## 4. Đặc Tả Giao Tiếp (API Contract)
-* **Endpoint**: `POST /employee/tasks/update`
-* **Request Payload**:
-```json
-{
-  "taskId": "Integer (Bắt buộc)",
-  "status": "String (Bắt buộc, CHECK IN ['In Progress', 'Completed'])",
-  "notes": "String (Bắt buộc khi trạng thái là Completed)",
-  "evidenceUrl": "String (Tùy chọn, đường dẫn chứng minh công việc)"
-}
-```
-* **Phản hồi Kỳ Vọng**:
-  - `HTTP 200 OK` JSON `{ "success": true, "message": "MSG-TASK-06" }` hoặc `HTTP 302` Redirect về trang danh sách task cá nhân.
-  - `HTTP 403` (Forbidden nếu vi phạm quyền sở hữu).
-  - `HTTP 400` (Bad Request nếu thiếu thông tin ghi chú khi nộp hoàn thành).
-
----
-
-## 5. Ràng Buộc Kỹ Thuật (Technical Constraints)
-* **Ownership Guard**: Kiểm tra quyền truy cập chặt chẽ tại tầng Controller (Servlet) trước khi thực hiện bất kỳ câu truy vấn UPDATE nào xuống database.
-
----
-
-## 6. Ngoài Phạm Vi (Out of Scope)
-* Việc tự động lưu bản nháp ghi chú hoàn thành (auto-save draft) khi đang viết báo cáo chưa được hỗ trợ.
+## Kiểm thử tối thiểu
+- Chạy `mvn -q compile` sau khi thay đổi code liên quan.
+- Employee A không xem/cập nhật task của Employee B.
+- Kiểm tra trường hợp không có quyền phải bị chặn bằng redirect hoặc JSON lỗi phù hợp.

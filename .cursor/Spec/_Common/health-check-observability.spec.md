@@ -1,6 +1,6 @@
 # Đặc tả dùng chung: Health check và khả năng quan sát
 
-Trạng thái: Bổ sung chuẩn mục tiêu theo đối chiếu code ngày 2026-07-14.
+Trạng thái: Đã rà soát theo code ngày 2026-07-22.
 Ngôn ngữ: tiếng Việt có dấu. Spec này áp dụng cho endpoint chẩn đoán, logging và giám sát vận hành.
 
 ## Actor và phạm vi
@@ -8,10 +8,13 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này áp dụng cho endpoint chẩn 
 
 ## Route, controller và JSP liên quan
 - `DBConnectionTest`, `DBConnection` và các component kết nối database, mail, OAuth, AI.
+- `SimpleHrController`, `Views/hr/HrHomeSimple.jsp`, `Views/hr/TestHrHome.jsp` là luồng HR đơn giản/kiểm thử còn tồn tại trong source.
 - Logger trong controller, DAO và service; `SystemLog` chỉ dùng cho audit nghiệp vụ, không thay thế application log.
 
 ## Hiện trạng code
 - Có servlet `DBConnectionTest` để kiểm tra kết nối database.
+- Có `SimpleHrController` mapping `/SimpleHrController`, forward tới `HrHomeSimple.jsp` và ghi log bằng `System.out`/`System.err`.
+- `TestHrHome.jsp` còn link tới `/DBConnectionTest`.
 - Logging chưa đồng nhất; code còn `System.out`, `printStackTrace` và nhiều loại logger.
 - Chưa có contract health/readiness/liveness hoặc correlation ID dùng chung.
 
@@ -24,7 +27,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này áp dụng cho endpoint chẩn 
 - Không dùng endpoint health để thực hiện mutation hoặc tự sửa dữ liệu.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Cần giới hạn hoặc loại bỏ `DBConnectionTest` khỏi production.
+- Cần giới hạn hoặc loại bỏ `DBConnectionTest`, `SimpleHrController`, `HrHomeSimple.jsp` và `TestHrHome.jsp` khỏi production.
 - Cần chuẩn hóa logging và thay `System.out`/`printStackTrace`.
 - Cần correlation ID, timeout dependency và chính sách retention.
 - Trang homepage không được dùng audit log làm nguồn tin công khai.

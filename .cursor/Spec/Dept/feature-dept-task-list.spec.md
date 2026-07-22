@@ -1,19 +1,19 @@
 # Tính năng Dept: Danh sách công việc
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Trạng thái: Đã rà soát theo code ngày 2026-07-16.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
 - Dept Manager xem danh sách task của phòng ban.
 
 ## Route, controller và JSP liên quan
-- `/dept`, `/dept/*`, `/taskManager`, `/dept/tasks/detail`, `/dept/leaves`.
-- Controller: `DeptController`, `TaskManager`, `PostTask`, `DeptViewTask`, `DeptLeaveController`.
+- `/dept`, `/dept/*`, `/taskManager`, `/viewTask`, `/dept/leaves`.
+- Controller: `DeptController`, `TaskManager`, `PostTask`, `ViewTask`, `DeptLeaveController`.
 - JSP: `Views/DeptManager/*`.
 
 ## Hiện trạng code
 - Danh sách task legacy đi qua `/taskManager`.
-- Chi tiết task dùng `/dept/tasks/detail` qua `DeptViewTask`.
+- Chi tiết task dùng `/viewTask` qua `ViewTask`.
 - Permission hiện dùng `VIEW_DEPARTMENTS`.
 - Dữ liệu phải gắn với manager/department qua `DeptManagerScope`.
 
@@ -23,9 +23,9 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - Không cho xem task ngoài scope bằng cách sửa URL.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Cần chuẩn hóa danh sách task sang `/dept/tasks`.
+- Cần chuẩn hóa danh sách/chi tiết task sang `/dept/tasks` và `/dept/tasks/detail` nếu đổi route code.
 - Cần test manager của phòng ban khác.
-- Cần permission riêng `VIEW_DEPARTMENT_TASKS`.
+- Cần permission riêng permission xem task riêng sau khi bổ sung seed/migration.
 
 ## Kiểm thử tối thiểu
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.

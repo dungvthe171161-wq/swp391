@@ -26,7 +26,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - POST phải dùng CSRF token và áp dụng Post/Redirect/Get.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Chưa thấy CSRF token và permission riêng như `APPROVE_DEPARTMENT_LEAVE`.
+- Chưa thấy CSRF token và permission duyệt leave phòng ban riêng trong seed/code; hiện còn dựa vào quyền chung theo module.
 - Cần xác nhận DAO chỉ cập nhật từ `Pending` để chống duyệt lặp hoặc tranh chấp đồng thời.
 - Chưa có audit log bắt buộc và lý do từ chối.
 - Tham số `status` cần allowlist thay vì nhận giá trị tùy ý.

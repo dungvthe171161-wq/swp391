@@ -26,12 +26,12 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 | Nhóm chức năng | Route/controller | Permission chuẩn cần có | Bảng dữ liệu chính | Ghi chú |
 |---|---|---|---|---|
 | Dashboard HR Staff | `/hrstaff`, `HrStaffHomeController` | `VIEW_HRSTAFF_DASHBOARD` | Recruitment, Application, Payroll, Contract | Hiển thị số liệu vận hành. |
-| Quản lý tin tuyển dụng | `/postRecruitments`, `PostRecruitmentController` | `VIEW_RECRUITMENT`, `CREATE_RECRUITMENT`, `UPDATE_RECRUITMENT`, `DELETE_RECRUITMENT` | `Recruitment` | Action ghi không dùng chung `VIEW_RECRUITMENT`. |
+| Quản lý tin tuyển dụng | `/postRecruitments`, `PostRecruitmentController` | `VIEW_RECRUITMENT`, `CREATE_RECRUITMENT`, `EDIT_RECRUITMENT`, `DELETE_RECRUITMENT` | `Recruitment` | Action ghi không dùng chung `VIEW_RECRUITMENT`. |
 | Quản lý ứng viên | `/candidates`, `ViewCandidateController` | `MANAGE_APPLICANTS` hoặc `VIEW_APPLICATIONS` | `Application`, `Guest`, `CandidateProfile` | Dữ liệu phải theo `ApplicationID`. |
 | Xem CV | `/viewCV`, `ViewCV` | `VIEW_APPLICATION_CV` | `Application`, `CandidateProfile` | Ưu tiên `applicationId`; `guestId` chỉ fallback legacy. |
 | Lên lịch phỏng vấn | `/hrstaff/interviews/schedule`, `InterviewScheduleController` | `SCHEDULE_INTERVIEW` | `Interview`, `Application`, `Notification` | Cần transaction và chống tạo lịch trùng. |
-| Quản lý hợp đồng | `/hrstaff/contracts`, `/hrstaff/contracts/create` | `VIEW_CONTRACTS`, `CREATE_CONTRACT`, `UPDATE_CONTRACT` | `Contract`, `Employee` | HR Staff tạo/push duyệt, HR Manager phê duyệt. |
-| Quản lý payroll | `/hrstaff/payroll*`, `/api/payroll` | `VIEW_PAYROLLS`, `CREATE_PAYROLL`, `UPDATE_PAYROLL`, `SUBMIT_PAYROLL`, `DELETE_PAYROLL` | `Payroll`, allowance, deduction | Batch action phải kiểm tra quyền từng action. |
+| Quản lý hợp đồng | `/hrstaff/contracts`, `/hrstaff/contracts/create` | `VIEW_CONTRACTS`, `CREATE_CONTRACT`, `EDIT_CONTRACT` | `Contract`, `Employee` | HR Staff tạo/push duyệt, HR Manager phê duyệt. |
+| Quản lý payroll | `/hrstaff/payroll*`, `/api/payroll` | `VIEW_PAYROLLS`, `CREATE_PAYROLL`, `EDIT_PAYROLL`, `SUBMIT_PAYROLL`, `DELETE_PAYROLL` | `Payroll`, allowance, deduction | Batch action phải kiểm tra quyền từng action. |
 | Phụ cấp/khấu trừ | `/api/allowance/*`, `/api/deduction/*` | `MANAGE_PAYROLL_ADJUSTMENTS` | Allowance, Deduction hoặc bảng tương ứng | JSON lỗi phải thống nhất. |
 
 ## Workflow tuyển dụng cần bổ sung

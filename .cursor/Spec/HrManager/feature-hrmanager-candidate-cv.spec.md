@@ -1,6 +1,6 @@
 # Tính năng HR Manager: Xem CV ứng viên
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Trạng thái: Đã rà soát theo code ngày 2026-07-16.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
@@ -13,7 +13,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 ## Hiện trạng code
 - `ViewCV` mapping `/viewCV` và dùng `VIEW_RECRUITMENT`.
 - GET ưu tiên `applicationId`; fallback `guestId` legacy nếu không có `applicationId`.
-- POST ưu tiên pplicationId để cập nhật Application; fallback legacy vẫn cập nhật Guest.Status.
+- POST ưu tiên `applicationId` để cập nhật `Application`; fallback legacy vẫn cập nhật `Guest.Status`.
 - Views/hr/ViewCV.jsp mở file qua /Upload/cvs/{fileName}; CvFileServlet đọc file từ thư mục do UploadPathUtil xác định.
 - Upload và phục vụ file tuân theo _Common/upload-cv.spec.md.
 

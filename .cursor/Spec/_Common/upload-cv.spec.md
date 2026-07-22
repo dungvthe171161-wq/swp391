@@ -1,6 +1,6 @@
 # Đặc tả dùng chung: Tải lên và hiển thị CV
 
-Trạng thái: Đã cập nhật theo code ngày 2026-07-13.
+Trạng thái: Đã cập nhật theo code ngày 2026-07-16.
 Ngôn ngữ: tiếng Việt có dấu. Spec này là nguồn mô tả chung cho các luồng Guest/PublicCandidate tải CV và HR xem CV.
 
 ## Actor và phạm vi
@@ -8,7 +8,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này là nguồn mô tả chung cho 
 - Guest/PublicCandidate đã đăng nhập tải CV khi nộp hồ sơ vào một tin tuyển dụng.
 - HR Staff/HR Manager xem hoặc tải CV của application đang xử lý.
 
-## Điểm vào và thành phần liên quan
+## Route, controller và JSP liên quan
 - `Views/ApplyForm.jsp`: form ứng tuyển, field file `cvFile`, POST multipart đến `/RecruitmentController` với action `saveCandidateProfile`.
 - `Views/Guest/Profile.jsp`: form hồ sơ ứng viên, field file `candidateCvFile`, POST multipart đến `/guest/profile` với action `saveCandidateProfile`.
 - `RecruitmentController.saveCvFile`: nhận CV từ form ứng tuyển.
@@ -19,7 +19,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này là nguồn mô tả chung cho 
 - `RecruitmentController.confirmApplication`: sao chép tên CV vào `Application.CV` khi tạo application.
 - `ViewCV` và `Views/hr/ViewCV.jsp`: HR tải thông tin application và hiển thị CV.
 
-## Luồng nghiệp vụ
+## Hiện trạng code
 1. Người dùng chọn file từ form hồ sơ hoặc form ứng tuyển.
 2. Controller nhận multipart part tương ứng (`candidateCvFile` hoặc `cvFile`).
 3. Nếu không chọn file mới và đã có CV, hệ thống giữ nguyên tên file cũ.
@@ -47,7 +47,7 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này là nguồn mô tả chung cho 
 - Khi đọc file, tên nhận từ URL không được chứa path khác với basename và file phải nằm trong thư mục CV đã resolve.
 - Route CV đi qua filter đăng nhập hiện tại; chỉ actor đã đăng nhập và có luồng nghiệp vụ phù hợp mới được mở trang HR.
 
-## Quy tắc nghiệp vụ
+## Quy tắc nghiệp vụ chuẩn
 - Không tạo application nếu recruitment đã đóng, hồ sơ chưa sẵn sàng hoặc Guest đã nộp trùng recruitment.
 - CV của application phải lấy từ `CandidateProfile` tại thời điểm xác nhận nộp hồ sơ.
 - HR phải truy cập bằng `applicationId` để xem đúng CV của lần ứng tuyển đang xét.

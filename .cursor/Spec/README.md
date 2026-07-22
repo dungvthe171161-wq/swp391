@@ -1,6 +1,6 @@
 # Chỉ mục đặc tả HRMS
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Trạng thái: Đã rà soát theo code ngày 2026-07-22.
 Ngôn ngữ: toàn bộ spec phải viết bằng tiếng Việt có dấu; tên class, route, bảng và permission được giữ nguyên theo code.
 
 ## Nguyên tắc đọc spec
@@ -22,17 +22,21 @@ Ngôn ngữ: toàn bộ spec phải viết bằng tiếng Việt có dấu; tên
 - `_Common/permission-matrix.spec.md`: ma trận route, role, permission và filter.
 - `_Common/status-workflow.spec.md`: enum nghiệp vụ hiện có trong database và workflow chuẩn.
 - `_Common/security-auth-hardening.spec.md`: bảo mật đăng nhập, mật khẩu, session và reset password.
+- `_Common/profile.spec.md`: hồ sơ user chung qua `/profilepage`.
 - `_Common/route-conflict-resolution.spec.md`: tách route task Dept/Employee.
 - `_Common/database-impact.spec.md`: bảng đọc/ghi theo module.
 - `_Common/notification.spec.md`: thông báo dùng chung theo `SystemUser.UserID`.
+- `_Common/file-access-data-privacy.spec.md`: bảo vệ CV, contract document và chữ ký.
 - `_Common/ui-language-theme.spec.md`: chuẩn tiếng Việt và giao diện BetterHR.
 
 ## Kết quả đối chiếu code quan trọng
-- Code compile thành công bằng Maven; warning hiện tại không chặn build.
-- `/departments` được bảo vệ bởi `RoleAuthorizationFilter`, `ModulePermissionFilter` và guard trong `DepartmentController`.
-- Chi tiết task Dept dùng `/dept/tasks/detail` qua servlet `DeptViewTask`; Employee dùng `/employee/tasks/detail` qua servlet `EmployeeViewTask` với ownership guard theo `systemUser.EmployeeID`.
-- Workflow tuyển dụng dùng enum database `Applied`, `Screening`, `Interview`, `Offered`, `Rejected`, `Withdrawn`, `Hired`; `Application.CurrentStep` dùng `Offer` (không phải `Offered`) khi ở bước offer.
+- `/departments` hiện có `DepartmentController`, đã được bảo vệ bởi `RoleAuthorizationFilter`, `ModulePermissionFilter` và guard `PermissionUtil` trong controller.
+- Department CRUD vẫn cần tách permission action `CREATE_DEPARTMENT`, `EDIT_DEPARTMENT`, `DELETE_DEPARTMENT` và audit nếu muốn hardening đầy đủ.
+- Chi tiết task Dept hiện dùng `/viewTask` qua servlet `ViewTask`; Employee có danh sách/cập nhật nhanh tại `/employee/tasks` và servlet detail `EmployeeViewTask` mapping `/employee/view-task`.
+- Employee schedule hiện có `/employee/schedule`; Employee contract có `/employee/contract/document` và ký bằng `POST /employee/contract`.
+- Workflow tuyển dụng dùng enum database `Applied`, `Screening`, `Interview`, `Offered`, `Rejected`, `Withdrawn`, `Hired`; `Application.CurrentStep` dùng `Offer` khi ở bước offer.
 - `ViewCV` ưu tiên tham số `applicationId`; chỉ còn fallback `guestId` legacy.
 - `CreateEmployeeController` dùng quyền `VIEW_EMPLOYEES`, tạo hoặc promote tài khoản rồi set `Guest.Status = Converted` (không xóa `Guest`).
 - Mật khẩu hiện đang so sánh/lưu dạng plain text trong `PasswordHash`; mọi spec bảo mật phải ghi rõ đây là hiện trạng cần hardening, không được mô tả như đã hash.
 - `PayrollApprovalController` hiện dùng quyền `VIEW_USERS`; thiết kế chuẩn cần tách quyền phê duyệt payroll riêng.
+- `DBConnectionTest`, `SimpleHrController`, `HrHomeSimple.jsp` và `TestHrHome.jsp` là luồng diagnostic/legacy cần giới hạn hoặc loại khỏi production.

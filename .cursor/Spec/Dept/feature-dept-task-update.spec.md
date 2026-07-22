@@ -1,18 +1,17 @@
 # Tính năng Dept: Cập nhật công việc
 
-Trạng thái: Đã rà soát theo code ngày 2026-07-13.
+Trạng thái: Đã rà soát theo code ngày 2026-07-16.
 Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng code; phần chưa đúng được ghi rõ ở mục cần sửa trong code.
 
 ## Actor và phạm vi
 - Dept Manager xem/cập nhật chi tiết task của phòng ban.
 
 ## Route, controller và JSP liên quan
-- `/dept/tasks/detail`, servlet `DeptViewTask`.
-- Route legacy tham chiếu: `/viewTask`, `dept.ViewTask` (không còn là route chính).
-- JSP: `Views/DeptManager/viewTask.jsp` hoặc trang detail tương ứng.
+- Route hiện tại: `/viewTask`, servlet `ViewTask`.
+- JSP nội bộ: `Views/DeptManager/viewTask.jsp`.
 
 ## Hiện trạng code
-- `DeptViewTask` xử lý GET/POST tại `/dept/tasks/detail`.
+- `ViewTask` xử lý GET/POST tại `/viewTask`.
 - Kiểm tra scope phòng ban qua `DeptManagerScope` và ownership task theo manager.
 - Filter yêu cầu permission `VIEW_DEPARTMENTS` cho route Dept.
 
@@ -22,8 +21,8 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 - Mọi thay đổi trạng thái nên có audit/notification nếu cần.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Cập nhật task vẫn dùng `VIEW_DEPARTMENTS`, chưa có `UPDATE_DEPARTMENT_TASK`.
-- JSP/link legacy có thể còn trỏ `/viewTask`.
+- Cập nhật task vẫn dùng `VIEW_DEPARTMENTS`, chưa có permission cập nhật task riêng sau khi bổ sung seed/migration.
+- Cần chuẩn hóa link/form sang `/dept/tasks/detail` nếu đổi route code.
 - Cần audit khi Dept Manager thay đổi trạng thái task.
 
 ## Kiểm thử tối thiểu

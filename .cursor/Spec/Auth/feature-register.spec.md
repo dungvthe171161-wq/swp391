@@ -18,12 +18,17 @@ Ngôn ngữ: tiếng Việt có dấu. Spec này mô tả đúng hiện trạng 
 
 ## Quy tắc nghiệp vụ chuẩn
 - Username/email phải unique.
-- Password phải đạt policy và được hash ở thiết kế chuẩn.
+- **Chính sách mật khẩu (Password Strength Policy)**:
+- Mật khẩu bắt buộc có độ dài tối thiểu là **10 ký tự** và tối đa là **36 ký tự**.
+- Mật khẩu bắt buộc chứa cả chữ cái và chữ số (hợp lệ theo biểu thức chính quy Regex: `^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,36}$`).
+- Mật khẩu lưu trữ dưới dạng thô (Plaintext), không mã hóa (đồng bộ theo hàm `hashPassword` và `checkPassword` hiện tại của `DAO.java`).
 - User mới không được gắn `EmployeeID` nếu chưa là employee.
 
 ## Code còn lệch spec hoặc cần bổ sung
-- Code hiện còn phụ thuộc cơ chế mật khẩu plain text.
+- Cần lập trình kiểm tra mật khẩu bằng biểu thức Regex `^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,36}$` ở cả Client-side (JavaScript validate form) và Server-side (kiểm tra trước khi chèn vào database trong `RegisterController`).
+- Giữ nguyên cơ chế so sánh và lưu mật khẩu dạng thô (Plaintext).
 - Cần test tạo Guest profile sau đăng ký.
+
 
 ## Kiểm thử tối thiểu
 - Chạy `mvn -q compile` sau khi thay đổi code liên quan.

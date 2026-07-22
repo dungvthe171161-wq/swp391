@@ -1,6 +1,7 @@
 package com.hrm.listener;
 
 import com.hrm.controller.EmailSender;
+import com.hrm.controller.EmailTemplates;
 import com.hrm.dao.TaskDAO;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
@@ -66,21 +67,31 @@ public class TaskDeadlineReminderListener implements ServletContextListener {
 
         int taskId = intValue(candidate.get("taskId"));
         int employeeId = intValue(candidate.get("employeeId"));
+        String employeeName = stringValue(candidate.get("fullName"));
         String title = stringValue(candidate.get("title"));
         String dueAt = formatDueAt(candidate.get("dueAt"));
         String subject = "BetterHR - Nhắc deadline công việc";
-        String content = "Công việc \"" + title + "\" sẽ đến hạn trong " + REMINDER_HOURS + " giờ.\n"
-                + "Deadline: " + dueAt + "\n"
-                + "Vui lòng đăng nhập BetterHR để cập nhật tiến độ hoặc nộp kết quả.";
+        String content = EmailTemplates.taskDeadlineReminder(
+                employeeName, title, dueAt, REMINDER_HOURS, resolveTaskUrl(context));
 
         try {
-            EmailSender.sendEmail(email, subject, content);
+            EmailSender.sendHtmlEmail(email, subject, content);
             taskDAO.markDeadlineReminderSent(taskId, employeeId);
         } catch (Exception ex) {
             context.log("Cannot send deadline reminder for task " + taskId + " to employee " + employeeId, ex);
         }
     }
 
+    private String resolveTaskUrl(ServletContext context) {
+        String baseUrl = System.getenv("APP_BASE_URL");
+        if (baseUrl == null || baseUrl.isBlank()) {
+            baseUrl = System.getProperty("APP_BASE_URL");
+        }
+        if (baseUrl == null || baseUrl.isBlank()) {
+            baseUrl = "http://localhost:8080" + context.getContextPath();
+        }
+        return baseUrl.replaceFirst("/+$", "") + "/employee/tasks";
+    }
     private String formatDueAt(Object value) {
         if (value instanceof Timestamp timestamp) {
             return timestamp.toLocalDateTime().format(DATE_TIME_FORMAT);

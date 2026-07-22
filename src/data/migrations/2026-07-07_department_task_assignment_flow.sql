@@ -1,8 +1,21 @@
 -- Department task assignment flow without creating new tables.
 -- Safe to run again: column additions are guarded by information_schema checks.
 
+-- Keep the legacy value temporarily so existing Completed rows can be migrated
+-- without being truncated by MySQL strict mode.
 ALTER TABLE Task
-    MODIFY COLUMN Status ENUM('Waiting','In Progress','Submitted','Approved','Rejected','Overdue','Cancelled') DEFAULT 'Waiting';
+    MODIFY COLUMN Status ENUM(
+        'Waiting','In Progress','Completed','Submitted','Approved','Rejected','Overdue','Cancelled'
+    ) DEFAULT 'Waiting';
+
+UPDATE Task
+SET Status = 'Submitted'
+WHERE Status = 'Completed';
+
+ALTER TABLE Task
+    MODIFY COLUMN Status ENUM(
+        'Waiting','In Progress','Submitted','Approved','Rejected','Overdue','Cancelled'
+    ) DEFAULT 'Waiting';
 
 SET @sql = (
     SELECT IF(

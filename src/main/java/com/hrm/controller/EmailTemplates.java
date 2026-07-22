@@ -45,6 +45,97 @@ public final class EmailTemplates {
         );
     }
 
+    public static String taskAssigned(String employeeName, String taskTitle, String description,
+                                      String startDate, String dueDate, String priority, String taskUrl) {
+        String priorityLabel = switch (firstNonBlank(priority, "Normal")) {
+            case "High" -> "Cao";
+            case "Low" -> "Thấp";
+            default -> "Bình thường";
+        };
+        String priorityColor = "High".equals(priority) ? RED
+                : "Low".equals(priority) ? GREEN_ACCENT : "#9a6700";
+        return taskEmail(
+                "Công việc mới",
+                "Bạn vừa được giao một công việc mới",
+                "Quản lý đã giao công việc mới cho bạn trên BetterHR. Hãy xem thông tin và chủ động cập nhật tiến độ đúng hạn.",
+                employeeName, taskTitle, startDate, dueDate,
+                "Mức độ ưu tiên", priorityLabel, priorityColor,
+                "Nội dung công việc", description, "Mở công việc", taskUrl
+        );
+    }
+
+    public static String taskDeadlineReminder(String employeeName, String taskTitle,
+                                               String dueDate, int hoursRemaining, String taskUrl) {
+        return taskEmail(
+                "Nhắc deadline",
+                "Công việc sắp đến hạn",
+                "Công việc dưới đây sắp đến deadline. Vui lòng kiểm tra tiến độ và nộp kết quả trước thời gian quy định.",
+                employeeName, taskTitle, null, dueDate,
+                "Thời gian còn lại", "Khoảng " + hoursRemaining + " giờ", "#b45309",
+                "Việc cần làm", "Đăng nhập BetterHR để cập nhật trạng thái hoặc nộp kết quả công việc.",
+                "Kiểm tra công việc", taskUrl
+        );
+    }
+
+    private static String taskEmail(String eyebrow, String headline, String lead,
+                                    String employeeName, String taskTitle, String startDate, String dueDate,
+                                    String badgeLabel, String badgeValue, String badgeColor,
+                                    String noteTitle, String noteBody, String actionText, String taskUrl) {
+        String safeName = escape(firstNonBlank(employeeName, "Nhân viên BetterHR"));
+        String safeTaskTitle = escape(firstNonBlank(taskTitle, "Công việc"));
+        String safeStartDate = escape(firstNonBlank(startDate, "Theo kế hoạch của quản lý"));
+        String safeDueDate = escape(firstNonBlank(dueDate, "Chưa xác định"));
+        String safeNote = escape(firstNonBlank(noteBody, "Xem chi tiết công việc trên BetterHR"))
+                .replace("\r\n", "<br>").replace("\n", "<br>");
+        String safeUrl = escape(firstNonBlank(taskUrl, "#"));
+
+        return """
+                <!doctype html>
+                <html lang="vi">
+                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BetterHR</title></head>
+                <body style="margin:0;padding:0;background:%s;font-family:Arial,Helvetica,sans-serif;color:%s;">
+                    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">%s - %s</div>
+                    <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:%s;padding:32px 12px;">
+                        <tr><td align="center">
+                            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:640px;background:%s;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.10);">
+                                <tr><td style="background:%s;padding:28px 32px;">
+                                    <div style="color:%s;font-size:22px;font-weight:700;"><span style="display:inline-block;width:42px;height:42px;line-height:42px;text-align:center;border-radius:50%%;background:%s;margin-right:10px;">B</span>BetterHR</div>
+                                    <div style="margin-top:22px;color:rgba(255,255,255,0.72);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">%s</div>
+                                    <h1 style="margin:8px 0 0;color:%s;font-size:29px;line-height:1.25;">%s</h1>
+                                </td></tr>
+                                <tr><td style="padding:32px;">
+                                    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Xin chào <strong>%s</strong>,</p>
+                                    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:%s;">%s</p>
+                                    <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:%s;border:1px solid %s;border-radius:12px;overflow:hidden;">
+                                        <tr><td colspan="2" style="padding:20px;border-bottom:1px solid %s;">
+                                            <div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Công việc</div>
+                                            <div style="margin-top:7px;font-size:19px;line-height:1.4;color:%s;font-weight:700;">%s</div>
+                                        </td></tr>
+                                        <tr>
+                                            <td width="50%%" style="padding:18px 20px;border-right:1px solid %s;"><div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Bắt đầu</div><div style="margin-top:6px;font-weight:700;">%s</div></td>
+                                            <td width="50%%" style="padding:18px 20px;"><div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Deadline</div><div style="margin-top:6px;font-weight:700;color:%s;">%s</div></td>
+                                        </tr>
+                                    </table>
+                                    <div style="margin:18px 0 24px;"><span style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">%s</span><br><span style="display:inline-block;margin-top:8px;padding:8px 13px;border-radius:999px;background:%s;color:%s;font-size:14px;font-weight:700;">%s</span></div>
+                                    <div style="border-left:4px solid %s;padding:3px 0 3px 16px;margin-bottom:26px;"><h2 style="margin:0 0 8px;font-size:17px;color:%s;">%s</h2><p style="margin:0;font-size:15px;line-height:1.7;color:%s;">%s</p></div>
+                                    <a href="%s" style="display:inline-block;background:%s;color:%s;text-decoration:none;font-size:15px;font-weight:700;padding:13px 22px;border-radius:999px;">%s</a>
+                                </td></tr>
+                                <tr><td style="background:%s;padding:20px 32px;color:rgba(255,255,255,0.70);font-size:13px;line-height:1.6;">Email này được gửi tự động từ hệ thống BetterHR. Vui lòng không trả lời trực tiếp email này.</td></tr>
+                            </table>
+                        </td></tr>
+                    </table>
+                </body></html>
+                """.formatted(
+                NEUTRAL_WARM, TEXT_BLACK, escape(eyebrow), safeTaskTitle,
+                NEUTRAL_WARM, WHITE, HOUSE_GREEN, WHITE, GREEN_ACCENT,
+                escape(eyebrow), WHITE, escape(headline), safeName, TEXT_SOFT, escape(lead),
+                NEUTRAL_WARM, CERAMIC, CERAMIC, TEXT_SOFT, STARBUCKS_GREEN, safeTaskTitle,
+                CERAMIC, TEXT_SOFT, safeStartDate, TEXT_SOFT, badgeColor, safeDueDate,
+                TEXT_SOFT, escape(badgeLabel), GREEN_LIGHT, badgeColor, escape(badgeValue),
+                badgeColor, STARBUCKS_GREEN, escape(noteTitle), TEXT_SOFT, safeNote,
+                safeUrl, GREEN_ACCENT, WHITE, escape(actionText), HOUSE_GREEN
+        );
+    }
     private static String applicationStatusEmail(String eyebrow,
                                                  String headline,
                                                  String lead,

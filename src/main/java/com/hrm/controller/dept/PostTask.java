@@ -1,6 +1,7 @@
 package com.hrm.controller.dept;
 
 import com.hrm.controller.EmailSender;
+import com.hrm.controller.EmailTemplates;
 import com.hrm.dao.DAO;
 import com.hrm.dao.EmployeeDAO;
 import com.hrm.model.entity.Employee;
@@ -102,7 +103,11 @@ public class PostTask extends HttpServlet {
                 scope.getUser() != null ? scope.getUser().getUserId() : 0,
                 taskId,
                 title,
-                formatDateTime(dueDate)
+                description,
+                formatDateTime(startDate),
+                formatDateTime(dueDate),
+                priority,
+                buildTaskUrl(request)
         );
 
         response.sendRedirect(request.getContextPath() + "/taskManager?mess="
@@ -185,7 +190,8 @@ public class PostTask extends HttpServlet {
     }
 
     private void sendTaskNotifications(List<Employee> employees, int actorUserId,
-            int taskId, String title, String dueDate) {
+            int taskId, String title, String description, String startDate,
+            String dueDate, String priority, String taskUrl) {
         List<Integer> assignedEmployeeIds = new ArrayList<>(employees.size());
         for (Employee employee : employees) {
             assignedEmployeeIds.add(employee.getEmployeeId());
@@ -194,24 +200,37 @@ public class PostTask extends HttpServlet {
         notificationService.notifyTaskAssignedToEmployees(employeeUserIds, actorUserId, taskId, title);
 
         for (Employee employee : employees) {
-            sendTaskEmail(employee, title, dueDate);
+            sendTaskEmail(employee, title, description, startDate, dueDate, priority, taskUrl);
         }
     }
 
-    private void sendTaskEmail(Employee employee, String title, String dueDate) {
+    private void sendTaskEmail(Employee employee, String title, String description,
+            String startDate, String dueDate, String priority, String taskUrl) {
         if (employee.getEmail() == null || employee.getEmail().isBlank()) {
             return;
         }
         try {
-            EmailSender.sendEmail(employee.getEmail(),
+            EmailSender.sendHtmlEmail(employee.getEmail(),
                     "BetterHR - Công việc mới",
-                    "Bạn vừa được giao công việc: " + title + "\nDeadline: " + dueDate
-                            + "\nVui lòng đăng nhập BetterHR để cập nhật trạng thái hoặc nộp kết quả.");
+                    EmailTemplates.taskAssigned(employee.getFullName(), title, description,
+                            startDate, dueDate, priority, taskUrl));
         } catch (Exception ignored) {
             // Email is best-effort; the in-app notification is still stored.
         }
     }
 
+    private String buildTaskUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        int port = request.getServerPort();
+        StringBuilder url = new StringBuilder(scheme)
+                .append("://")
+                .append(request.getServerName());
+        if (("http".equalsIgnoreCase(scheme) && port != 80)
+                || ("https".equalsIgnoreCase(scheme) && port != 443)) {
+            url.append(':').append(port);
+        }
+        return url.append(request.getContextPath()).append("/employee/tasks").toString();
+    }
     private String clean(String value) {
         return value == null ? null : value.trim();
     }

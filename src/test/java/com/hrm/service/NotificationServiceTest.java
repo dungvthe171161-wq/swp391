@@ -171,8 +171,8 @@ class NotificationServiceTest {
         assertEquals("Task", notification.getEntityType());
         assertEquals(Integer.valueOf(501), notification.getEntityId());
         assertEquals("/employee/tasks", notification.getTargetUrl());
-        assertEquals("Ban co cong viec moi", notification.getTitle());
-        assertEquals("Cong viec moi: Bao cao tuan.", notification.getMessage());
+        assertEquals("Bạn có công việc mới", notification.getTitle());
+        assertEquals("Công việc mới: Bao cao tuan.", notification.getMessage());
     }
 
     @Test
@@ -342,7 +342,8 @@ class NotificationServiceTest {
         assertEquals("Role", notification.getEntityType());
         assertEquals(Integer.valueOf(3), notification.getEntityId());
         assertEquals("/admin?action=role-permissions", notification.getTargetUrl());
-        assertEquals("Permission da duoc cap", notification.getTitle());
+        assertEquals("Quyền đã được cấp", notification.getTitle());
+        assertEquals("Vai trò #3 vừa được cấp 2 quyền.", notification.getMessage());
     }
 
     private static class FakeNotificationRepository implements NotificationService.NotificationRepository {

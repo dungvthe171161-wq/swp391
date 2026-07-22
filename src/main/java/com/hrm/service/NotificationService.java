@@ -141,8 +141,8 @@ public class NotificationService {
                 "Task",
                 taskId,
                 "Task",
-                "Ban co cong viec moi",
-                "Cong viec moi: " + defaultText(taskTitle, "Cong viec") + ".",
+                "Bạn có công việc mới",
+                "Công việc mới: " + defaultText(taskTitle, "Công việc") + ".",
                 "/employee/tasks",
                 "Normal"
         );
@@ -354,9 +354,9 @@ public class NotificationService {
                 "Role",
                 roleId,
                 "Permission",
-                granted ? "Permission da duoc cap" : "Permission da duoc thu hoi",
-                "Role #" + roleId + (granted ? " vua duoc cap " : " vua bi thu hoi ")
-                        + Math.max(1, permissionCount) + " permission.",
+                granted ? "Quyền đã được cấp" : "Quyền đã được thu hồi",
+                "Vai trò #" + roleId + (granted ? " vừa được cấp " : " vừa bị thu hồi ")
+                        + Math.max(1, permissionCount) + " quyền.",
                 "/admin?action=role-permissions",
                 "High"
         );

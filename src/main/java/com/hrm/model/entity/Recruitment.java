@@ -1,8 +1,10 @@
 package com.hrm.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Recruitment entity – stores job postings for the HRMS system.
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
  */
 public class Recruitment implements Serializable {
     private static final long serialVersionUID = 1L;
+    private static final DateTimeFormatter POSTED_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private int recruitmentId;
     private String Title;
@@ -105,6 +108,14 @@ public class Recruitment implements Serializable {
 
     public void setPostedDate(LocalDateTime postedDate) {
         this.postedDate = postedDate;
+    }
+
+    public String getPostedDateDisplay() {
+        return postedDate == null ? "Chưa xác định" : postedDate.format(POSTED_DATE_FORMAT);
+    }
+
+    public String getSalaryInputValue() {
+        return Salary == null ? "" : BigDecimal.valueOf(Salary).stripTrailingZeros().toPlainString();
     }
 
     @Override

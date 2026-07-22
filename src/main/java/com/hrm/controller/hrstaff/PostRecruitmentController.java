@@ -39,6 +39,10 @@ public class PostRecruitmentController extends HttpServlet {
         if (!ensureAccess(request, response)) {
             return;
         }
+        String flashMessage = request.getParameter("mess");
+        if (flashMessage != null && !flashMessage.isBlank()) {
+            request.setAttribute("mess", flashMessage);
+        }
         String action = request.getParameter("action");
         if ("send".equals(action)) {
             try {
@@ -110,6 +114,8 @@ public class PostRecruitmentController extends HttpServlet {
         request.setAttribute("recruitment", rList);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecruitment", totalRecruitment);
+        request.setAttribute("pageSize", pageSize);
         request.setAttribute("searchByTitle", searchByTitle);
         request.setAttribute("filterStatus", filterStatus);
         request.setAttribute("startDate", startDate);

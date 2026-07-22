@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 public class DetailRecruitment extends HttpServlet {
 
     private static final String REQUIRED_PERMISSION = "VIEW_RECRUITMENT";
-    private static final String DENIED_MESSAGE = "You do not have permission to view or edit recruitment details.";
+    private static final String DENIED_MESSAGE = "Bạn không có quyền xem hoặc chỉnh sửa tin tuyển dụng.";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -60,14 +60,17 @@ public class DetailRecruitment extends HttpServlet {
                 int applicant = Integer.parseInt(request.getParameter("Applicant"));
 
                 String message = null;
-                if (title != null && title.length() > 50) {
-                    message = "Title must not exceed 50 characters!";
-                } else if (requirement != null && requirement.length() > 50) {
-                    message = "Requirement must not exceed 50 characters!";
-                } else if (location != null && location.length() > 50) {
-                    message = "Location must not exceed 50 characters!";
-                } else if (description != null && description.length() > 500) {
-                    message = "Description must not exceed 500 characters!";
+                if (title == null || title.isBlank() || description == null || description.isBlank()
+                        || requirement == null || requirement.isBlank() || location == null || location.isBlank()) {
+                    message = "Vui lòng nhập đầy đủ thông tin bắt buộc.";
+                } else if (title.length() > 200) {
+                    message = "Tên vị trí không được vượt quá 200 ký tự.";
+                } else if (requirement.length() > 200) {
+                    message = "Yêu cầu ứng viên không được vượt quá 200 ký tự.";
+                } else if (location.length() > 200) {
+                    message = "Địa điểm làm việc không được vượt quá 200 ký tự.";
+                } else if (description.length() > 1000) {
+                    message = "Mô tả công việc không được vượt quá 1.000 ký tự.";
                 }
 
                 if (message != null) {
@@ -79,7 +82,7 @@ public class DetailRecruitment extends HttpServlet {
                 }
 
                 if (salary <= 0) {
-                    request.setAttribute("mess", "Salary must be a positive number!");
+                    request.setAttribute("mess", "Mức lương phải lớn hơn 0.");
                     Recruitment rec = DAO.getInstance().getRecruitmentById(id);
                     request.setAttribute("rec", rec);
                     request.getRequestDispatcher("Views/hr/DetailRecruitment.jsp").forward(request, response);
@@ -87,7 +90,7 @@ public class DetailRecruitment extends HttpServlet {
                 }
                 
                 if (applicant <= 0) {
-                    request.setAttribute("mess", "Applicant must be a positive number!");
+                    request.setAttribute("mess", "Số lượng tuyển phải lớn hơn 0.");
                     Recruitment rec = DAO.getInstance().getRecruitmentById(id);
                     request.setAttribute("rec", rec);
                     request.getRequestDispatcher("Views/hr/DetailRecruitment.jsp").forward(request, response);
@@ -96,12 +99,12 @@ public class DetailRecruitment extends HttpServlet {
 
                 int update = DAO.getInstance().setRecruitmentById(title, description, requirement, location, salary, applicant,id);
                 if (update > 0) {
-                    String successMessage = URLEncoder.encode("Save recruitment successfully!", StandardCharsets.UTF_8);
+                    String successMessage = URLEncoder.encode("Đã lưu thay đổi tin tuyển dụng.", StandardCharsets.UTF_8);
                     response.sendRedirect(request.getContextPath() + "/postRecruitments?mess=" + successMessage);
                     return;
                 }
 
-                request.setAttribute("mess", "No changes were saved.");
+                request.setAttribute("mess", "Không có thay đổi nào được lưu.");
                 Recruitment rec = DAO.getInstance().getRecruitmentById(id);
                 request.setAttribute("rec", rec);
                 request.getRequestDispatcher("Views/hr/DetailRecruitment.jsp").forward(request, response);
@@ -116,7 +119,7 @@ public class DetailRecruitment extends HttpServlet {
 
     @Override
     public String getServletInfo() {
-        return "Short description";
+        return "Chi tiết tin tuyển dụng";
     }
 
     private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
@@ -126,7 +129,7 @@ public class DetailRecruitment extends HttpServlet {
                 response,
                 PermissionUtil.ROLE_HR_STAFF,
                 REQUIRED_PERMISSION,
-                "This section is restricted to HR Staff.",
+                "Khu vực này chỉ dành cho nhân viên nhân sự.",
                 DENIED_MESSAGE
         );
     }

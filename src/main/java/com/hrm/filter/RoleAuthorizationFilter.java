@@ -23,6 +23,8 @@ public class RoleAuthorizationFilter implements Filter {
     private static final Map<String, Set<Integer>> ROLE_PATTERNS = new LinkedHashMap<>();
 
     static {
+        addPattern(Set.of(1), "/departments");
+
         addPattern(Set.of(1, 2), "/hr/", "/Views/hr/", "/HrHomeController", "/postRecruitments",
                 "/detailRecruitment", "/detailRecruitmentCreate", "/viewRecruitment",
                 "/viewCV", "/candidates", "/detailWaitingRecruitment", "/SimpleHrController");

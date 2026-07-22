@@ -18,6 +18,7 @@ import java.util.List;
 // request  đến filter 
 @WebFilter(filterName = "ModulePermissionFilter", urlPatterns = {
         "/admin", "/admin/*",
+        "/departments",
         "/dept", "/dept/*",
         "/taskManager", "/postTask", "/viewTask",
         "/employee", "/employee/*"
@@ -62,6 +63,12 @@ public class ModulePermissionFilter extends HttpFilter {
                     "MANAGE_SYSTEM",
                     "Chỉ quản trị viên mới được truy cập trang quản trị.",
                     "Bạn thiếu quyền MANAGE_SYSTEM."),
+            ModuleRule.htmlOnly(
+                    "/departments",
+                    PermissionUtil.ROLE_ADMIN,
+                    PERMISSION_VIEW_DEPARTMENTS,
+                    "Chỉ quản trị viên mới được quản lý phòng ban.",
+                    MESSAGE_DEPARTMENT_PERMISSION),
             ModuleRule.htmlOnly(
                     "/dept",
                     null,

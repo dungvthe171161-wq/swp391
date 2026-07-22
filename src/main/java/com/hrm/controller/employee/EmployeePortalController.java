@@ -156,7 +156,7 @@ public class EmployeePortalController extends HttpServlet {
         request.setAttribute("todaySchedule", workScheduleDAO.getByEmployeeAndDate(employeeId, LocalDate.now()));
         request.setAttribute("gpsRequired", true);
         if (officeLocation == null) {
-            request.setAttribute("gpsWarning", "Chua cau hinh dia diem van phong hop le de cham cong GPS.");
+            request.setAttribute("gpsWarning", "Chưa cấu hình địa điểm văn phòng hợp lệ để chấm công GPS.");
         }
         request.getRequestDispatcher("/Views/Employee/Attendance.jsp").forward(request, response);
     }
@@ -287,11 +287,11 @@ public class EmployeePortalController extends HttpServlet {
         if ("checkIn".equals(action)) {
             success = attendanceDAO.checkInWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
-                    success ? "Da ghi nhan vao ca." : "Khong the vao ca GPS. Vui long kiem tra vi tri.");
+                    success ? "Đã ghi nhận vào ca." : "Không thể vào ca bằng GPS. Vui lòng kiểm tra vị trí.");
         } else if ("checkOut".equals(action)) {
             success = attendanceDAO.checkOutWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
-                    success ? "Da ghi nhan ra ca." : "Khong the ra ca GPS. Vui long kiem tra vi tri.");
+                    success ? "Đã ghi nhận ra ca." : "Không thể ra ca bằng GPS. Vui lòng kiểm tra vị trí.");
         }
         response.sendRedirect(request.getContextPath() + "/employee/attendance");
     }

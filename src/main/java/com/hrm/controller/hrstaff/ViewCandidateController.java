@@ -34,6 +34,7 @@ public class ViewCandidateController extends HttpServlet {
     private static final String PARAM_FILTER_STATUS = "filterStatus";
     private static final String PARAM_START_DATE = "startDate";
     private static final String PARAM_END_DATE = "endDate";
+    private static final int PAGE_SIZE = 10;
     private final transient ApplicationDAO applicationDAO = new ApplicationDAO();
 
     @Override
@@ -43,7 +44,7 @@ public class ViewCandidateController extends HttpServlet {
             return;
         }
         int page = 1;
-        int pageSize = 5;
+        int pageSize = PAGE_SIZE;
         String pageStr = request.getParameter("page");
 
         if (pageStr != null) {

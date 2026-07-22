@@ -2,6 +2,7 @@ package com.hrm.controller.admin;
 
 import com.hrm.dao.*;
 import com.hrm.model.entity.*;
+import com.hrm.util.PermissionUtil;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,10 +22,17 @@ public class DepartmentController extends HttpServlet {
 
     private DepartmentDAO departmentDAO = new DepartmentDAO();
     private EmployeeDAO employeeDAO = new EmployeeDAO();
+    private static final String REQUIRED_PERMISSION = "VIEW_DEPARTMENTS";
+    private static final String ROLE_DENIED_MESSAGE = "Khu vực này chỉ dành cho quản trị viên.";
+    private static final String PERMISSION_DENIED_MESSAGE = "Bạn thiếu quyền xem phòng ban.";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!ensureAccess(request, response)) {
+            return;
+        }
+
         String action = request.getParameter("action");
         if (action == null) {
             action = "list";
@@ -48,6 +56,10 @@ public class DepartmentController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!ensureAccess(request, response)) {
+            return;
+        }
+
         String action = request.getParameter("action");
         if (action == null) {
             action = "save";
@@ -368,11 +380,23 @@ public class DepartmentController extends HttpServlet {
             e.printStackTrace();
         }
 
-        response.sendRedirect(request.getContextPath() + "/department?action=departments");
+        response.sendRedirect(request.getContextPath() + "/departments?action=departments");
     }
 
     @Override
     public String getServletInfo() {
         return "Department Controller - Handles department management operations";
+    }
+
+    private boolean ensureAccess(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        return PermissionUtil.ensureRolePermission(
+                request,
+                response,
+                PermissionUtil.ROLE_ADMIN,
+                REQUIRED_PERMISSION,
+                ROLE_DENIED_MESSAGE,
+                PERMISSION_DENIED_MESSAGE
+        );
     }
 }

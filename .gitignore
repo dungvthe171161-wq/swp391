@@ -38,6 +38,7 @@ Thumbs.db
 *.tar.gz
 
 # Local DB configs
+.env
 src/main/resources/db.properties
 src/main/resources/META-INF/db.local.properties
 src/main/resources/META-INF/google.properties

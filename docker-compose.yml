@@ -1,0 +1,58 @@
+services:
+  hrms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hrms:local
+    environment:
+      DB_HOST: ${DB_HOST:?Set DB_HOST in .env}
+      DB_PORT: ${DB_PORT:?Set DB_PORT in .env}
+      DB_NAME: ${DB_NAME:?Set DB_NAME in .env}
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    ports:
+      - "${HRMS_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - hrms_network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    command:
+      - --port=${DB_PORT:?Set DB_PORT in .env}
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      DB_PORT: ${DB_PORT:?Set DB_PORT in .env}
+      MYSQL_DATABASE: ${DB_NAME:?Set DB_NAME in .env}
+      MYSQL_USER: ${DB_USER:?Set DB_USER in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
+      - ./src/data:/docker-entrypoint-source:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - MYSQL_PWD="$${MYSQL_PASSWORD}" mysql -h 127.0.0.1 -P "$${DB_PORT}" -u "$${MYSQL_USER}" "$${MYSQL_DATABASE}" --execute="SELECT 1 FROM Employee LIMIT 0; SELECT CheckInAccuracy FROM Attendance LIMIT 0; SELECT 1 FROM ChatbotFaq LIMIT 0;"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - hrms_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    name: hrms_mysql_data
+
+networks:
+  hrms_network:
+    name: hrms_network
+    driver: bridge

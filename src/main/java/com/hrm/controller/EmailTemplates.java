@@ -19,13 +19,13 @@ public final class EmailTemplates {
 
     public static String cvScreeningPassed(String candidateName, String recruitmentTitle) {
         return applicationStatusEmail(
-                "Tin vui từ BetterHR",
-                "CV của bạn đã vượt qua vòng sàng lọc",
-                "Hồ sơ của bạn phù hợp với tiêu chí tuyển dụng ban đầu. Đội ngũ BetterHR sẽ gửi lịch phỏng vấn trong thời gian sớm nhất.",
-                "Vượt qua sàng lọc",
+                "Tin vui tá»« WorkMate",
+                "CV cá»§a báº¡n Ä‘Ã£ vÆ°á»£t qua vÃ²ng sÃ ng lá»c",
+                "Há»“ sÆ¡ cá»§a báº¡n phÃ¹ há»£p vá»›i tiÃªu chÃ­ tuyá»ƒn dá»¥ng ban Ä‘áº§u. Äá»™i ngÅ© WorkMate sáº½ gá»­i lá»‹ch phá»ng váº¥n trong thá»i gian sá»›m nháº¥t.",
+                "VÆ°á»£t qua sÃ ng lá»c",
                 GREEN_ACCENT,
-                "Bước tiếp theo",
-                "Vui lòng theo dõi email và điện thoại để nhận lịch phỏng vấn. Bạn có thể chuẩn bị trước thông tin kinh nghiệm, dự án nổi bật và các câu hỏi muốn trao đổi với nhà tuyển dụng.",
+                "BÆ°á»›c tiáº¿p theo",
+                "Vui lÃ²ng theo dÃµi email vÃ  Ä‘iá»‡n thoáº¡i Ä‘á»ƒ nháº­n lá»‹ch phá»ng váº¥n. Báº¡n cÃ³ thá»ƒ chuáº©n bá»‹ trÆ°á»›c thÃ´ng tin kinh nghiá»‡m, dá»± Ã¡n ná»•i báº­t vÃ  cÃ¡c cÃ¢u há»i muá»‘n trao Ä‘á»•i vá»›i nhÃ  tuyá»ƒn dá»¥ng.",
                 candidateName,
                 recruitmentTitle
         );
@@ -33,13 +33,13 @@ public final class EmailTemplates {
 
     public static String cvRejected(String candidateName, String recruitmentTitle) {
         return applicationStatusEmail(
-                "Cập nhật hồ sơ ứng tuyển",
-                "Cảm ơn bạn đã quan tâm đến BetterHR",
-                "Sau khi xem xét, hồ sơ hiện tại của bạn chưa thật sự phù hợp với yêu cầu của vị trí này. BetterHR rất trân trọng thời gian và sự quan tâm của bạn.",
-                "Chưa phù hợp",
+                "Cáº­p nháº­t há»“ sÆ¡ á»©ng tuyá»ƒn",
+                "Cáº£m Æ¡n báº¡n Ä‘Ã£ quan tÃ¢m Ä‘áº¿n WorkMate",
+                "Sau khi xem xÃ©t, há»“ sÆ¡ hiá»‡n táº¡i cá»§a báº¡n chÆ°a tháº­t sá»± phÃ¹ há»£p vá»›i yÃªu cáº§u cá»§a vá»‹ trÃ­ nÃ y. WorkMate ráº¥t trÃ¢n trá»ng thá»i gian vÃ  sá»± quan tÃ¢m cá»§a báº¡n.",
+                "ChÆ°a phÃ¹ há»£p",
                 RED,
-                "Lời nhắn từ BetterHR",
-                "Bạn vẫn có thể tiếp tục theo dõi các vị trí tuyển dụng khác trên BetterHR. Chúng tôi hy vọng sẽ có cơ hội đồng hành cùng bạn trong những đợt tuyển dụng tiếp theo.",
+                "Lá»i nháº¯n tá»« WorkMate",
+                "Báº¡n váº«n cÃ³ thá»ƒ tiáº¿p tá»¥c theo dÃµi cÃ¡c vá»‹ trÃ­ tuyá»ƒn dá»¥ng khÃ¡c trÃªn WorkMate. ChÃºng tÃ´i hy vá»ng sáº½ cÃ³ cÆ¡ há»™i Ä‘á»“ng hÃ nh cÃ¹ng báº¡n trong nhá»¯ng Ä‘á»£t tuyá»ƒn dá»¥ng tiáº¿p theo.",
                 candidateName,
                 recruitmentTitle
         );
@@ -49,31 +49,48 @@ public final class EmailTemplates {
                                       String startDate, String dueDate, String priority, String taskUrl) {
         String priorityLabel = switch (firstNonBlank(priority, "Normal")) {
             case "High" -> "Cao";
-            case "Low" -> "Thấp";
-            default -> "Bình thường";
+            case "Low" -> "Tháº¥p";
+            default -> "BÃ¬nh thÆ°á»ng";
         };
         String priorityColor = "High".equals(priority) ? RED
                 : "Low".equals(priority) ? GREEN_ACCENT : "#9a6700";
         return taskEmail(
-                "Công việc mới",
-                "Bạn vừa được giao một công việc mới",
-                "Quản lý đã giao công việc mới cho bạn trên BetterHR. Hãy xem thông tin và chủ động cập nhật tiến độ đúng hạn.",
+                "CÃ´ng viá»‡c má»›i",
+                "Báº¡n vá»«a Ä‘Æ°á»£c giao má»™t cÃ´ng viá»‡c má»›i",
+                "Quáº£n lÃ½ Ä‘Ã£ giao cÃ´ng viá»‡c má»›i cho báº¡n trÃªn WorkMate. HÃ£y xem thÃ´ng tin vÃ  chá»§ Ä‘á»™ng cáº­p nháº­t tiáº¿n Ä‘á»™ Ä‘Ãºng háº¡n.",
                 employeeName, taskTitle, startDate, dueDate,
-                "Mức độ ưu tiên", priorityLabel, priorityColor,
-                "Nội dung công việc", description, "Mở công việc", taskUrl
+                "Má»©c Ä‘á»™ Æ°u tiÃªn", priorityLabel, priorityColor,
+                "Ná»™i dung cÃ´ng viá»‡c", description, "Má»Ÿ cÃ´ng viá»‡c", taskUrl
         );
     }
 
     public static String taskDeadlineReminder(String employeeName, String taskTitle,
                                                String dueDate, int hoursRemaining, String taskUrl) {
         return taskEmail(
-                "Nhắc deadline",
-                "Công việc sắp đến hạn",
-                "Công việc dưới đây sắp đến deadline. Vui lòng kiểm tra tiến độ và nộp kết quả trước thời gian quy định.",
+                "Nháº¯c deadline",
+                "CÃ´ng viá»‡c sáº¯p Ä‘áº¿n háº¡n",
+                "CÃ´ng viá»‡c dÆ°á»›i Ä‘Ã¢y sáº¯p Ä‘áº¿n deadline. Vui lÃ²ng kiá»ƒm tra tiáº¿n Ä‘á»™ vÃ  ná»™p káº¿t quáº£ trÆ°á»›c thá»i gian quy Ä‘á»‹nh.",
                 employeeName, taskTitle, null, dueDate,
-                "Thời gian còn lại", "Khoảng " + hoursRemaining + " giờ", "#b45309",
-                "Việc cần làm", "Đăng nhập BetterHR để cập nhật trạng thái hoặc nộp kết quả công việc.",
-                "Kiểm tra công việc", taskUrl
+                "Thá»i gian cÃ²n láº¡i", "Khoáº£ng " + hoursRemaining + " giá»", "#b45309",
+                "Viá»‡c cáº§n lÃ m", "ÄÄƒng nháº­p WorkMate Ä‘á»ƒ cáº­p nháº­t tráº¡ng thÃ¡i hoáº·c ná»™p káº¿t quáº£ cÃ´ng viá»‡c.",
+                "Kiá»ƒm tra cÃ´ng viá»‡c", taskUrl
+        );
+    }
+
+    public static String attendanceLogged(String employeeName, String actionType, String timeString) {
+        String actionLabel = "checkIn".equals(actionType) ? "VÃ o ca (Check-in)" : "Ra ca (Check-out)";
+        String statusColor = "checkIn".equals(actionType) ? GREEN_ACCENT : "#b45309";
+        
+        return applicationStatusEmail(
+                "ThÃ´ng bÃ¡o cháº¥m cÃ´ng",
+                "Cháº¥m cÃ´ng thÃ nh cÃ´ng",
+                "Há»‡ thá»‘ng Ä‘Ã£ ghi nháº­n dá»¯ liá»‡u cháº¥m cÃ´ng cá»§a báº¡n trÃªn WorkMate.",
+                actionLabel,
+                statusColor,
+                "Chi tiáº¿t ghi nháº­n",
+                "Thá»i gian: " + timeString + "<br>PhÆ°Æ¡ng thá»©c: Äá»‹nh vá»‹ GPS",
+                employeeName,
+                "Báº£ng cháº¥m cÃ´ng hÃ ng ngÃ y"
         );
     }
 
@@ -81,38 +98,38 @@ public final class EmailTemplates {
                                     String employeeName, String taskTitle, String startDate, String dueDate,
                                     String badgeLabel, String badgeValue, String badgeColor,
                                     String noteTitle, String noteBody, String actionText, String taskUrl) {
-        String safeName = escape(firstNonBlank(employeeName, "Nhân viên BetterHR"));
-        String safeTaskTitle = escape(firstNonBlank(taskTitle, "Công việc"));
-        String safeStartDate = escape(firstNonBlank(startDate, "Theo kế hoạch của quản lý"));
-        String safeDueDate = escape(firstNonBlank(dueDate, "Chưa xác định"));
-        String safeNote = escape(firstNonBlank(noteBody, "Xem chi tiết công việc trên BetterHR"))
+        String safeName = escape(firstNonBlank(employeeName, "NhÃ¢n viÃªn WorkMate"));
+        String safeTaskTitle = escape(firstNonBlank(taskTitle, "CÃ´ng viá»‡c"));
+        String safeStartDate = escape(firstNonBlank(startDate, "Theo káº¿ hoáº¡ch cá»§a quáº£n lÃ½"));
+        String safeDueDate = escape(firstNonBlank(dueDate, "ChÆ°a xÃ¡c Ä‘á»‹nh"));
+        String safeNote = escape(firstNonBlank(noteBody, "Xem chi tiáº¿t cÃ´ng viá»‡c trÃªn WorkMate"))
                 .replace("\r\n", "<br>").replace("\n", "<br>");
         String safeUrl = escape(firstNonBlank(taskUrl, "#"));
 
         return """
                 <!doctype html>
                 <html lang="vi">
-                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BetterHR</title></head>
+                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>WorkMate</title></head>
                 <body style="margin:0;padding:0;background:%s;font-family:Arial,Helvetica,sans-serif;color:%s;">
                     <div style="display:none;max-height:0;overflow:hidden;opacity:0;">%s - %s</div>
                     <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:%s;padding:32px 12px;">
                         <tr><td align="center">
                             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:640px;background:%s;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.10);">
                                 <tr><td style="background:%s;padding:28px 32px;">
-                                    <div style="color:%s;font-size:22px;font-weight:700;"><span style="display:inline-block;width:42px;height:42px;line-height:42px;text-align:center;border-radius:50%%;background:%s;margin-right:10px;">B</span>BetterHR</div>
+                                    <div style="color:%s;font-size:22px;font-weight:700;"><span style="display:inline-block;width:42px;height:42px;line-height:42px;text-align:center;border-radius:50%%;background:%s;margin-right:10px;">W</span>WorkMate</div>
                                     <div style="margin-top:22px;color:rgba(255,255,255,0.72);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">%s</div>
                                     <h1 style="margin:8px 0 0;color:%s;font-size:29px;line-height:1.25;">%s</h1>
                                 </td></tr>
                                 <tr><td style="padding:32px;">
-                                    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Xin chào <strong>%s</strong>,</p>
+                                    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Xin chÃ o <strong>%s</strong>,</p>
                                     <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:%s;">%s</p>
                                     <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:%s;border:1px solid %s;border-radius:12px;overflow:hidden;">
                                         <tr><td colspan="2" style="padding:20px;border-bottom:1px solid %s;">
-                                            <div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Công việc</div>
+                                            <div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">CÃ´ng viá»‡c</div>
                                             <div style="margin-top:7px;font-size:19px;line-height:1.4;color:%s;font-weight:700;">%s</div>
                                         </td></tr>
                                         <tr>
-                                            <td width="50%%" style="padding:18px 20px;border-right:1px solid %s;"><div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Bắt đầu</div><div style="margin-top:6px;font-weight:700;">%s</div></td>
+                                            <td width="50%%" style="padding:18px 20px;border-right:1px solid %s;"><div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Báº¯t Ä‘áº§u</div><div style="margin-top:6px;font-weight:700;">%s</div></td>
                                             <td width="50%%" style="padding:18px 20px;"><div style="font-size:12px;color:%s;text-transform:uppercase;font-weight:700;">Deadline</div><div style="margin-top:6px;font-weight:700;color:%s;">%s</div></td>
                                         </tr>
                                     </table>
@@ -120,7 +137,7 @@ public final class EmailTemplates {
                                     <div style="border-left:4px solid %s;padding:3px 0 3px 16px;margin-bottom:26px;"><h2 style="margin:0 0 8px;font-size:17px;color:%s;">%s</h2><p style="margin:0;font-size:15px;line-height:1.7;color:%s;">%s</p></div>
                                     <a href="%s" style="display:inline-block;background:%s;color:%s;text-decoration:none;font-size:15px;font-weight:700;padding:13px 22px;border-radius:999px;">%s</a>
                                 </td></tr>
-                                <tr><td style="background:%s;padding:20px 32px;color:rgba(255,255,255,0.70);font-size:13px;line-height:1.6;">Email này được gửi tự động từ hệ thống BetterHR. Vui lòng không trả lời trực tiếp email này.</td></tr>
+                                <tr><td style="background:%s;padding:20px 32px;color:rgba(255,255,255,0.70);font-size:13px;line-height:1.6;">Email nÃ y Ä‘Æ°á»£c gá»­i tá»± Ä‘á»™ng tá»« há»‡ thá»‘ng WorkMate. Vui lÃ²ng khÃ´ng tráº£ lá»i trá»±c tiáº¿p email nÃ y.</td></tr>
                             </table>
                         </td></tr>
                     </table>
@@ -145,8 +162,8 @@ public final class EmailTemplates {
                                                  String sectionBody,
                                                  String candidateName,
                                                  String recruitmentTitle) {
-        String safeName = escape(firstNonBlank(candidateName, "Ứng viên"));
-        String safeTitle = escape(firstNonBlank(recruitmentTitle, "Vị trí ứng tuyển"));
+        String safeName = escape(firstNonBlank(candidateName, "á»¨ng viÃªn"));
+        String safeTitle = escape(firstNonBlank(recruitmentTitle, "Vá»‹ trÃ­ á»©ng tuyá»ƒn"));
 
         return """
                 <!doctype html>
@@ -154,7 +171,7 @@ public final class EmailTemplates {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>BetterHR</title>
+                    <title>WorkMate</title>
                 </head>
                 <body style="margin:0; padding:0; background:%s; font-family:Arial, Helvetica, sans-serif; color:%s;">
                     <div style="display:none; max-height:0; overflow:hidden; opacity:0;">%s - %s</div>
@@ -167,8 +184,8 @@ public final class EmailTemplates {
                                             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td style="vertical-align:middle;">
-                                                        <div style="display:inline-block; width:44px; height:44px; border-radius:50%%; background:%s; color:%s; text-align:center; line-height:44px; font-weight:700; font-size:20px; margin-right:12px;">B</div>
-                                                        <span style="color:%s; font-size:22px; font-weight:700; vertical-align:middle;">BetterHR</span>
+                                                        <div style="display:inline-block; width:44px; height:44px; border-radius:50%%; background:%s; color:%s; text-align:center; line-height:44px; font-weight:700; font-size:20px; margin-right:12px;">W</div>
+                                                        <span style="color:%s; font-size:22px; font-weight:700; vertical-align:middle;">WorkMate</span>
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -182,18 +199,18 @@ public final class EmailTemplates {
                                     </tr>
                                     <tr>
                                         <td style="padding:32px;">
-                                            <p style="margin:0 0 18px; font-size:16px; line-height:1.7; color:%s;">Xin chào <strong>%s</strong>,</p>
+                                            <p style="margin:0 0 18px; font-size:16px; line-height:1.7; color:%s;">Xin chÃ o <strong>%s</strong>,</p>
                                             <p style="margin:0 0 24px; font-size:16px; line-height:1.7; color:%s;">%s</p>
                                             <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:%s; border-radius:14px; border:1px solid %s; margin:0 0 24px;">
                                                 <tr>
                                                     <td style="padding:18px 20px; border-bottom:1px solid %s;">
-                                                        <div style="font-size:12px; color:%s; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Vị trí</div>
+                                                        <div style="font-size:12px; color:%s; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Vá»‹ trÃ­</div>
                                                         <div style="margin-top:6px; font-size:16px; color:%s; font-weight:700;">%s</div>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td style="padding:18px 20px;">
-                                                        <div style="font-size:12px; color:%s; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Trạng thái hồ sơ</div>
+                                                        <div style="font-size:12px; color:%s; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Tráº¡ng thÃ¡i há»“ sÆ¡</div>
                                                         <div style="margin-top:8px;">
                                                             <span style="display:inline-block; padding:8px 14px; border-radius:999px; background:%s; color:%s; font-size:14px; font-weight:700;">%s</span>
                                                         </div>
@@ -204,12 +221,12 @@ public final class EmailTemplates {
                                                 <h2 style="margin:0 0 8px; font-size:18px; line-height:1.4; color:%s;">%s</h2>
                                                 <p style="margin:0; font-size:15px; line-height:1.7; color:%s;">%s</p>
                                             </div>
-                                            <span style="display:inline-block; background:%s; color:%s; text-decoration:none; font-size:15px; font-weight:700; padding:13px 22px; border-radius:999px;">BetterHR đồng hành cùng bạn</span>
+                                            <span style="display:inline-block; background:%s; color:%s; text-decoration:none; font-size:15px; font-weight:700; padding:13px 22px; border-radius:999px;">WorkMate Ä‘á»“ng hÃ nh cÃ¹ng báº¡n</span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="background:%s; padding:22px 32px; color:%s; font-size:13px; line-height:1.6;">
-                                            Email này được gửi tự động từ hệ thống BetterHR. Vui lòng không trả lời trực tiếp email này.
+                                            Email nÃ y Ä‘Æ°á»£c gá»­i tá»± Ä‘á»™ng tá»« há»‡ thá»‘ng WorkMate. Vui lÃ²ng khÃ´ng tráº£ lá»i trá»±c tiáº¿p email nÃ y.
                                         </td>
                                     </tr>
                                 </table>

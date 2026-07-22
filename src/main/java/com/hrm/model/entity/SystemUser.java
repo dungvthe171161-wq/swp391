@@ -21,6 +21,9 @@ public class SystemUser implements Serializable {
     private boolean isActive;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    private int failedAttempts;
+    private boolean isLocked;
+    private LocalDateTime lockedAt;
 
     private Department department;
     private Employee employee;
@@ -181,6 +184,30 @@ public class SystemUser implements Serializable {
         this.updatedDate = updatedDate;
     }
 
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
+
+    public boolean isLocked() {
+        return isLocked;
+    }
+
+    public void setLocked(boolean locked) {
+        isLocked = locked;
+    }
+
+    public LocalDateTime getLockedAt() {
+        return lockedAt;
+    }
+
+    public void setLockedAt(LocalDateTime lockedAt) {
+        this.lockedAt = lockedAt;
+    }
+
     public Role getRole() {
         return role;
     }
@@ -220,6 +247,9 @@ public class SystemUser implements Serializable {
                 + ", isActive=" + isActive
                 + ", createdDate=" + createdDate
                 + ", updatedDate=" + updatedDate
+                + ", failedAttempts=" + failedAttempts
+                + ", isLocked=" + isLocked
+                + ", lockedAt=" + lockedAt
                 + '}';
     }
 }

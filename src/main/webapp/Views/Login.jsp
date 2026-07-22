@@ -77,5 +77,10 @@
             </div>
         </section>
     </main>
+    <c:if test="${not empty showWarningPopup}">
+        <script>
+            alert("Cảnh báo: Tài khoản của bạn có nguy cơ bị khóa nếu tiếp tục nhập sai!");
+        </script>
+    </c:if>
 </body>
 </html>

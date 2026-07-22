@@ -42,11 +42,11 @@
                     </div>
 
                     <div class="auth-field">
-                        <input type="password" name="password" class="auth-input" placeholder="Mật khẩu" minlength="6" maxlength="100" required>
+                        <input type="password" name="password" class="auth-input" placeholder="Mật khẩu" minlength="10" maxlength="36" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,36}$" title="Mật khẩu phải từ 10-36 ký tự, gồm cả chữ và số, không chứa ký tự đặc biệt" required>
                     </div>
 
                     <div class="auth-field">
-                        <input type="password" name="confirmPassword" class="auth-input" placeholder="Xác nhận mật khẩu" minlength="6" maxlength="100" required>
+                        <input type="password" name="confirmPassword" class="auth-input" placeholder="Xác nhận mật khẩu" minlength="10" maxlength="36" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,36}$" title="Mật khẩu phải từ 10-36 ký tự, gồm cả chữ và số, không chứa ký tự đặc biệt" required>
                     </div>
 
                     <c:if test="${not empty mess}">

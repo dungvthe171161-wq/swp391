@@ -34,7 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.sql.SQLException;
 
-@WebServlet("/admin/users")
+@WebServlet(name = "UserController", urlPatterns = {"/admin/users", "/admin/users/unlock"})
 @MultipartConfig
 public class UserController extends HttpServlet {
 
@@ -82,8 +82,14 @@ public class UserController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
               throws ServletException, IOException {
         String action = request.getParameter("action");
+        String uri = request.getRequestURI();
 
         try (Connection conn = DBConnection.getConnection()) {
+            if (uri.endsWith("/unlock")) {
+                handleUnlockUser(request, response, conn);
+                return;
+            }
+
             if ("save".equals(action)) {
                 handleSaveUser(request, response, conn);
             } else if ("update".equals(action)) {
@@ -601,5 +607,37 @@ public class UserController extends HttpServlet {
         } else {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to delete user");
         }
+    }
+
+    private void handleUnlockUser(HttpServletRequest request, HttpServletResponse response, Connection conn)
+              throws Exception {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+
+        SystemUser currentUser = PermissionUtil.getCurrentUser(request);
+        if (currentUser == null || currentUser.getRoleId() != PermissionUtil.ROLE_ADMIN) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            out.write("{\"success\":false,\"message\":\"Bạn không có quyền thực hiện hành động này.\"}");
+            out.flush();
+            return;
+        }
+
+        String idParam = request.getParameter("id");
+        if (idParam == null || idParam.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"success\":false,\"message\":\"Thiếu ID người dùng.\"}");
+            out.flush();
+            return;
+        }
+
+        int userId = Integer.parseInt(idParam);
+        if (DAO.getInstance().unlockUser(userId)) {
+            out.write("{\"success\":true,\"message\":\"Mở khóa tài khoản thành công.\"}");
+        } else {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write("{\"success\":false,\"message\":\"Không thể mở khóa tài khoản.\"}");
+        }
+        out.flush();
     }
 }

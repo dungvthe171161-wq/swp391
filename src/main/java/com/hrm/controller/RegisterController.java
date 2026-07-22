@@ -18,6 +18,7 @@ public class RegisterController extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(RegisterController.class.getName());
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{3,100}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{10,36}$");
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -97,8 +98,8 @@ public class RegisterController extends HttpServlet {
         if (!EMAIL_PATTERN.matcher(email).matches() || email.length() > 150) {
             return "Email không đúng định dạng.";
         }
-        if (password.length() < 6 || password.length() > 100) {
-            return "Mật khẩu phải có từ 6 đến 100 ký tự.";
+        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+            return "Mật khẩu phải có từ 10 đến 36 ký tự, chứa cả chữ cái và chữ số, và không chứa ký tự đặc biệt.";
         }
         if (!password.equals(confirmPassword)) {
             return "Mật khẩu xác nhận không khớp.";

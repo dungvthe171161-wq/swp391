@@ -782,6 +782,14 @@ public class SystemUserDAO {
         user.setLockedUntil(lockedUntil != null ? lockedUntil.toLocalDateTime() : null);
         Timestamp updatedDate = hasColumn(rs, "UpdatedDate") ? rs.getTimestamp("UpdatedDate") : null;
         user.setUpdatedDate(updatedDate != null ? updatedDate.toLocalDateTime() : null);
+        if (hasColumn(rs, "failed_attempts")) {
+            user.setFailedAttempts(rs.getInt("failed_attempts"));
+        }
+        if (hasColumn(rs, "is_locked")) {
+            user.setLocked(rs.getBoolean("is_locked"));
+        }
+        Timestamp lockedAt = hasColumn(rs, "locked_at") ? rs.getTimestamp("locked_at") : null;
+        user.setLockedAt(lockedAt != null ? lockedAt.toLocalDateTime() : null);
     }
 
     private String getNullableString(ResultSet rs, String columnName) throws SQLException {

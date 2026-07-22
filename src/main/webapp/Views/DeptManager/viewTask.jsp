@@ -10,6 +10,8 @@
     <%@ include file="_DeptManagerStyles.jspf" %>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chatbot.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body>
 <div class="dept-shell">
@@ -65,22 +67,19 @@
                                 <a href="${pageContext.request.contextPath}/${task.attachmentPath}" target="_blank">${task.attachmentPath}</a>
                             </div>
                         </c:if>
-                        <div class="dept-field" style="margin-top:14px;">
+                        <div class="dept-field" style="margin-top:14px; margin-bottom:20px;">
                             <label>Giao cho</label>
-                            <div class="dept-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+                            <select id="assignToSelect" name="assignTo" multiple placeholder="Tìm và chọn nhân viên..." autocomplete="off" required>
                                 <c:forEach var="emp" items="${employeeList}">
-                                    <c:set var="checked" value="false" />
+                                    <c:set var="isSelected" value="false" />
                                     <c:forEach var="assignedId" items="${assignedEmployeeIds}">
                                         <c:if test="${assignedId == emp.employeeId}">
-                                            <c:set var="checked" value="true" />
+                                            <c:set var="isSelected" value="true" />
                                         </c:if>
                                     </c:forEach>
-                                    <label style="display:flex; gap:10px; align-items:center; padding:12px; border:1px solid var(--dept-border-soft); border-radius:10px; background:#fff;">
-                                        <input type="checkbox" name="assignTo" value="${emp.employeeId}" ${checked ? 'checked' : ''}>
-                                        <span>${emp.fullName}</span>
-                                    </label>
+                                    <option value="${emp.employeeId}" ${isSelected ? 'selected' : ''}>${emp.fullName} - ${emp.position}</option>
                                 </c:forEach>
-                            </div>
+                            </select>
                         </div>
                         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
                             <a class="dept-btn secondary" href="${pageContext.request.contextPath}/taskManager">Quay lại</a>
@@ -106,6 +105,16 @@ if (startInput && dueInput) {
     };
     syncDueMin();
     startInput.addEventListener('change', syncDueMin);
+}
+
+// Khởi tạo Tom Select cho bộ chọn nhân viên
+if (document.getElementById('assignToSelect')) {
+    new TomSelect('#assignToSelect', {
+        plugins: ['remove_button'],
+        maxItems: null,
+        persist: false,
+        create: false
+    });
 }
 </script>
 </body>

@@ -8,6 +8,8 @@
     <title>BetterHR - Tạo công việc</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <%@ include file="_DeptManagerStyles.jspf" %>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body>
 <div class="dept-shell">
@@ -51,16 +53,13 @@
                                 <input type="file" name="attachment">
                             </div>
                         </div>
-                        <div class="dept-field" style="margin-bottom:14px;">
+                        <div class="dept-field" style="margin-bottom:20px;">
                             <label>Giao cho</label>
-                            <div class="dept-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+                            <select id="assignToSelect" name="assignTo" multiple placeholder="Tìm và chọn nhân viên..." autocomplete="off" required>
                                 <c:forEach var="emp" items="${employeeList}">
-                                    <label style="display:flex; gap:10px; align-items:center; padding:12px; border:1px solid var(--dept-border-soft); border-radius:10px; background:#fff;">
-                                        <input type="checkbox" name="assignTo" value="${emp.employeeId}">
-                                        <span>${emp.fullName}</span>
-                                    </label>
+                                    <option value="${emp.employeeId}">${emp.fullName} - ${emp.position}</option>
                                 </c:forEach>
-                            </div>
+                            </select>
                         </div>
                         <div style="display:flex; justify-content:flex-end; gap:10px;">
                             <a class="dept-btn secondary" href="${pageContext.request.contextPath}/taskManager">Quay lại</a>
@@ -86,6 +85,16 @@ if (startInput && dueInput) {
         if (dueInput.value && startInput.value && dueInput.value < startInput.value) {
             dueInput.value = startInput.value;
         }
+    });
+}
+
+// Khởi tạo Tom Select cho bộ chọn nhân viên
+if (document.getElementById('assignToSelect')) {
+    new TomSelect('#assignToSelect', {
+        plugins: ['remove_button'],
+        maxItems: null,
+        persist: false,
+        create: false
     });
 }
 </script>

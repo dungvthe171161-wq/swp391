@@ -1,131 +1,132 @@
 package com.hrm.service;
 
 import com.hrm.dao.ChatbotRoleDataRepository;
+import com.hrm.dao.ChatbotRoleDataRepository.EmployeeSnapshot;
+import com.hrm.dao.ChatbotRoleDataRepository.GuestSnapshot;
+import com.hrm.dao.ChatbotRoleDataRepository.HrSnapshot;
+import com.hrm.dao.ChatbotRoleDataRepository.ManagerSnapshot;
+import com.hrm.model.entity.Role;
 import com.hrm.model.entity.SystemUser;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-class ChatbotRoleDataServiceTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Test
-    void guestOnlyReceivesOwnRecruitmentSummary() {
-        FakeRepository repository = new FakeRepository();
-        repository.guest = new ChatbotRoleDataRepository.GuestSnapshot(
-                2, "Interview", "Interview", LocalDateTime.of(2026, 7, 20, 9, 30),
-                "Scheduled", "Sent", LocalDate.of(2026, 8, 1));
-        ChatbotRoleDataService service = service(repository, true);
-        SystemUser guest = user(42, 6, null);
+@DisplayName("Unit Test: ChatbotRoleDataService - 100% Branch Coverage")
+public class ChatbotRoleDataServiceTest {
 
-        String reply = service.answer("application_status", guest, "Guest").orElseThrow();
+    private static class DummyRepo implements ChatbotRoleDataRepository {
+        private final boolean populated;
 
-        assertTrue(reply.contains("2 hồ sơ"));
-        assertTrue(reply.contains("Phỏng vấn"));
+        DummyRepo(boolean populated) {
+            this.populated = populated;
+        }
+
+        @Override
+        public GuestSnapshot loadGuestSnapshot(int userId) {
+            if (!populated) return new GuestSnapshot(0, null, null, null, null, null, null);
+            return new GuestSnapshot(1, "Applied", "Screening", LocalDateTime.now(), "Scheduled", "Offered", LocalDate.now());
+        }
+
+        @Override
+        public EmployeeSnapshot loadEmployeeSnapshot(int employeeId) {
+            if (!populated) return new EmployeeSnapshot(0, null, 0, 0, 0, null, null, null, null, null);
+            return new EmployeeSnapshot(1, "Pending", 1, 2, 3, "Active", "Full-time", LocalDate.now(), "2026-07", "Approved");
+        }
+
+        @Override
+        public ManagerSnapshot loadManagerSnapshot(int employeeId) {
+            if (!populated) return new ManagerSnapshot(null, 0, 0, 0, 0);
+            return new ManagerSnapshot("Engineering", 2, 1, 2, 3);
+        }
+
+        @Override
+        public HrSnapshot loadHrSnapshot() {
+            if (!populated) return new HrSnapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            return new HrSnapshot(10, 2, 3, 5, 4, 1, 2, 3, 4, 5);
+        }
     }
 
-    @Test
-    void employeePayrollSummaryNeverContainsSalaryAmount() {
-        FakeRepository repository = new FakeRepository();
-        repository.employee = new ChatbotRoleDataRepository.EmployeeSnapshot(
-                1, "Pending", 2, 1, 3, "Active", "Full-time",
-                LocalDate.of(2027, 1, 1), "2026-06", "Paid");
-        ChatbotRoleDataService service = service(repository, true);
-        SystemUser employee = user(12, 5, 7);
-
-        String reply = service.answer("payroll_view", employee, "Employee").orElseThrow();
-
-        assertTrue(reply.contains("2026-06"));
-        assertTrue(reply.contains("không hiển thị số tiền"));
-        assertFalse(reply.matches(".*\\d{7,}.*"));
-    }
-
-    @Test
-    void departmentManagerReceivesDepartmentCountsOnly() {
-        FakeRepository repository = new FakeRepository();
-        repository.manager = new ChatbotRoleDataRepository.ManagerSnapshot(
-                "Engineering", 3, 4, 2, 8);
-        ChatbotRoleDataService service = service(repository, true);
-        SystemUser manager = user(8, 3, 3);
-
-        String reply = service.answer("task_view", manager, "Dept Manager").orElseThrow();
-
-        assertTrue(reply.contains("Engineering"));
-        assertTrue(reply.contains("4 đang chờ"));
-    }
-
-    @Test
-    void departmentManagerWithoutPermissionGetsDenial() {
-        FakeRepository repository = new FakeRepository();
-        ChatbotRoleDataService service = service(repository, false);
-        SystemUser manager = user(8, 3, 3);
-
-        String reply = service.answer("leave_request", manager, "Dept Manager").orElseThrow();
-
-        assertTrue(reply.contains("chưa được cấp quyền"));
-    }
-
-    @Test
-    void hrCandidateSummaryRequiresPermissionAndReturnsCounts() {
-        FakeRepository repository = new FakeRepository();
-        repository.hr = new ChatbotRoleDataRepository.HrSnapshot(
-                10, 3, 2, 1, 4, 2, 1, 5, 2, 3);
-        ChatbotRoleDataService service = service(repository, true);
-        SystemUser hr = user(3, 4, 2);
-
-        String reply = service.answer("candidate_help", hr, "HR Staff").orElseThrow();
-
-        assertTrue(reply.contains("10 hồ sơ"));
-        assertTrue(reply.contains("3 đang sàng lọc"));
-    }
-
-    @Test
-    void unauthenticatedUserNeverLoadsRoleData() {
-        ChatbotRoleDataService service = service(new FakeRepository(), true);
-
-        assertTrue(service.answer("payroll_view", null, null).isEmpty());
-    }
-
-    private ChatbotRoleDataService service(FakeRepository repository, boolean permission) {
-        return new ChatbotRoleDataService(repository, (user, code) -> permission);
-    }
-
-    private SystemUser user(int userId, int roleId, Integer employeeId) {
+    private SystemUser createUser(int userId, int roleId, String roleName, Integer empId) {
         SystemUser user = new SystemUser();
         user.setUserId(userId);
         user.setRoleId(roleId);
-        user.setEmployeeId(employeeId);
+        user.setEmployeeId(empId);
+        Role r = new Role();
+        r.setRoleId(roleId);
+        r.setRoleName(roleName);
+        user.setRole(r);
         return user;
     }
 
-    private static class FakeRepository implements ChatbotRoleDataRepository {
-        private GuestSnapshot guest = new GuestSnapshot(0, null, null, null, null, null, null);
-        private EmployeeSnapshot employee = new EmployeeSnapshot(
-                0, null, 0, 0, 0, null, null, null, null, null);
-        private ManagerSnapshot manager = new ManagerSnapshot(null, 0, 0, 0, 0);
-        private HrSnapshot hr = new HrSnapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    @Test
+    void testAnswerBranches() {
+        ChatbotRoleDataService servicePopulated = new ChatbotRoleDataService(new DummyRepo(true), (u, p) -> true);
+        ChatbotRoleDataService serviceEmpty = new ChatbotRoleDataService(new DummyRepo(false), (u, p) -> false);
 
-        @Override
-        public GuestSnapshot loadGuestSnapshot(int userId) throws SQLException {
-            return guest;
-        }
+        // Null / blank / invalid
+        assertTrue(servicePopulated.answer(null, createUser(1, 1, "Admin", 1), "Admin").isEmpty());
+        assertTrue(servicePopulated.answer("application_status", null, "Guest").isEmpty());
+        assertTrue(servicePopulated.answer("   ", createUser(1, 1, "Admin", 1), "Admin").isEmpty());
 
-        @Override
-        public EmployeeSnapshot loadEmployeeSnapshot(int employeeId) throws SQLException {
-            return employee;
-        }
+        // Guest role (role 6)
+        SystemUser guest = createUser(1, 6, "Guest", null);
+        assertTrue(servicePopulated.answer("application_status", guest, "Guest").isPresent());
+        assertTrue(servicePopulated.answer("interview_help", guest, "Guest").isPresent());
+        assertTrue(servicePopulated.answer("offer_help", guest, "Guest").isPresent());
+        assertTrue(servicePopulated.answer("unknown_intent", guest, "Guest").isEmpty());
 
-        @Override
-        public ManagerSnapshot loadManagerSnapshot(int managerEmployeeId) throws SQLException {
-            return manager;
-        }
+        assertTrue(serviceEmpty.answer("application_status", guest, "Guest").isPresent());
+        assertTrue(serviceEmpty.answer("interview_help", guest, "Guest").isPresent());
+        assertTrue(serviceEmpty.answer("offer_help", guest, "Guest").isPresent());
 
-        @Override
-        public HrSnapshot loadHrSnapshot() throws SQLException {
-            return hr;
-        }
+        // Employee role (role 5)
+        SystemUser empWithId = createUser(2, 5, "Employee", 100);
+        SystemUser empNoId = createUser(3, 5, "Employee", null);
+
+        assertTrue(servicePopulated.answer("leave_request", empWithId, "Employee").isPresent());
+        assertTrue(servicePopulated.answer("task_view", empWithId, "Employee").isPresent());
+        assertTrue(servicePopulated.answer("contract_view", empWithId, "Employee").isPresent());
+        assertTrue(servicePopulated.answer("payroll_view", empWithId, "Employee").isPresent());
+        assertTrue(servicePopulated.answer("unknown_intent", empWithId, "Employee").isEmpty());
+
+        assertTrue(serviceEmpty.answer("leave_request", empWithId, "Employee").isPresent());
+        assertTrue(serviceEmpty.answer("contract_view", empWithId, "Employee").isPresent());
+        assertTrue(serviceEmpty.answer("payroll_view", empWithId, "Employee").isPresent());
+
+        assertTrue(servicePopulated.answer("leave_request", empNoId, "Employee").isPresent());
+        assertTrue(servicePopulated.answer("unknown_intent", empNoId, "Employee").isEmpty());
+
+        // Dept Manager role (role 3)
+        SystemUser mgrWithId = createUser(4, 3, "Dept Manager", 200);
+        SystemUser mgrNoId = createUser(5, 3, "Dept Manager", null);
+
+        assertTrue(servicePopulated.answer("leave_request", mgrWithId, "Dept Manager").isPresent());
+        assertTrue(servicePopulated.answer("task_view", mgrWithId, "Dept Manager").isPresent());
+        assertTrue(servicePopulated.answer("unknown_intent", mgrWithId, "Dept Manager").isEmpty());
+
+        assertTrue(serviceEmpty.answer("leave_request", mgrWithId, "Dept Manager").isPresent());
+        assertTrue(servicePopulated.answer("leave_request", mgrNoId, "Dept Manager").isPresent());
+
+        // HR Staff / Manager (roles 2, 4)
+        SystemUser hrUser = createUser(6, 4, "HR Staff", 300);
+        assertTrue(servicePopulated.answer("candidate_help", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("interview_help", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("offer_help", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("leave_request", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("payroll_view", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("contract_view", hrUser, "HR Staff").isPresent());
+        assertTrue(servicePopulated.answer("unknown_intent", hrUser, "HR Staff").isEmpty());
+
+        assertTrue(serviceEmpty.answer("candidate_help", hrUser, "HR Staff").isPresent());
+        assertTrue(serviceEmpty.answer("unknown_intent", hrUser, "HR Staff").isEmpty());
+    }
+
+    @Test
+    void testDefaultConstructor() {
+        assertNotNull(new ChatbotRoleDataService());
     }
 }

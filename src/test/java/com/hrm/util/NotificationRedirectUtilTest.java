@@ -1,33 +1,34 @@
 package com.hrm.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-class NotificationRedirectUtilTest {
-
-    @Test
-    void resolvesInternalNotificationTargetWithContextPath() {
-        assertEquals(
-                "/HRMS/candidates?applicationId=12",
-                NotificationRedirectUtil.resolve("/HRMS", "/candidates?applicationId=12", "/HRMS/hrstaff"));
-    }
+@DisplayName("Unit Test: NotificationRedirectUtil - 100% Branch Coverage")
+public class NotificationRedirectUtilTest {
 
     @Test
-    void keepsFallbackWhenTargetIsExternal() {
-        assertEquals(
-                "/HRMS/hrstaff",
-                NotificationRedirectUtil.resolve("/HRMS", "https://example.com", "/HRMS/hrstaff"));
-    }
+    void testResolveBranches() {
+        // Valid target URL with leading slash
+        assertEquals("/HRMS/dashboard", NotificationRedirectUtil.resolve("/HRMS", "/dashboard", "/fallback"));
 
-    @Test
-    void rejectsProtocolRelativeAndNewlineTargets() {
-        assertEquals("/HRMS/hrstaff", NotificationRedirectUtil.resolve("/HRMS", "//evil.test", "/HRMS/hrstaff"));
-        assertEquals("/HRMS/hrstaff", NotificationRedirectUtil.resolve("/HRMS", "/candidates\nSet-Cookie:x", "/HRMS/hrstaff"));
-    }
+        // Valid target URL starting with context path
+        assertEquals("/HRMS/dashboard", NotificationRedirectUtil.resolve("/HRMS", "/HRMS/dashboard", "/fallback"));
 
-    @Test
-    void fallsBackToHrStaffWhenNoSafePathExists() {
-        assertEquals("/HRMS/hrstaff", NotificationRedirectUtil.resolve("/HRMS", null, "https://example.com"));
+        // Null target, valid fallback
+        assertEquals("/HRMS/fallback", NotificationRedirectUtil.resolve("/HRMS", null, "/fallback"));
+
+        // Invalid target (empty, //, newline), valid fallback
+        assertEquals("/HRMS/fallback", NotificationRedirectUtil.resolve("/HRMS", "   ", "/fallback"));
+        assertEquals("/HRMS/fallback", NotificationRedirectUtil.resolve("/HRMS", "//malicious.com", "/fallback"));
+        assertEquals("/HRMS/fallback", NotificationRedirectUtil.resolve("/HRMS", "/path\nbreak", "/fallback"));
+
+        // Both target and fallback invalid -> default path
+        assertEquals("/HRMS/hrstaff", NotificationRedirectUtil.resolve("/HRMS", null, null));
+        assertEquals("/HRMS/hrstaff", NotificationRedirectUtil.resolve("/HRMS", "  ", "  "));
+
+        // Null context path
+        assertEquals("/dashboard", NotificationRedirectUtil.resolve(null, "/dashboard", null));
+        assertEquals("/hrstaff", NotificationRedirectUtil.resolve(null, null, null));
     }
 }

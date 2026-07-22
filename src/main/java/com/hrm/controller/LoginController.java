@@ -74,6 +74,11 @@ public class LoginController extends HttpServlet {
             return;
         }
 
+        if (user != null && user.isLocked()) {
+            forwardLogin(request, response, "Tài khoản của bạn đã bị khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng liên hệ Admin để mở khóa.");
+            return;
+        }
+
         if (user != null && user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
             forwardLogin(request, response, "Tài khoản đang tạm khóa. Vui lòng thử lại sau.");
             return;
@@ -115,6 +120,17 @@ public class LoginController extends HttpServlet {
 
         if (user != null) {
             DAO.getInstance().recordFailedLogin(user.getUsername());
+            SystemUser updatedUser = DAO.getInstance().getAccountByUsernameOrEmail(login.toLowerCase());
+            if (updatedUser != null) {
+                if (updatedUser.isLocked()) {
+                    forwardLogin(request, response, "Tài khoản của bạn đã bị khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng liên hệ Admin để mở khóa.");
+                    return;
+                } else if (updatedUser.getFailedAttempts() == 7) {
+                    request.setAttribute("showWarningPopup", true);
+                    forwardLogin(request, response, "Sai tên đăng nhập/email hoặc mật khẩu. Cảnh báo: Tài khoản của bạn có nguy cơ bị khóa nếu tiếp tục nhập sai!");
+                    return;
+                }
+            }
         }
         forwardLogin(request, response, "Sai tên đăng nhập/email hoặc mật khẩu.");
     }

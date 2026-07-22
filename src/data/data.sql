@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 data base đã sửa thêm with gg
 -- =====================================================
 -- HRM DATABASE - SCRIPT GỘP HOÀN CHỈNH
@@ -236,6 +236,12 @@ CREATE TABLE IF NOT EXISTS SystemUser (
     LastLogin DATETIME NULL,
 
     IsActive BOOLEAN DEFAULT TRUE,
+
+    failed_attempts INT DEFAULT 0,
+
+    is_locked BOOLEAN DEFAULT FALSE,
+
+    locked_at DATETIME NULL,
 
     CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
 

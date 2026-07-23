@@ -157,7 +157,7 @@ public class EmployeePortalController extends HttpServlet {
         request.setAttribute("todaySchedule", workScheduleDAO.getByEmployeeAndDate(employeeId, LocalDate.now()));
         request.setAttribute("gpsRequired", true);
         if (officeLocation == null) {
-            request.setAttribute("gpsWarning", "ChÆ°a cáº¥u hÃ¬nh Ä‘á»‹a Ä‘iá»ƒm vÄƒn phÃ²ng há»£p lá»‡ Ä‘á»ƒ cháº¥m cÃ´ng GPS.");
+            request.setAttribute("gpsWarning", "Chưa cấu hình địa điểm văn phòng hợp lệ để chấm công GPS.");
         }
         request.getRequestDispatcher("/Views/Employee/Attendance.jsp").forward(request, response);
     }
@@ -245,7 +245,7 @@ public class EmployeePortalController extends HttpServlet {
             throws IOException {
         String action = request.getParameter("action");
         if (!"checkIn".equals(action) && !"checkOut".equals(action)) {
-            redirectAttendanceError(request, response, "Thao tÃ¡c cháº¥m cÃ´ng khÃ´ng há»£p lá»‡.");
+            redirectAttendanceError(request, response, "Thao tác chấm công không hợp lệ.");
             return;
         }
         String latitudeValue = request.getParameter("latitude");
@@ -254,7 +254,7 @@ public class EmployeePortalController extends HttpServlet {
         if (latitudeValue == null || latitudeValue.isBlank()
                 || longitudeValue == null || longitudeValue.isBlank()
                 || accuracyValue == null || accuracyValue.isBlank()) {
-            redirectAttendanceError(request, response, "Vui lÃ²ng cáº¥p quyá»n vá»‹ trÃ­ Ä‘á»ƒ cháº¥m cÃ´ng.");
+            redirectAttendanceError(request, response, "Vui lòng cấp quyền vị trí để chấm công.");
             return;
         }
 
@@ -262,17 +262,17 @@ public class EmployeePortalController extends HttpServlet {
         Double longitude = parseDoubleObject(longitudeValue);
         Double accuracy = parseDoubleObject(accuracyValue);
         if (!GeoUtil.isValidLatitude(latitude) || !GeoUtil.isValidLongitude(longitude)) {
-            redirectAttendanceError(request, response, "Tá»a Ä‘á»™ cháº¥m cÃ´ng khÃ´ng há»£p lá»‡.");
+            redirectAttendanceError(request, response, "Tọa độ chấm công không hợp lệ.");
             return;
         }
         if (accuracy == null || !Double.isFinite(accuracy) || accuracy < 0) {
-            redirectAttendanceError(request, response, "Äá»™ chÃ­nh xÃ¡c GPS khÃ´ng há»£p lá»‡.");
+            redirectAttendanceError(request, response, "Độ chính xác GPS không hợp lệ.");
             return;
         }
 
         OfficeLocation office = officeLocationDAO.getNearestActiveLocation(latitude, longitude);
         if (office == null || office.getLatitude() == null || office.getLongitude() == null) {
-            redirectAttendanceError(request, response, "ChÆ°a cÃ³ Ä‘á»‹a Ä‘iá»ƒm vÄƒn phÃ²ng há»£p lá»‡ Ä‘á»ƒ cháº¥m cÃ´ng GPS.");
+            redirectAttendanceError(request, response, "Chưa có địa điểm văn phòng hợp lệ để chấm công GPS.");
             return;
         }
 
@@ -280,7 +280,7 @@ public class EmployeePortalController extends HttpServlet {
                 office.getLatitude().doubleValue(), office.getLongitude().doubleValue());
         if (!GeoUtil.isWithinRadius(distanceMeters, office.getRadiusMeters())) {
             redirectAttendanceError(request, response, String.format(
-                    "Báº¡n Ä‘ang cÃ¡ch Ä‘á»‹a Ä‘iá»ƒm lÃ m viá»‡c %.0f m. Khoáº£ng cÃ¡ch cho phÃ©p lÃ  %d m.",
+                    "Bạn đang cách địa điểm làm việc %.0f m. Khoảng cách cho phép là %d m.",
                     distanceMeters, office.getRadiusMeters()));
             return;
         }
@@ -288,11 +288,11 @@ public class EmployeePortalController extends HttpServlet {
         if ("checkIn".equals(action)) {
             success = attendanceDAO.checkInWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
-                    success ? "ÄÃ£ ghi nháº­n vÃ o ca." : "KhÃ´ng thá»ƒ vÃ o ca báº±ng GPS. Vui lÃ²ng kiá»ƒm tra vá»‹ trÃ­.");
+                    success ? "Đã ghi nhận vào ca." : "Không thể vào ca bằng GPS. Vui lòng kiểm tra vị trí.");
         } else if ("checkOut".equals(action)) {
             success = attendanceDAO.checkOutWithGps(employeeId, latitude, longitude, accuracy);
             request.getSession().setAttribute(success ? "employeeSuccess" : "employeeError",
-                    success ? "ÄÃ£ ghi nháº­n ra ca." : "KhÃ´ng thá»ƒ ra ca báº±ng GPS. Vui lÃ²ng kiá»ƒm tra vá»‹ trÃ­.");
+                    success ? "Đã ghi nhận ra ca." : "Không thể ra ca bằng GPS. Vui lòng kiểm tra vị trí.");
         }
 
         if (success) {
@@ -300,7 +300,7 @@ public class EmployeePortalController extends HttpServlet {
             if (employee != null && employee.getEmail() != null && !employee.getEmail().isBlank()) {
                 String timeString = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
                 String emailContent = EmailTemplates.attendanceLogged(employee.getFullName(), action, timeString);
-                String emailSubject = "WorkMate - Ghi nháº­n cháº¥m cÃ´ng thÃ nh cÃ´ng";
+                String emailSubject = "WorkMate - Ghi nhận chấm công thành công";
                 try {
                     EmailSender.sendHtmlEmail(employee.getEmail(), emailSubject, emailContent);
                 } catch (Exception ignored) {
